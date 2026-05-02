@@ -1,0 +1,42 @@
+[
+  {
+    "id": 4,
+    "name": "KDJ金叉死叉-1H",
+    "type": "kdj",
+    "strategy_params": {
+      "k_period": 7,
+      "oversold": 15,
+      "overbought": 75
+    },
+    "best_params": {
+      "score": -0.0,
+      "total_return": -0.0,
+      "win_rate": 34.48,
+      "trade_count": 29,
+      "max_drawdown": 0.0,
+      "tp": 20,
+      "sl": 20,
+      "trailing": 25
+    }
+  },
+  {
+    "id": 5,
+    "name": "CCI趋势反转-1H",
+    "type": "cci",
+    "strategy_params": {
+      "period": 14,
+      "oversold": -150,
+      "overbought": 100
+    },
+    "best_params": {
+      "score": -0.0,
+      "total_return": -0.0,
+      "win_rate": 40.0,
+      "trade_count": 45,
+      "max_drawdown": 0.01,
+      "tp": 20,
+      "sl": 20,
+      "trailing": 25
+    }
+  }
+]

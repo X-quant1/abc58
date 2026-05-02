@@ -1,0 +1,842 @@
+[
+  {
+    "id": 1,
+    "name": "BTC双均线策略",
+    "type": "ma_cross",
+    "best_by_winrate": {
+      "total_return": -0.22,
+      "win_rate": 40.91,
+      "trade_count": 22,
+      "max_drawdown": 0.31,
+      "tp": 25,
+      "sl": 50,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.21,
+      "win_rate": 31.82,
+      "trade_count": 22,
+      "max_drawdown": 0.37,
+      "tp": 100,
+      "sl": 50,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.22,
+        "win_rate": 40.91,
+        "trade_count": 22,
+        "max_drawdown": 0.31,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.22,
+        "win_rate": 40.91,
+        "trade_count": 22,
+        "max_drawdown": 0.31,
+        "tp": 30,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.26,
+        "win_rate": 36.36,
+        "trade_count": 22,
+        "max_drawdown": 0.35,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.26,
+        "win_rate": 36.36,
+        "trade_count": 22,
+        "max_drawdown": 0.35,
+        "tp": 30,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.26,
+        "win_rate": 36.36,
+        "trade_count": 22,
+        "max_drawdown": 0.36,
+        "tp": 40,
+        "sl": 50,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "12H稳定测试-趋势突破",
+    "type": "trend_break",
+    "best_by_winrate": {
+      "total_return": -0.35,
+      "win_rate": 30.0,
+      "trade_count": 20,
+      "max_drawdown": 0.41,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 40
+    },
+    "best_by_return": {
+      "total_return": -0.34,
+      "win_rate": 17.65,
+      "trade_count": 17,
+      "max_drawdown": 0.45,
+      "tp": 100,
+      "sl": 25,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.35,
+        "win_rate": 30.0,
+        "trade_count": 20,
+        "max_drawdown": 0.41,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 40
+      },
+      {
+        "total_return": -0.35,
+        "win_rate": 30.0,
+        "trade_count": 20,
+        "max_drawdown": 0.41,
+        "tp": 30,
+        "sl": 25,
+        "trailing": 40
+      },
+      {
+        "total_return": -0.36,
+        "win_rate": 30.0,
+        "trade_count": 20,
+        "max_drawdown": 0.46,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.36,
+        "win_rate": 30.0,
+        "trade_count": 20,
+        "max_drawdown": 0.46,
+        "tp": 30,
+        "sl": 25,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.4,
+        "win_rate": 30.0,
+        "trade_count": 20,
+        "max_drawdown": 0.46,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 40
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "RSI超卖超买-1H",
+    "type": "rsi",
+    "best_by_winrate": {
+      "total_return": -0.01,
+      "win_rate": 40.82,
+      "trade_count": 49,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 34.21,
+      "trade_count": 38,
+      "max_drawdown": 0.01,
+      "tp": 80,
+      "sl": 40,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.01,
+        "win_rate": 40.82,
+        "trade_count": 49,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 40.43,
+        "trade_count": 47,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 40.43,
+        "trade_count": 47,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 40.38,
+        "trade_count": 52,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 39.22,
+        "trade_count": 51,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 30
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "KDJ金叉死叉-1H",
+    "type": "kdj",
+    "best_by_winrate": {
+      "total_return": -0.01,
+      "win_rate": 43.48,
+      "trade_count": 46,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 40,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.01,
+      "win_rate": 43.48,
+      "trade_count": 46,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 40,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.01,
+        "win_rate": 43.48,
+        "trade_count": 46,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 43.48,
+        "trade_count": 46,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 43.48,
+        "trade_count": 46,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 43.48,
+        "trade_count": 46,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 41.67,
+        "trade_count": 48,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "CCI趋势反转-1H",
+    "type": "cci",
+    "best_by_winrate": {
+      "total_return": -0.01,
+      "win_rate": 31.58,
+      "trade_count": 57,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 40,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.01,
+      "win_rate": 31.58,
+      "trade_count": 57,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 40,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.01,
+        "win_rate": 31.58,
+        "trade_count": 57,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 31.58,
+        "trade_count": 57,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 31.58,
+        "trade_count": 57,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 31.58,
+        "trade_count": 57,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 29.31,
+        "trade_count": 58,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "RSI+MACD共振-1H",
+    "type": "rsi_macd",
+    "best_by_winrate": {
+      "total_return": -0.0,
+      "win_rate": 66.67,
+      "trade_count": 3,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 10
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 66.67,
+      "trade_count": 3,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 10
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.0,
+        "win_rate": 66.67,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 10
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 66.67,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 15
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 66.67,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 20
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 66.67,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 25
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 66.67,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 30
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "SuperTrend趋势-1H",
+    "type": "supertrend",
+    "best_by_winrate": {
+      "total_return": -0.0,
+      "win_rate": 25.0,
+      "trade_count": 8,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 30
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 25.0,
+      "trade_count": 8,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 30
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.0,
+        "win_rate": 25.0,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 25.0,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 30,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 25.0,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 35,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 25.0,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 40,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 25.0,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 50,
+        "sl": 25,
+        "trailing": 30
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "EMA量能确认-1H",
+    "type": "ema_volume",
+    "best_by_winrate": {
+      "total_return": -0.0,
+      "win_rate": 36.36,
+      "trade_count": 11,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 36.36,
+      "trade_count": 11,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.0,
+        "win_rate": 36.36,
+        "trade_count": 11,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 36.36,
+        "trade_count": 11,
+        "max_drawdown": 0.0,
+        "tp": 30,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 36.36,
+        "trade_count": 11,
+        "max_drawdown": 0.0,
+        "tp": 40,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 36.36,
+        "trade_count": 11,
+        "max_drawdown": 0.0,
+        "tp": 50,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 36.36,
+        "trade_count": 11,
+        "max_drawdown": 0.0,
+        "tp": 60,
+        "sl": 30,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "双时间框架EMA-1H",
+    "type": "dual_ema",
+    "best_by_winrate": {
+      "total_return": -0.0,
+      "win_rate": 41.67,
+      "trade_count": 12,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 41.67,
+      "trade_count": 12,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.0,
+        "win_rate": 41.67,
+        "trade_count": 12,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 41.67,
+        "trade_count": 12,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 41.67,
+        "trade_count": 12,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 33.33,
+        "trade_count": 12,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 30
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 33.33,
+        "trade_count": 12,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "均线多空排列-1H",
+    "type": "ma_ribbon",
+    "best_by_winrate": {
+      "total_return": -0.01,
+      "win_rate": 36.84,
+      "trade_count": 38,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 50,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 34.21,
+      "trade_count": 38,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 25,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.01,
+        "win_rate": 36.84,
+        "trade_count": 38,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 34.21,
+        "trade_count": 38,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 34.21,
+        "trade_count": 38,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 34.21,
+        "trade_count": 38,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 34.21,
+        "trade_count": 38,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 50,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "量价突破-1H",
+    "type": "vol_break",
+    "best_by_winrate": {
+      "total_return": -0.0,
+      "win_rate": 38.1,
+      "trade_count": 21,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 38.1,
+      "trade_count": 21,
+      "max_drawdown": 0.0,
+      "tp": 25,
+      "sl": 30,
+      "trailing": 50
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.0,
+        "win_rate": 38.1,
+        "trade_count": 21,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 38.1,
+        "trade_count": 21,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 38.1,
+        "trade_count": 21,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 37.5,
+        "trade_count": 16,
+        "max_drawdown": 0.0,
+        "tp": 100,
+        "sl": 30,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.0,
+        "win_rate": 37.5,
+        "trade_count": 16,
+        "max_drawdown": 0.0,
+        "tp": 100,
+        "sl": 40,
+        "trailing": 50
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "多时间框架趋势-1H",
+    "type": "multi_tf_trend",
+    "best_by_winrate": {
+      "total_return": -0.01,
+      "win_rate": 34.62,
+      "trade_count": 26,
+      "max_drawdown": 0.01,
+      "tp": 25,
+      "sl": 40,
+      "trailing": 50
+    },
+    "best_by_return": {
+      "total_return": -0.0,
+      "win_rate": 28.57,
+      "trade_count": 28,
+      "max_drawdown": 0.0,
+      "tp": 30,
+      "sl": 25,
+      "trailing": 30
+    },
+    "all_combinations": [
+      {
+        "total_return": -0.01,
+        "win_rate": 34.62,
+        "trade_count": 26,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 40,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 34.62,
+        "trade_count": 26,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 50,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 33.33,
+        "trade_count": 27,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 33.33,
+        "trade_count": 27,
+        "max_drawdown": 0.01,
+        "tp": 30,
+        "sl": 25,
+        "trailing": 50
+      },
+      {
+        "total_return": -0.01,
+        "win_rate": 33.33,
+        "trade_count": 27,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 30,
+        "trailing": 50
+      }
+    ]
+  }
+]

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Market Regime Filter Comparison (124d)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; background:#0d1117; color:#e6edf3; padding:30px; }
+  h1 { text-align:center; color:#f7931a; font-size:24px; margin-bottom:8px; }
+  .subtitle { text-align:center; color:#8b949e; font-size:14px; margin-bottom:6px; }
+  .config { text-align:center; color:#58a6ff; font-size:13px; margin-bottom:20px; }
+  .note { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:12px 18px; margin:0 auto 24px; max-width:900px; color:#8b949e; font-size:13px; line-height:1.6; }
+  h2 { text-align:center; color:#f7931a; margin:25px 0 16px; }
+  table { border-collapse:collapse; margin:0 auto 30px; font-size:13px; }
+  table th, table td { padding:8px 10px; border:1px solid #30363d; text-align:center; }
+  table th { background:#161b22; color:#f7931a; font-weight:600; font-size:11px; }
+  table tr:nth-child(even) { background:#161b22; }
+  .positive { color:#3fb950; font-weight:bold; }
+  .negative { color:#f85149; font-weight:bold; }
+  .improved { color:#58a6ff; font-weight:bold; }
+  .worse { color:#f85149; font-weight:bold; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-up { background:#3fb95033; color:#3fb950; }
+  .badge-down { background:#f8514933; color:#f85149; }
+  .badge-same { background:#8b949e33; color:#8b949e; }
+  .section { background:#161b22; border:1px solid #30363d; border-radius:10px; margin:20px auto; max-width:1400px; padding:20px; }
+</style>
+</head>
+<body>
+
+<h1>Market Regime Filter Comparison</h1>
+<p class="subtitle">BTC-USDT-SWAP | 1h | 2025-12-18 ~ 2026-04-22 (124 days) | Leverage: 100x</p>
+<p class="config">Market Regime Detector: ADX + Volatility Ratio + MA Deviation + ATR Change Rate | Filter: ranging = no new positions</p>
+
+<div class="note">
+  <strong>How it works:</strong> Before opening a new position, the system checks if the market is in a trending, ranging, or volatile state.
+  If the market is <strong>ranging</strong> (oscillating sideways), the opening signal is suppressed.
+  This should reduce false breakouts and improve win rate at the cost of fewer trades.
+</div>
+
+<h2>Comparison Table</h2>
+<table>
+<thead>
+<tr>
+  <th rowspan="2">#</th>
+  <th rowspan="2">Strategy</th>
+  <th rowspan="2">TP/SL</th>
+  <th colspan="3">No Filter</th>
+  <th colspan="3">With Filter</th>
+  <th colspan="3">Delta</th>
+  <th rowspan="2">Regime Stats</th>
+</tr>
+<tr>
+  <th>Return</th><th>WinRate</th><th>Trades</th>
+  <th>Return</th><th>WinRate</th><th>Trades</th>
+  <th>Return</th><th>WinRate</th><th>Trades</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>趋势突破</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/NoTrail</td>
+  <td class="positive">1.3%</td>
+  <td>40.4%</td>
+  <td>104</td>
+  <td class="positive">1.1%</td>
+  <td>41.0%</td>
+  <td>78</td>
+  <td class="worse">-0.2%</td>
+  <td class="improved">+0.6%</td>
+  <td>-26</td>
+  <td style="font-size:10px;">ST:20 T:33 WT:25 R:27 V:26 F:53</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>均线排列+MACD</td>
+  <td style="font-size:11px;">TP1.5/SL0.5/T:1.0%>0.2%</td>
+  <td class="positive">0.8%</td>
+  <td>40.7%</td>
+  <td>86</td>
+  <td class="positive">0.8%</td>
+  <td>43.8%</td>
+  <td>64</td>
+  <td class="">-0.0%</td>
+  <td class="improved">+3.0%</td>
+  <td>-22</td>
+  <td style="font-size:10px;">ST:22 T:26 WT:16 R:13 V:14 F:27</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>RSI+MACD共振</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.8%</td>
+  <td>37.3%</td>
+  <td>67</td>
+  <td class="positive">0.2%</td>
+  <td>34.6%</td>
+  <td>52</td>
+  <td class="worse">-0.6%</td>
+  <td class="worse">-2.7%</td>
+  <td>-15</td>
+  <td style="font-size:10px;">ST:21 T:21 WT:10 R:11 V:9 F:20</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>RSI 超卖超买</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.7%</td>
+  <td>36.7%</td>
+  <td>120</td>
+  <td class="negative">-1.0%</td>
+  <td>33.3%</td>
+  <td>111</td>
+  <td class="worse">-1.7%</td>
+  <td class="worse">-3.3%</td>
+  <td>-9</td>
+  <td style="font-size:10px;">ST:49 T:40 WT:22 R:16 V:14 F:30</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>量价突破</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/T:1.2%>0.3%</td>
+  <td class="positive">0.3%</td>
+  <td>41.7%</td>
+  <td>127</td>
+  <td class="negative">-0.5%</td>
+  <td>39.0%</td>
+  <td>100</td>
+  <td class="worse">-0.8%</td>
+  <td class="worse">-2.7%</td>
+  <td>-27</td>
+  <td style="font-size:10px;">ST:37 T:34 WT:29 R:11 V:34 F:45</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>布林带突破</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/NoTrail</td>
+  <td class="positive">0.0%</td>
+  <td>35.8%</td>
+  <td>151</td>
+  <td class="positive">0.5%</td>
+  <td>36.9%</td>
+  <td>130</td>
+  <td class="improved">+0.5%</td>
+  <td class="improved">+1.2%</td>
+  <td>-21</td>
+  <td style="font-size:10px;">ST:35 T:54 WT:41 R:27 V:33 F:60</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>均线多空排列</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/NoTrail</td>
+  <td class="negative">-0.1%</td>
+  <td>35.8%</td>
+  <td>120</td>
+  <td class="negative">-0.7%</td>
+  <td>34.0%</td>
+  <td>97</td>
+  <td class="worse">-0.6%</td>
+  <td class="worse">-1.8%</td>
+  <td>-23</td>
+  <td style="font-size:10px;">ST:28 T:38 WT:31 R:20 V:29 F:49</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>双时间框架EMA</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/NoTrail</td>
+  <td class="negative">-0.3%</td>
+  <td>34.2%</td>
+  <td>76</td>
+  <td class="positive">1.0%</td>
+  <td>42.9%</td>
+  <td>49</td>
+  <td class="improved">+1.3%</td>
+  <td class="improved">+8.6%</td>
+  <td>-27</td>
+  <td style="font-size:10px;">ST:12 T:30 WT:7 R:21 V:16 F:37</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>CCI 趋势反转</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="negative">-0.3%</td>
+  <td>34.1%</td>
+  <td>126</td>
+  <td class="negative">-1.4%</td>
+  <td>31.9%</td>
+  <td>116</td>
+  <td class="worse">-1.1%</td>
+  <td class="worse">-2.2%</td>
+  <td>-10</td>
+  <td style="font-size:10px;">ST:50 T:45 WT:21 R:14 V:23 F:37</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>EMA 量能确认</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="negative">-1.2%</td>
+  <td>28.6%</td>
+  <td>70</td>
+  <td class="negative">-2.8%</td>
+  <td>17.8%</td>
+  <td>45</td>
+  <td class="worse">-1.5%</td>
+  <td class="worse">-10.8%</td>
+  <td>-25</td>
+  <td style="font-size:10px;">ST:4 T:24 WT:17 R:33 V:19 F:52</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>KDJ 金叉死叉</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="negative">-1.8%</td>
+  <td>32.0%</td>
+  <td>125</td>
+  <td class="negative">-1.6%</td>
+  <td>32.1%</td>
+  <td>112</td>
+  <td class="improved">+0.2%</td>
+  <td class="">+0.1%</td>
+  <td>-13</td>
+  <td style="font-size:10px;">ST:55 T:37 WT:20 R:15 V:23 F:38</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>MACD 趋势动能</td>
+  <td style="font-size:11px;">TP1.5/SL0.5/NoTrail</td>
+  <td class="negative">-2.0%</td>
+  <td>30.7%</td>
+  <td>228</td>
+  <td class="negative">-2.3%</td>
+  <td>29.2%</td>
+  <td>178</td>
+  <td class="worse">-0.3%</td>
+  <td class="worse">-1.5%</td>
+  <td>-50</td>
+  <td style="font-size:10px;">ST:65 T:63 WT:50 R:43 V:44 F:87</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>SuperTrend+KDJ</td>
+  <td style="font-size:11px;">TP2.0/SL0.8/NoTrail</td>
+  <td class="negative">-2.4%</td>
+  <td>30.8%</td>
+  <td>143</td>
+  <td class="negative">-2.8%</td>
+  <td>28.9%</td>
+  <td>121</td>
+  <td class="worse">-0.3%</td>
+  <td class="worse">-1.8%</td>
+  <td>-22</td>
+  <td style="font-size:10px;">ST:46 T:47 WT:28 R:16 V:22 F:38</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>SuperTrend 趋势</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="negative">-2.8%</td>
+  <td>24.7%</td>
+  <td>77</td>
+  <td class="negative">-2.2%</td>
+  <td>24.1%</td>
+  <td>54</td>
+  <td class="improved">+0.6%</td>
+  <td class="worse">-0.6%</td>
+  <td>-23</td>
+  <td style="font-size:10px;">ST:10 T:25 WT:19 R:14 V:14 F:28</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>均线交叉</td>
+  <td style="font-size:11px;">TP3.0/SL1.0/T:2.0%>0.5%</td>
+  <td class="negative">-3.0%</td>
+  <td>29.2%</td>
+  <td>130</td>
+  <td class="negative">-2.8%</td>
+  <td>29.6%</td>
+  <td>115</td>
+  <td class="improved">+0.2%</td>
+  <td class="">+0.3%</td>
+  <td>-15</td>
+  <td style="font-size:10px;">ST:49 T:41 WT:25 R:12 V:22 F:34</td>
+</tr>
+</tbody></table>
+<h2 style="text-align:center; color:#f7931a; margin:25px 0 16px;">Market Regime Distribution</h2>
+<div class="section"><table style="font-size:12px;">
+<thead><tr><th>Strategy</th><th>Strong Trend</th><th>Trending</th><th>Weak Trend</th><th>Ranging</th><th>Volatile</th><th>Filtered Out</th><th>Filter Rate</th></tr></thead>
+<tbody>
+<tr>
+  <td>趋势突破</td>
+  <td style="color:#3fb950;">20</td>
+  <td style="color:#58a6ff;">33</td>
+  <td style="color:#d29922;">25</td>
+  <td style="color:#f85149;">27</td>
+  <td style="color:#a371f7;">26</td>
+  <td>53</td>
+  <td>40.5%</td>
+</tr>
+<tr>
+  <td>均线排列+MACD</td>
+  <td style="color:#3fb950;">22</td>
+  <td style="color:#58a6ff;">26</td>
+  <td style="color:#d29922;">16</td>
+  <td style="color:#f85149;">13</td>
+  <td style="color:#a371f7;">14</td>
+  <td>27</td>
+  <td>29.7%</td>
+</tr>
+<tr>
+  <td>RSI+MACD共振</td>
+  <td style="color:#3fb950;">21</td>
+  <td style="color:#58a6ff;">21</td>
+  <td style="color:#d29922;">10</td>
+  <td style="color:#f85149;">11</td>
+  <td style="color:#a371f7;">9</td>
+  <td>20</td>
+  <td>27.8%</td>
+</tr>
+<tr>
+  <td>RSI 超卖超买</td>
+  <td style="color:#3fb950;">49</td>
+  <td style="color:#58a6ff;">40</td>
+  <td style="color:#d29922;">22</td>
+  <td style="color:#f85149;">16</td>
+  <td style="color:#a371f7;">14</td>
+  <td>30</td>
+  <td>21.3%</td>
+</tr>
+<tr>
+  <td>量价突破</td>
+  <td style="color:#3fb950;">37</td>
+  <td style="color:#58a6ff;">34</td>
+  <td style="color:#d29922;">29</td>
+  <td style="color:#f85149;">11</td>
+  <td style="color:#a371f7;">34</td>
+  <td>45</td>
+  <td>31.0%</td>
+</tr>
+<tr>
+  <td>布林带突破</td>
+  <td style="color:#3fb950;">35</td>
+  <td style="color:#58a6ff;">54</td>
+  <td style="color:#d29922;">41</td>
+  <td style="color:#f85149;">27</td>
+  <td style="color:#a371f7;">33</td>
+  <td>60</td>
+  <td>31.6%</td>
+</tr>
+<tr>
+  <td>均线多空排列</td>
+  <td style="color:#3fb950;">28</td>
+  <td style="color:#58a6ff;">38</td>
+  <td style="color:#d29922;">31</td>
+  <td style="color:#f85149;">20</td>
+  <td style="color:#a371f7;">29</td>
+  <td>49</td>
+  <td>33.6%</td>
+</tr>
+<tr>
+  <td>双时间框架EMA</td>
+  <td style="color:#3fb950;">12</td>
+  <td style="color:#58a6ff;">30</td>
+  <td style="color:#d29922;">7</td>
+  <td style="color:#f85149;">21</td>
+  <td style="color:#a371f7;">16</td>
+  <td>37</td>
+  <td>43.0%</td>
+</tr>
+<tr>
+  <td>CCI 趋势反转</td>
+  <td style="color:#3fb950;">50</td>
+  <td style="color:#58a6ff;">45</td>
+  <td style="color:#d29922;">21</td>
+  <td style="color:#f85149;">14</td>
+  <td style="color:#a371f7;">23</td>
+  <td>37</td>
+  <td>24.2%</td>
+</tr>
+<tr>
+  <td>EMA 量能确认</td>
+  <td style="color:#3fb950;">4</td>
+  <td style="color:#58a6ff;">24</td>
+  <td style="color:#d29922;">17</td>
+  <td style="color:#f85149;">33</td>
+  <td style="color:#a371f7;">19</td>
+  <td>52</td>
+  <td>53.6%</td>
+</tr>
+<tr>
+  <td>KDJ 金叉死叉</td>
+  <td style="color:#3fb950;">55</td>
+  <td style="color:#58a6ff;">37</td>
+  <td style="color:#d29922;">20</td>
+  <td style="color:#f85149;">15</td>
+  <td style="color:#a371f7;">23</td>
+  <td>38</td>
+  <td>25.3%</td>
+</tr>
+<tr>
+  <td>MACD 趋势动能</td>
+  <td style="color:#3fb950;">65</td>
+  <td style="color:#58a6ff;">63</td>
+  <td style="color:#d29922;">50</td>
+  <td style="color:#f85149;">43</td>
+  <td style="color:#a371f7;">44</td>
+  <td>87</td>
+  <td>32.8%</td>
+</tr>
+<tr>
+  <td>SuperTrend+KDJ</td>
+  <td style="color:#3fb950;">46</td>
+  <td style="color:#58a6ff;">47</td>
+  <td style="color:#d29922;">28</td>
+  <td style="color:#f85149;">16</td>
+  <td style="color:#a371f7;">22</td>
+  <td>38</td>
+  <td>23.9%</td>
+</tr>
+<tr>
+  <td>SuperTrend 趋势</td>
+  <td style="color:#3fb950;">10</td>
+  <td style="color:#58a6ff;">25</td>
+  <td style="color:#d29922;">19</td>
+  <td style="color:#f85149;">14</td>
+  <td style="color:#a371f7;">14</td>
+  <td>28</td>
+  <td>34.1%</td>
+</tr>
+<tr>
+  <td>均线交叉</td>
+  <td style="color:#3fb950;">49</td>
+  <td style="color:#58a6ff;">41</td>
+  <td style="color:#d29922;">25</td>
+  <td style="color:#f85149;">12</td>
+  <td style="color:#a371f7;">22</td>
+  <td>34</td>
+  <td>22.8%</td>
+</tr>
+</tbody></table></div>
+
+<div class="note" style="max-width:700px;">
+  <strong>Summary:</strong><br>
+  Total strategies: 15<br>
+  Return improved by filter: <span class="positive">5</span> |
+  Return worsened: <span class="negative">9</span> |
+  No significant change: 1<br>
+  Win rate improved: <span class="positive">4</span> / 15<br><br>
+  <strong>Key insight:</strong> If the filter improves win rate without destroying too many trades,
+  it's worth enabling in live trading. The goal is quality over quantity.
+</div>
+</body></html>

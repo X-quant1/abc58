@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>BTC 高频回测报告 - 优化版</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { text-align: center; color: #f7931a; margin-bottom: 5px; font-size: 26px; }
+  .subtitle { text-align: center; color: #8b949e; margin-bottom: 8px; font-size: 13px; }
+  .config { text-align: center; color: #58a6ff; margin-bottom: 25px; font-size: 12px; font-family: monospace; }
+  .summary { background: #161b22; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #30363d; }
+  .summary h2 { color: #f7931a; margin-bottom: 12px; font-size: 16px; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .summary-table th { background: #21262d; color: #f7931a; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 1px solid #30363d; }
+  .summary-table td { padding: 6px; text-align: center; border-bottom: 1px solid #21262d; }
+  .summary-table tr:hover { background: #1c2128; }
+  .positive { color: #ef5350; font-weight: 600; }
+  .negative { color: #26a69a; font-weight: 600; }
+  .strategy-card { background: #161b22; border-radius: 12px; margin-bottom: 16px; border: 1px solid #30363d; overflow: hidden; }
+  .strategy-header { background: linear-gradient(135deg, #f7931a, #ff9f43); color: #fff; padding: 12px 16px; }
+  .strategy-header h3 { font-size: 15px; }
+  .strategy-header .stats { font-size: 12px; opacity: 0.95; margin-top: 4px; }
+  .strategy-body { padding: 0; max-height: 500px; overflow-y: auto; }
+  .trade-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .trade-table th { background: #21262d; padding: 7px 5px; text-align: left; font-weight: 600; color: #8b949e; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 1; }
+  .trade-table td { padding: 5px; border-bottom: 1px solid #21262d; }
+  .trade-table tr:hover { background: #1c2128; }
+  .trade-table .open-long { color: #ef5350; font-weight: 600; }
+  .trade-table .open-short { color: #26a69a; font-weight: 600; }
+  .trade-table .close-long { color: #26a69a; }
+  .trade-table .close-short { color: #ef5350; }
+  .badge { display: inline-block; padding: 1px 5px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+  .badge-long { background: #3d1f1f; color: #ef5350; }
+  .badge-short { background: #1f3d2d; color: #26a69a; }
+  .badge-tp { background: #1f3d1f; color: #4caf50; }
+  .badge-sl { background: #3d1f2d; color: #e91e63; }
+  .badge-signal { background: #1f2d3d; color: #1976d2; }
+  .badge-trailing { background: #3d2d1f; color: #ff9800; }
+  .badge-end { background: #2d1f3d; color: #9c27b0; }
+  .pair-row { background: #1c2128; }
+  .top3 { background: #2d2000 !important; }
+  .note { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #8b949e; }
+  .note strong { color: #f7931a; }
+</style>
+</head>
+<body>
+<h1>BTC 高频回测报告 - 优化版</h1>
+<p class="subtitle">BTC-USDT-SWAP | 5m | 2026-04-21 ~ 2026-04-22 (1 天) | 杠杆: 100x</p>
+<p class="config">每个策略使用参数扫描得出的最优止盈/止损/移动止盈组合</p>
+
+<div class="note">
+  <strong>说明：</strong> 每个策略使用参数扫描（10种组合）得出的最优止盈止损配置。<br>
+  信号周期已缩短（如 MA 3/7, RSI 6, MACD 6/13/5），以在1小时级别产生更多信号。
+</div>
+
+<div class="summary">
+<h2>策略对比（每策略最优止盈止损）</h2>
+<table class="summary-table">
+<thead>
+<tr>
+  <th>#</th><th>策略</th><th>止盈止损配置</th><th>收益率</th><th>最大回撤</th><th>夏普</th><th>胜率</th><th>盈亏比</th><th>交易数</th><th>信号/天</th><th>手续费</th><th>最终权益</th>
+</tr>
+</thead>
+<tbody>
+<tr class="top3">
+  <td>1</td>
+  <td><strong>KDJ 金叉死叉</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.2%</td>
+  <td>0.1%</td>
+  <td>2.39</td>
+  <td>100.0%</td>
+  <td>12.74</td>
+  <td>2</td>
+  <td>2.0</td>
+  <td>$1.54</td>
+  <td>$10024.71</td>
+</tr>
+<tr class="top3">
+  <td>2</td>
+  <td><strong>SuperTrend 趋势</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.1%</td>
+  <td>0.1%</td>
+  <td>0.95</td>
+  <td>33.3%</td>
+  <td>3.53</td>
+  <td>3</td>
+  <td>3.0</td>
+  <td>$2.30</td>
+  <td>$10008.51</td>
+</tr>
+<tr class="top3">
+  <td>3</td>
+  <td><strong>双时间框架EMA</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.0%</td>
+  <td>0.2%</td>
+  <td>0.48</td>
+  <td>33.3%</td>
+  <td>3.06</td>
+  <td>3</td>
+  <td>3.0</td>
+  <td>$2.31</td>
+  <td>$10004.23</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><strong>布林带突破</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.0%</td>
+  <td>0.2%</td>
+  <td>0.34</td>
+  <td>33.3%</td>
+  <td>2.68</td>
+  <td>3</td>
+  <td>3.0</td>
+  <td>$2.31</td>
+  <td>$10002.74</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><strong>均线多空排列</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.0%</td>
+  <td>0.2%</td>
+  <td>0.31</td>
+  <td>33.3%</td>
+  <td>2.61</td>
+  <td>3</td>
+  <td>3.0</td>
+  <td>$2.31</td>
+  <td>$10002.42</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><strong>RSI 超卖超买</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.5/止损0.5/无移动</td>
+  <td class="negative">-0.1%</td>
+  <td>0.1%</td>
+  <td>-0.76</td>
+  <td>20.0%</td>
+  <td>2.61</td>
+  <td>5</td>
+  <td>5.0</td>
+  <td>$3.83</td>
+  <td>$9992.03</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><strong>MACD 趋势动能</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.0/止损0.5/无移动</td>
+  <td class="negative">-0.1%</td>
+  <td>0.2%</td>
+  <td>-0.99</td>
+  <td>20.0%</td>
+  <td>2.07</td>
+  <td>5</td>
+  <td>5.0</td>
+  <td>$3.84</td>
+  <td>$9989.80</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><strong>EMA 量能确认</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈0.8/止损0.4/T:0.5%>0.1%</td>
+  <td class="negative">-0.2%</td>
+  <td>0.2%</td>
+  <td>-2.63</td>
+  <td>0.0%</td>
+  <td>0.00</td>
+  <td>3</td>
+  <td>3.0</td>
+  <td>$2.30</td>
+  <td>$9983.74</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><strong>均线交叉</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈0.5/止损0.3/T:0.3%>0.06%</td>
+  <td class="negative">-0.2%</td>
+  <td>0.2%</td>
+  <td>-1.84</td>
+  <td>40.0%</td>
+  <td>0.57</td>
+  <td>10</td>
+  <td>10.0</td>
+  <td>$7.61</td>
+  <td>$9981.22</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><strong>CCI 趋势反转</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.0/止损0.5/无移动</td>
+  <td class="negative">-0.3%</td>
+  <td>0.3%</td>
+  <td>-2.46</td>
+  <td>14.3%</td>
+  <td>1.33</td>
+  <td>7</td>
+  <td>7.0</td>
+  <td>$5.36</td>
+  <td>$9972.73</td>
+</tr>
+</tbody></table></div>
+<h2 style="text-align:center; color:#f7931a; margin-bottom:16px;">逐笔交易明细</h2>
+
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#1 KDJ 金叉死叉</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.2%</strong> |
+    信号/天: 2.0 | 胜率: 100.0% | 交易数: 2
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:25</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,371.37</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 12:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,613.77</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$22.04</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 13:05</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,591.28</td>
+  <td>1</td>
+  <td>$7.76</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 17:55</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,974.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$3.44</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#2 SuperTrend 趋势</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.1%</strong> |
+    信号/天: 3.0 | 胜率: 33.3% | 交易数: 3
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:40</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,809.89</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 03:40</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,829.47</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.18</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 04:10</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,623.69</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 13:15</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,893.93</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$22.31</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 15:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,843.26</td>
+  <td>1</td>
+  <td>$7.79</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-2.48</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#3 双时间框架EMA</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.0%</strong> |
+    信号/天: 3.0 | 胜率: 33.3% | 交易数: 3
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 02:10</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,541.11</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 07:45</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,398.78</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.96</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 08:55</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,407.78</td>
+  <td>1</td>
+  <td>$7.64</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 13:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,996.98</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.50</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 14:50</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$78,051.21</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 17:55</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,974.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-1.16</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#4 布林带突破</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.0%</strong> |
+    信号/天: 3.0 | 胜率: 33.3% | 交易数: 3
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 02:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,415.27</td>
+  <td>1</td>
+  <td>$7.55</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 07:45</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,398.78</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.22</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 09:10</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,431.20</td>
+  <td>1</td>
+  <td>$7.64</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 13:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,996.98</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.27</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 14:50</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$78,051.21</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 17:55</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,974.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-1.16</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#5 均线多空排列</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.0%</strong> |
+    信号/天: 3.0 | 胜率: 33.3% | 交易数: 3
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 02:25</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,436.36</td>
+  <td>1</td>
+  <td>$7.55</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 07:45</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,398.78</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.01</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 09:10</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,431.20</td>
+  <td>1</td>
+  <td>$7.64</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 13:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,996.98</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.27</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 14:45</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,922.22</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-1.69</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#6 RSI 超卖超买</h3>
+  <div class="stats">
+    止盈=1.5% | 止损=0.5% | 无移动止盈 | 收益: <strong class="negative">-0.1%</strong> |
+    信号/天: 5.0 | 胜率: 20.0% | 交易数: 5
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:35</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,634.80</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 03:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,215.77</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.57</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 04:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,140.05</td>
+  <td>1</td>
+  <td>$7.51</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 07:45</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,322.42</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$11.44</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 08:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,240.96</td>
+  <td>1</td>
+  <td>$7.63</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 10:10</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,775.57</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.73</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-22 11:15</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,384.59</td>
+  <td>1</td>
+  <td>$7.74</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 13:15</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,971.87</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.26</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-22 13:35</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,996.98</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-0.94</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#7 MACD 趋势动能</h3>
+  <div class="stats">
+    止盈=1.0% | 止损=0.5% | 无移动止盈 | 收益: <strong class="negative">-0.1%</strong> |
+    信号/天: 5.0 | 胜率: 20.0% | 交易数: 5
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:35</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,634.80</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 03:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,215.77</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.57</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 04:05</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,391.08</td>
+  <td>1</td>
+  <td>$7.54</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 07:45</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,322.42</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$8.93</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 08:15</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,320.02</td>
+  <td>1</td>
+  <td>$7.64</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 10:10</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,775.57</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.94</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-22 11:10</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,567.20</td>
+  <td>1</td>
+  <td>$7.76</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 13:20</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,256.71</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-7.29</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-22 13:45</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,048.66</td>
+  <td>1</td>
+  <td>$7.81</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-0.43</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#8 EMA 量能确认</h3>
+  <div class="stats">
+    止盈=0.8% | 止损=0.4% | 移动止盈: 0.5%激活, 0.1%回调 | 收益: <strong class="negative">-0.2%</strong> |
+    信号/天: 3.0 | 胜率: 0.0% | 交易数: 3
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 03:35</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,215.77</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 04:10</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,623.69</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.46</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 09:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,143.81</td>
+  <td>1</td>
+  <td>$7.62</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 10:10</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,775.57</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.70</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 15:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,843.26</td>
+  <td>1</td>
+  <td>$7.79</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 17:25</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,199.58</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.95</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#9 均线交叉</h3>
+  <div class="stats">
+    止盈=0.5% | 止损=0.3% | 移动止盈: 0.3%激活, 0.06%回调 | 收益: <strong class="negative">-0.2%</strong> |
+    信号/天: 10.0 | 胜率: 40.0% | 交易数: 10
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:35</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,634.80</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 02:45</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,358.90</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.14</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 02:45</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,358.90</td>
+  <td>1</td>
+  <td>$7.54</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 02:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,651.61</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.31</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 03:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,778.47</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 03:35</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,215.77</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.00</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-22 03:35</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,215.77</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 03:50</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,990.98</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$1.87</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-22 04:05</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,391.08</td>
+  <td>1</td>
+  <td>$7.54</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-22 04:30</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,751.91</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$3.23</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-22 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,669.95</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-22 06:25</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,403.58</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$2.29</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-22 06:40</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,557.66</td>
+  <td>1</td>
+  <td>$7.55</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-22 07:20</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,782.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$1.87</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-22 08:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,240.96</td>
+  <td>1</td>
+  <td>$7.63</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-22 10:10</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,775.57</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.73</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>04-22 11:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,447.16</td>
+  <td>1</td>
+  <td>$7.75</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>9</td>
+  <td>04-22 13:15</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,971.87</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.64</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>04-22 13:45</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,048.66</td>
+  <td>1</td>
+  <td>$7.81</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>10</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-0.43</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#10 CCI 趋势反转</h3>
+  <div class="stats">
+    止盈=1.0% | 止损=0.5% | 无移动止盈 | 收益: <strong class="negative">-0.3%</strong> |
+    信号/天: 7.0 | 胜率: 14.3% | 交易数: 7
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-22 01:30</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,376.47</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-22 03:40</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,829.47</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.84</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-22 03:55</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,063.41</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-22 07:05</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,804.28</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.03</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-22 07:20</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,782.29</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 07:45</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,398.78</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.55</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-22 08:10</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,378.89</td>
+  <td>1</td>
+  <td>$7.64</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 10:15</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,055.51</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-7.15</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-22 10:35</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,064.35</td>
+  <td>1</td>
+  <td>$7.71</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-22 10:50</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,513.24</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.88</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-22 11:15</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,384.59</td>
+  <td>1</td>
+  <td>$7.74</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-22 13:15</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,971.87</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.26</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-22 13:35</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,996.98</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-22 17:55</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,052.31</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-0.94</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<h2 style="text-align:center; color:#f7931a; margin:25px 0 16px;">权益曲线</h2>
+<div class="strategy-card" style="padding:16px;">
+<canvas id="equityChart" height="350"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script>
+const equityData = {
+  datasets: [
+  {
+    label: 'KDJ 金叉死叉',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 9999.25},{x: new Date(1776792600000), y: 9999.3},{x: new Date(1776792900000), y: 10001.88},{x: new Date(1776793200000), y: 10003.63},{x: new Date(1776793500000), y: 10003.09},{x: new Date(1776793800000), y: 10002.11},{x: new Date(1776794100000), y: 10001.47},{x: new Date(1776794400000), y: 10001.64},{x: new Date(1776794700000), y: 10001.8},{x: new Date(1776795000000), y: 10001.7},{x: new Date(1776795300000), y: 10000.57},{x: new Date(1776795600000), y: 10000.44},{x: new Date(1776795900000), y: 10000.65},{x: new Date(1776796200000), y: 10001.67},{x: new Date(1776796500000), y: 10001.28},{x: new Date(1776796800000), y: 10001.13},{x: new Date(1776797100000), y: 9999.88},{x: new Date(1776797400000), y: 10000.99},{x: new Date(1776797700000), y: 10002.05},{x: new Date(1776798000000), y: 10003.32},{x: new Date(1776798300000), y: 10002.86},{x: new Date(1776798600000), y: 10002.0},{x: new Date(1776798900000), y: 10002.02},{x: new Date(1776799200000), y: 10004.23},{x: new Date(1776799500000), y: 10003.7},{x: new Date(1776799800000), y: 10001.62},{x: new Date(1776800100000), y: 9998.44},{x: new Date(1776800400000), y: 9994.58},{x: new Date(1776800700000), y: 9996.01},{x: new Date(1776801000000), y: 9995.44},{x: new Date(1776801300000), y: 9996.17},{x: new Date(1776801600000), y: 9996.93},{x: new Date(1776801900000), y: 9999.44},{x: new Date(1776802200000), y: 10001.77},{x: new Date(1776802500000), y: 10001.02},{x: new Date(1776802800000), y: 10002.2},{x: new Date(1776803100000), y: 10002.41},{x: new Date(1776803400000), y: 10003.81},{x: new Date(1776803700000), y: 10003.45},{x: new Date(1776804000000), y: 10002.58},{x: new Date(1776804300000), y: 10003.34},{x: new Date(1776804600000), y: 10003.07},{x: new Date(1776804900000), y: 10002.86},{x: new Date(1776805200000), y: 10002.99},{x: new Date(1776805500000), y: 10002.13},{x: new Date(1776805800000), y: 10001.64},{x: new Date(1776806100000), y: 10001.72},{x: new Date(1776806400000), y: 10001.96},{x: new Date(1776806700000), y: 10001.67},{x: new Date(1776807000000), y: 10001.79},{x: new Date(1776807300000), y: 10001.93},{x: new Date(1776807600000), y: 10000.47},{x: new Date(1776807900000), y: 10001.01},{x: new Date(1776808200000), y: 10001.31},{x: new Date(1776808500000), y: 10001.33},{x: new Date(1776808800000), y: 10001.24},{x: new Date(1776809100000), y: 10000.8},{x: new Date(1776809400000), y: 10001.35},{x: new Date(1776809700000), y: 9998.98},{x: new Date(1776810000000), y: 9999.42},{x: new Date(1776810300000), y: 9999.57},{x: new Date(1776810600000), y: 9999.63},{x: new Date(1776810900000), y: 9999.57},{x: new Date(1776811200000), y: 10001.11},{x: new Date(1776811500000), y: 10000.75},{x: new Date(1776811800000), y: 10001.64},{x: new Date(1776812100000), y: 10002.3},{x: new Date(1776812400000), y: 10003.46},{x: new Date(1776812700000), y: 10004.33},{x: new Date(1776813000000), y: 10003.63},{x: new Date(1776813300000), y: 10004.27},{x: new Date(1776813600000), y: 10004.11},{x: new Date(1776813900000), y: 10003.79},{x: new Date(1776814200000), y: 10004.33},{x: new Date(1776814500000), y: 10005.64},{x: new Date(1776814800000), y: 10006.72},{x: new Date(1776815100000), y: 10009.52},{x: new Date(1776815400000), y: 10009.36},{x: new Date(1776815700000), y: 10009.21},{x: new Date(1776816000000), y: 10009.01},{x: new Date(1776816300000), y: 10010.39},{x: new Date(1776816600000), y: 10010.08},{x: new Date(1776816900000), y: 10009.49},{x: new Date(1776817200000), y: 10008.7},{x: new Date(1776817500000), y: 10008.61},{x: new Date(1776817800000), y: 10008.44},{x: new Date(1776818100000), y: 10009.28},{x: new Date(1776818400000), y: 10009.21},{x: new Date(1776818700000), y: 10008.72},{x: new Date(1776819000000), y: 10008.65},{x: new Date(1776819300000), y: 10009.61},{x: new Date(1776819600000), y: 10009.41},{x: new Date(1776819900000), y: 10009.32},{x: new Date(1776820200000), y: 10009.84},{x: new Date(1776820500000), y: 10007.75},{x: new Date(1776820800000), y: 10007.73},{x: new Date(1776821100000), y: 10007.52},{x: new Date(1776821400000), y: 10007.67},{x: new Date(1776821700000), y: 10008.57},{x: new Date(1776822000000), y: 10008.43},{x: new Date(1776822300000), y: 10008.79},{x: new Date(1776822600000), y: 10008.38},{x: new Date(1776822900000), y: 10008.92},{x: new Date(1776823200000), y: 10008.87},{x: new Date(1776823500000), y: 10009.32},{x: new Date(1776823800000), y: 10013.28},{x: new Date(1776824100000), y: 10016.08},{x: new Date(1776824400000), y: 10016.12},{x: new Date(1776824700000), y: 10018.31},{x: new Date(1776825000000), y: 10017.28},{x: new Date(1776825300000), y: 10016.94},{x: new Date(1776825600000), y: 10018.42},{x: new Date(1776825900000), y: 10017.91},{x: new Date(1776826200000), y: 10020.65},{x: new Date(1776826500000), y: 10021.96},{x: new Date(1776826800000), y: 10021.93},{x: new Date(1776827100000), y: 10021.97},{x: new Date(1776827400000), y: 10021.97},{x: new Date(1776827700000), y: 10020.14},{x: new Date(1776828000000), y: 10020.77},{x: new Date(1776828300000), y: 10021.21},{x: new Date(1776828600000), y: 10020.13},{x: new Date(1776828900000), y: 10020.2},{x: new Date(1776829200000), y: 10021.61},{x: new Date(1776829500000), y: 10021.51},{x: new Date(1776829800000), y: 10021.43},{x: new Date(1776830100000), y: 10021.17},{x: new Date(1776830400000), y: 10021.85},{x: new Date(1776830700000), y: 10021.6},{x: new Date(1776831000000), y: 10020.76},{x: new Date(1776831300000), y: 10020.42},{x: new Date(1776831600000), y: 10020.13},{x: new Date(1776831900000), y: 10021.03},{x: new Date(1776832200000), y: 10020.9},{x: new Date(1776832500000), y: 10021.66},{x: new Date(1776832800000), y: 10021.66},{x: new Date(1776833100000), y: 10021.66},{x: new Date(1776833400000), y: 10021.66},{x: new Date(1776833700000), y: 10021.66},{x: new Date(1776834000000), y: 10021.66},{x: new Date(1776834300000), y: 10020.88},{x: new Date(1776834600000), y: 10020.77},{x: new Date(1776834900000), y: 10024.69},{x: new Date(1776835200000), y: 10027.53},{x: new Date(1776835500000), y: 10027.9},{x: new Date(1776835800000), y: 10027.24},{x: new Date(1776836100000), y: 10025.72},{x: new Date(1776836400000), y: 10026.72},{x: new Date(1776836700000), y: 10026.24},{x: new Date(1776837000000), y: 10026.32},{x: new Date(1776837300000), y: 10025.24},{x: new Date(1776837600000), y: 10024.92},{x: new Date(1776837900000), y: 10024.77},{x: new Date(1776838200000), y: 10024.82},{x: new Date(1776838500000), y: 10025.24},{x: new Date(1776838800000), y: 10024.84},{x: new Date(1776839100000), y: 10025.04},{x: new Date(1776839400000), y: 10024.66},{x: new Date(1776839700000), y: 10024.75},{x: new Date(1776840000000), y: 10025.01},{x: new Date(1776840300000), y: 10024.97},{x: new Date(1776840600000), y: 10025.48},{x: new Date(1776840900000), y: 10025.4},{x: new Date(1776841200000), y: 10025.36},{x: new Date(1776841500000), y: 10025.74},{x: new Date(1776841800000), y: 10026.42},{x: new Date(1776842100000), y: 10025.03},{x: new Date(1776842400000), y: 10024.18},{x: new Date(1776842700000), y: 10024.28},{x: new Date(1776843000000), y: 10024.3},{x: new Date(1776843300000), y: 10024.38},{x: new Date(1776843600000), y: 10025.97},{x: new Date(1776843900000), y: 10025.38},{x: new Date(1776844200000), y: 10025.34},{x: new Date(1776844500000), y: 10025.46},{x: new Date(1776844800000), y: 10025.88},{x: new Date(1776845100000), y: 10026.45},{x: new Date(1776845400000), y: 10026.79},{x: new Date(1776845700000), y: 10026.8},{x: new Date(1776846000000), y: 10025.68},{x: new Date(1776846300000), y: 10025.05},{x: new Date(1776846600000), y: 10025.07},{x: new Date(1776846900000), y: 10025.11},{x: new Date(1776847200000), y: 10024.8},{x: new Date(1776847500000), y: 10024.99},{x: new Date(1776847800000), y: 10025.94},{x: new Date(1776848100000), y: 10025.51},{x: new Date(1776848400000), y: 10025.23},{x: new Date(1776848700000), y: 10025.98},{x: new Date(1776849000000), y: 10025.84},{x: new Date(1776849300000), y: 10025.24},{x: new Date(1776849600000), y: 10025.76},{x: new Date(1776849900000), y: 10026.96},{x: new Date(1776850200000), y: 10026.35},{x: new Date(1776850500000), y: 10026.48},{x: new Date(1776850800000), y: 10026.81},{x: new Date(1776851100000), y: 10026.44},{x: new Date(1776851400000), y: 10025.41},{x: new Date(1776851700000), y: 10025.49}],
+    borderColor: '#f7931a',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'SuperTrend 趋势',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 10000},{x: new Date(1776793200000), y: 9999.24},{x: new Date(1776793500000), y: 9998.7},{x: new Date(1776793800000), y: 9997.73},{x: new Date(1776794100000), y: 9997.09},{x: new Date(1776794400000), y: 9997.25},{x: new Date(1776794700000), y: 9997.42},{x: new Date(1776795000000), y: 9997.31},{x: new Date(1776795300000), y: 9996.18},{x: new Date(1776795600000), y: 9996.05},{x: new Date(1776795900000), y: 9996.26},{x: new Date(1776796200000), y: 9997.28},{x: new Date(1776796500000), y: 9996.9},{x: new Date(1776796800000), y: 9996.74},{x: new Date(1776797100000), y: 9995.49},{x: new Date(1776797400000), y: 9996.6},{x: new Date(1776797700000), y: 9997.66},{x: new Date(1776798000000), y: 9998.93},{x: new Date(1776798300000), y: 9998.47},{x: new Date(1776798600000), y: 9997.61},{x: new Date(1776798900000), y: 9997.64},{x: new Date(1776799200000), y: 9999.85},{x: new Date(1776799500000), y: 9999.32},{x: new Date(1776799800000), y: 9997.24},{x: new Date(1776800100000), y: 9994.06},{x: new Date(1776800400000), y: 9989.44},{x: new Date(1776800700000), y: 9989.44},{x: new Date(1776801000000), y: 9989.44},{x: new Date(1776801300000), y: 9989.44},{x: new Date(1776801600000), y: 9989.44},{x: new Date(1776801900000), y: 9989.44},{x: new Date(1776802200000), y: 9988.69},{x: new Date(1776802500000), y: 9987.94},{x: new Date(1776802800000), y: 9989.12},{x: new Date(1776803100000), y: 9989.33},{x: new Date(1776803400000), y: 9990.73},{x: new Date(1776803700000), y: 9990.37},{x: new Date(1776804000000), y: 9989.5},{x: new Date(1776804300000), y: 9990.26},{x: new Date(1776804600000), y: 9989.99},{x: new Date(1776804900000), y: 9989.77},{x: new Date(1776805200000), y: 9989.91},{x: new Date(1776805500000), y: 9989.04},{x: new Date(1776805800000), y: 9988.55},{x: new Date(1776806100000), y: 9988.64},{x: new Date(1776806400000), y: 9988.88},{x: new Date(1776806700000), y: 9988.59},{x: new Date(1776807000000), y: 9988.71},{x: new Date(1776807300000), y: 9988.85},{x: new Date(1776807600000), y: 9987.38},{x: new Date(1776807900000), y: 9987.93},{x: new Date(1776808200000), y: 9988.22},{x: new Date(1776808500000), y: 9988.25},{x: new Date(1776808800000), y: 9988.16},{x: new Date(1776809100000), y: 9987.71},{x: new Date(1776809400000), y: 9988.27},{x: new Date(1776809700000), y: 9985.89},{x: new Date(1776810000000), y: 9986.34},{x: new Date(1776810300000), y: 9986.49},{x: new Date(1776810600000), y: 9986.54},{x: new Date(1776810900000), y: 9986.48},{x: new Date(1776811200000), y: 9988.03},{x: new Date(1776811500000), y: 9987.67},{x: new Date(1776811800000), y: 9988.55},{x: new Date(1776812100000), y: 9989.21},{x: new Date(1776812400000), y: 9990.37},{x: new Date(1776812700000), y: 9991.25},{x: new Date(1776813000000), y: 9990.55},{x: new Date(1776813300000), y: 9991.19},{x: new Date(1776813600000), y: 9991.03},{x: new Date(1776813900000), y: 9990.71},{x: new Date(1776814200000), y: 9991.25},{x: new Date(1776814500000), y: 9992.56},{x: new Date(1776814800000), y: 9993.63},{x: new Date(1776815100000), y: 9996.43},{x: new Date(1776815400000), y: 9996.28},{x: new Date(1776815700000), y: 9996.12},{x: new Date(1776816000000), y: 9995.93},{x: new Date(1776816300000), y: 9997.31},{x: new Date(1776816600000), y: 9997.0},{x: new Date(1776816900000), y: 9996.41},{x: new Date(1776817200000), y: 9995.62},{x: new Date(1776817500000), y: 9995.53},{x: new Date(1776817800000), y: 9995.36},{x: new Date(1776818100000), y: 9996.2},{x: new Date(1776818400000), y: 9996.13},{x: new Date(1776818700000), y: 9995.64},{x: new Date(1776819000000), y: 9995.57},{x: new Date(1776819300000), y: 9996.52},{x: new Date(1776819600000), y: 9996.32},{x: new Date(1776819900000), y: 9996.24},{x: new Date(1776820200000), y: 9996.76},{x: new Date(1776820500000), y: 9994.66},{x: new Date(1776820800000), y: 9994.65},{x: new Date(1776821100000), y: 9994.44},{x: new Date(1776821400000), y: 9994.59},{x: new Date(1776821700000), y: 9995.49},{x: new Date(1776822000000), y: 9995.34},{x: new Date(1776822300000), y: 9995.7},{x: new Date(1776822600000), y: 9995.29},{x: new Date(1776822900000), y: 9995.84},{x: new Date(1776823200000), y: 9995.79},{x: new Date(1776823500000), y: 9996.24},{x: new Date(1776823800000), y: 10000.2},{x: new Date(1776824100000), y: 10003.0},{x: new Date(1776824400000), y: 10003.04},{x: new Date(1776824700000), y: 10005.23},{x: new Date(1776825000000), y: 10004.2},{x: new Date(1776825300000), y: 10003.86},{x: new Date(1776825600000), y: 10005.34},{x: new Date(1776825900000), y: 10004.83},{x: new Date(1776826200000), y: 10007.57},{x: new Date(1776826500000), y: 10008.88},{x: new Date(1776826800000), y: 10008.85},{x: new Date(1776827100000), y: 10008.88},{x: new Date(1776827400000), y: 10008.89},{x: new Date(1776827700000), y: 10007.06},{x: new Date(1776828000000), y: 10007.69},{x: new Date(1776828300000), y: 10008.13},{x: new Date(1776828600000), y: 10007.05},{x: new Date(1776828900000), y: 10007.12},{x: new Date(1776829200000), y: 10008.53},{x: new Date(1776829500000), y: 10008.43},{x: new Date(1776829800000), y: 10008.35},{x: new Date(1776830100000), y: 10008.09},{x: new Date(1776830400000), y: 10008.77},{x: new Date(1776830700000), y: 10008.52},{x: new Date(1776831000000), y: 10007.68},{x: new Date(1776831300000), y: 10007.34},{x: new Date(1776831600000), y: 10007.05},{x: new Date(1776831900000), y: 10007.95},{x: new Date(1776832200000), y: 10007.81},{x: new Date(1776832500000), y: 10009.35},{x: new Date(1776832800000), y: 10008.46},{x: new Date(1776833100000), y: 10008.07},{x: new Date(1776833400000), y: 10007.57},{x: new Date(1776833700000), y: 10008.09},{x: new Date(1776834000000), y: 10007.68},{x: new Date(1776834300000), y: 10008.35},{x: new Date(1776834600000), y: 10008.24},{x: new Date(1776834900000), y: 10011.38},{x: new Date(1776835200000), y: 10011.38},{x: new Date(1776835500000), y: 10011.38},{x: new Date(1776835800000), y: 10011.38},{x: new Date(1776836100000), y: 10011.38},{x: new Date(1776836400000), y: 10011.38},{x: new Date(1776836700000), y: 10011.38},{x: new Date(1776837000000), y: 10011.38},{x: new Date(1776837300000), y: 10011.38},{x: new Date(1776837600000), y: 10011.38},{x: new Date(1776837900000), y: 10011.38},{x: new Date(1776838200000), y: 10011.38},{x: new Date(1776838500000), y: 10011.38},{x: new Date(1776838800000), y: 10011.38},{x: new Date(1776839100000), y: 10011.38},{x: new Date(1776839400000), y: 10011.38},{x: new Date(1776839700000), y: 10011.38},{x: new Date(1776840000000), y: 10011.38},{x: new Date(1776840300000), y: 10011.38},{x: new Date(1776840600000), y: 10011.38},{x: new Date(1776840900000), y: 10011.38},{x: new Date(1776841200000), y: 10011.38},{x: new Date(1776841500000), y: 10011.38},{x: new Date(1776841800000), y: 10011.38},{x: new Date(1776842100000), y: 10011.38},{x: new Date(1776842400000), y: 10010.6},{x: new Date(1776842700000), y: 10010.5},{x: new Date(1776843000000), y: 10010.47},{x: new Date(1776843300000), y: 10010.4},{x: new Date(1776843600000), y: 10008.81},{x: new Date(1776843900000), y: 10009.4},{x: new Date(1776844200000), y: 10009.44},{x: new Date(1776844500000), y: 10009.32},{x: new Date(1776844800000), y: 10008.9},{x: new Date(1776845100000), y: 10008.33},{x: new Date(1776845400000), y: 10007.98},{x: new Date(1776845700000), y: 10007.98},{x: new Date(1776846000000), y: 10009.1},{x: new Date(1776846300000), y: 10009.73},{x: new Date(1776846600000), y: 10009.7},{x: new Date(1776846900000), y: 10009.67},{x: new Date(1776847200000), y: 10009.98},{x: new Date(1776847500000), y: 10009.78},{x: new Date(1776847800000), y: 10008.84},{x: new Date(1776848100000), y: 10009.27},{x: new Date(1776848400000), y: 10009.55},{x: new Date(1776848700000), y: 10008.8},{x: new Date(1776849000000), y: 10008.94},{x: new Date(1776849300000), y: 10009.54},{x: new Date(1776849600000), y: 10009.02},{x: new Date(1776849900000), y: 10007.82},{x: new Date(1776850200000), y: 10008.43},{x: new Date(1776850500000), y: 10008.29},{x: new Date(1776850800000), y: 10007.97},{x: new Date(1776851100000), y: 10008.34},{x: new Date(1776851400000), y: 10009.37},{x: new Date(1776851700000), y: 10009.29}],
+    borderColor: '#ef5350',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '双时间框架EMA',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 10000},{x: new Date(1776793200000), y: 10000},{x: new Date(1776793500000), y: 10000},{x: new Date(1776793800000), y: 10000},{x: new Date(1776794100000), y: 10000},{x: new Date(1776794400000), y: 10000},{x: new Date(1776794700000), y: 10000},{x: new Date(1776795000000), y: 9999.24},{x: new Date(1776795300000), y: 10000.38},{x: new Date(1776795600000), y: 10000.5},{x: new Date(1776795900000), y: 10000.29},{x: new Date(1776796200000), y: 9999.27},{x: new Date(1776796500000), y: 9999.66},{x: new Date(1776796800000), y: 9999.81},{x: new Date(1776797100000), y: 10001.07},{x: new Date(1776797400000), y: 9999.95},{x: new Date(1776797700000), y: 9998.9},{x: new Date(1776798000000), y: 9997.63},{x: new Date(1776798300000), y: 9998.09},{x: new Date(1776798600000), y: 9998.95},{x: new Date(1776798900000), y: 9998.92},{x: new Date(1776799200000), y: 9996.71},{x: new Date(1776799500000), y: 9997.24},{x: new Date(1776799800000), y: 9999.32},{x: new Date(1776800100000), y: 10002.5},{x: new Date(1776800400000), y: 10006.36},{x: new Date(1776800700000), y: 10004.94},{x: new Date(1776801000000), y: 10005.5},{x: new Date(1776801300000), y: 10004.77},{x: new Date(1776801600000), y: 10004.01},{x: new Date(1776801900000), y: 10001.5},{x: new Date(1776802200000), y: 9999.17},{x: new Date(1776802500000), y: 9999.92},{x: new Date(1776802800000), y: 9998.74},{x: new Date(1776803100000), y: 9998.54},{x: new Date(1776803400000), y: 9997.14},{x: new Date(1776803700000), y: 9997.49},{x: new Date(1776804000000), y: 9998.36},{x: new Date(1776804300000), y: 9997.6},{x: new Date(1776804600000), y: 9997.87},{x: new Date(1776804900000), y: 9998.09},{x: new Date(1776805200000), y: 9997.96},{x: new Date(1776805500000), y: 9998.82},{x: new Date(1776805800000), y: 9999.31},{x: new Date(1776806100000), y: 9999.22},{x: new Date(1776806400000), y: 9998.98},{x: new Date(1776806700000), y: 9999.27},{x: new Date(1776807000000), y: 9999.15},{x: new Date(1776807300000), y: 9999.01},{x: new Date(1776807600000), y: 10000.48},{x: new Date(1776807900000), y: 9999.93},{x: new Date(1776808200000), y: 9999.64},{x: new Date(1776808500000), y: 9999.61},{x: new Date(1776808800000), y: 9999.7},{x: new Date(1776809100000), y: 10000.15},{x: new Date(1776809400000), y: 9999.59},{x: new Date(1776809700000), y: 10001.97},{x: new Date(1776810000000), y: 10001.52},{x: new Date(1776810300000), y: 10001.37},{x: new Date(1776810600000), y: 10001.32},{x: new Date(1776810900000), y: 10001.38},{x: new Date(1776811200000), y: 9999.83},{x: new Date(1776811500000), y: 10000.19},{x: new Date(1776811800000), y: 9999.31},{x: new Date(1776812100000), y: 9998.65},{x: new Date(1776812400000), y: 9997.49},{x: new Date(1776812700000), y: 9996.61},{x: new Date(1776813000000), y: 9997.31},{x: new Date(1776813300000), y: 9996.67},{x: new Date(1776813600000), y: 9996.83},{x: new Date(1776813900000), y: 9997.15},{x: new Date(1776814200000), y: 9996.61},{x: new Date(1776814500000), y: 9995.31},{x: new Date(1776814800000), y: 9994.23},{x: new Date(1776815100000), y: 9990.66},{x: new Date(1776815400000), y: 9990.66},{x: new Date(1776815700000), y: 9990.66},{x: new Date(1776816000000), y: 9990.66},{x: new Date(1776816300000), y: 9990.66},{x: new Date(1776816600000), y: 9990.66},{x: new Date(1776816900000), y: 9990.66},{x: new Date(1776817200000), y: 9990.66},{x: new Date(1776817500000), y: 9990.66},{x: new Date(1776817800000), y: 9990.66},{x: new Date(1776818100000), y: 9990.66},{x: new Date(1776818400000), y: 9990.66},{x: new Date(1776818700000), y: 9990.66},{x: new Date(1776819000000), y: 9990.66},{x: new Date(1776819300000), y: 9989.9},{x: new Date(1776819600000), y: 9989.7},{x: new Date(1776819900000), y: 9989.61},{x: new Date(1776820200000), y: 9990.13},{x: new Date(1776820500000), y: 9988.04},{x: new Date(1776820800000), y: 9988.02},{x: new Date(1776821100000), y: 9987.82},{x: new Date(1776821400000), y: 9987.96},{x: new Date(1776821700000), y: 9988.87},{x: new Date(1776822000000), y: 9988.72},{x: new Date(1776822300000), y: 9989.08},{x: new Date(1776822600000), y: 9988.67},{x: new Date(1776822900000), y: 9989.21},{x: new Date(1776823200000), y: 9989.16},{x: new Date(1776823500000), y: 9989.62},{x: new Date(1776823800000), y: 9993.58},{x: new Date(1776824100000), y: 9996.37},{x: new Date(1776824400000), y: 9996.42},{x: new Date(1776824700000), y: 9998.6},{x: new Date(1776825000000), y: 9997.58},{x: new Date(1776825300000), y: 9997.23},{x: new Date(1776825600000), y: 9998.71},{x: new Date(1776825900000), y: 9998.2},{x: new Date(1776826200000), y: 10000.95},{x: new Date(1776826500000), y: 10002.26},{x: new Date(1776826800000), y: 10002.22},{x: new Date(1776827100000), y: 10002.26},{x: new Date(1776827400000), y: 10002.26},{x: new Date(1776827700000), y: 10000.44},{x: new Date(1776828000000), y: 10001.06},{x: new Date(1776828300000), y: 10001.51},{x: new Date(1776828600000), y: 10000.43},{x: new Date(1776828900000), y: 10000.49},{x: new Date(1776829200000), y: 10001.91},{x: new Date(1776829500000), y: 10001.8},{x: new Date(1776829800000), y: 10001.73},{x: new Date(1776830100000), y: 10001.47},{x: new Date(1776830400000), y: 10002.14},{x: new Date(1776830700000), y: 10001.89},{x: new Date(1776831000000), y: 10001.06},{x: new Date(1776831300000), y: 10000.71},{x: new Date(1776831600000), y: 10000.43},{x: new Date(1776831900000), y: 10001.32},{x: new Date(1776832200000), y: 10001.19},{x: new Date(1776832500000), y: 10002.73},{x: new Date(1776832800000), y: 10001.84},{x: new Date(1776833100000), y: 10001.44},{x: new Date(1776833400000), y: 10000.95},{x: new Date(1776833700000), y: 10001.47},{x: new Date(1776834000000), y: 10001.05},{x: new Date(1776834300000), y: 10001.73},{x: new Date(1776834600000), y: 10001.62},{x: new Date(1776834900000), y: 10005.53},{x: new Date(1776835200000), y: 10008.38},{x: new Date(1776835500000), y: 10008.74},{x: new Date(1776835800000), y: 10008.09},{x: new Date(1776836100000), y: 10005.78},{x: new Date(1776836400000), y: 10005.78},{x: new Date(1776836700000), y: 10005.78},{x: new Date(1776837000000), y: 10005.78},{x: new Date(1776837300000), y: 10005.78},{x: new Date(1776837600000), y: 10005.78},{x: new Date(1776837900000), y: 10005.78},{x: new Date(1776838200000), y: 10005.78},{x: new Date(1776838500000), y: 10005.78},{x: new Date(1776838800000), y: 10005.78},{x: new Date(1776839100000), y: 10005.78},{x: new Date(1776839400000), y: 10005.78},{x: new Date(1776839700000), y: 10005.78},{x: new Date(1776840000000), y: 10005.78},{x: new Date(1776840300000), y: 10005.78},{x: new Date(1776840600000), y: 10005.0},{x: new Date(1776840900000), y: 10004.92},{x: new Date(1776841200000), y: 10004.88},{x: new Date(1776841500000), y: 10005.27},{x: new Date(1776841800000), y: 10005.94},{x: new Date(1776842100000), y: 10004.55},{x: new Date(1776842400000), y: 10003.7},{x: new Date(1776842700000), y: 10003.8},{x: new Date(1776843000000), y: 10003.83},{x: new Date(1776843300000), y: 10003.9},{x: new Date(1776843600000), y: 10005.49},{x: new Date(1776843900000), y: 10004.91},{x: new Date(1776844200000), y: 10004.86},{x: new Date(1776844500000), y: 10004.98},{x: new Date(1776844800000), y: 10005.4},{x: new Date(1776845100000), y: 10005.97},{x: new Date(1776845400000), y: 10006.32},{x: new Date(1776845700000), y: 10006.32},{x: new Date(1776846000000), y: 10005.2},{x: new Date(1776846300000), y: 10004.57},{x: new Date(1776846600000), y: 10004.6},{x: new Date(1776846900000), y: 10004.64},{x: new Date(1776847200000), y: 10004.33},{x: new Date(1776847500000), y: 10004.52},{x: new Date(1776847800000), y: 10005.47},{x: new Date(1776848100000), y: 10005.03},{x: new Date(1776848400000), y: 10004.75},{x: new Date(1776848700000), y: 10005.5},{x: new Date(1776849000000), y: 10005.36},{x: new Date(1776849300000), y: 10004.76},{x: new Date(1776849600000), y: 10005.28},{x: new Date(1776849900000), y: 10006.49},{x: new Date(1776850200000), y: 10005.88},{x: new Date(1776850500000), y: 10006.01},{x: new Date(1776850800000), y: 10006.34},{x: new Date(1776851100000), y: 10005.96},{x: new Date(1776851400000), y: 10004.93},{x: new Date(1776851700000), y: 10005.01}],
+    borderColor: '#26a69a',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '布林带突破',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 10000},{x: new Date(1776793200000), y: 10000},{x: new Date(1776793500000), y: 10000},{x: new Date(1776793800000), y: 10000},{x: new Date(1776794100000), y: 10000},{x: new Date(1776794400000), y: 10000},{x: new Date(1776794700000), y: 10000},{x: new Date(1776795000000), y: 10000},{x: new Date(1776795300000), y: 10000},{x: new Date(1776795600000), y: 9999.25},{x: new Date(1776795900000), y: 9999.03},{x: new Date(1776796200000), y: 9998.01},{x: new Date(1776796500000), y: 9998.4},{x: new Date(1776796800000), y: 9998.56},{x: new Date(1776797100000), y: 9999.81},{x: new Date(1776797400000), y: 9998.69},{x: new Date(1776797700000), y: 9997.64},{x: new Date(1776798000000), y: 9996.37},{x: new Date(1776798300000), y: 9996.83},{x: new Date(1776798600000), y: 9997.69},{x: new Date(1776798900000), y: 9997.66},{x: new Date(1776799200000), y: 9995.45},{x: new Date(1776799500000), y: 9995.98},{x: new Date(1776799800000), y: 9998.06},{x: new Date(1776800100000), y: 10001.24},{x: new Date(1776800400000), y: 10005.11},{x: new Date(1776800700000), y: 10003.68},{x: new Date(1776801000000), y: 10004.24},{x: new Date(1776801300000), y: 10003.52},{x: new Date(1776801600000), y: 10002.75},{x: new Date(1776801900000), y: 10000.24},{x: new Date(1776802200000), y: 9997.92},{x: new Date(1776802500000), y: 9998.67},{x: new Date(1776802800000), y: 9997.48},{x: new Date(1776803100000), y: 9997.28},{x: new Date(1776803400000), y: 9995.88},{x: new Date(1776803700000), y: 9996.23},{x: new Date(1776804000000), y: 9997.1},{x: new Date(1776804300000), y: 9996.35},{x: new Date(1776804600000), y: 9996.61},{x: new Date(1776804900000), y: 9996.83},{x: new Date(1776805200000), y: 9996.7},{x: new Date(1776805500000), y: 9997.56},{x: new Date(1776805800000), y: 9998.05},{x: new Date(1776806100000), y: 9997.96},{x: new Date(1776806400000), y: 9997.73},{x: new Date(1776806700000), y: 9998.02},{x: new Date(1776807000000), y: 9997.89},{x: new Date(1776807300000), y: 9997.75},{x: new Date(1776807600000), y: 9999.22},{x: new Date(1776807900000), y: 9998.68},{x: new Date(1776808200000), y: 9998.38},{x: new Date(1776808500000), y: 9998.35},{x: new Date(1776808800000), y: 9998.45},{x: new Date(1776809100000), y: 9998.89},{x: new Date(1776809400000), y: 9998.33},{x: new Date(1776809700000), y: 10000.71},{x: new Date(1776810000000), y: 10000.27},{x: new Date(1776810300000), y: 10000.12},{x: new Date(1776810600000), y: 10000.06},{x: new Date(1776810900000), y: 10000.12},{x: new Date(1776811200000), y: 9998.58},{x: new Date(1776811500000), y: 9998.93},{x: new Date(1776811800000), y: 9998.05},{x: new Date(1776812100000), y: 9997.39},{x: new Date(1776812400000), y: 9996.23},{x: new Date(1776812700000), y: 9995.35},{x: new Date(1776813000000), y: 9996.06},{x: new Date(1776813300000), y: 9995.41},{x: new Date(1776813600000), y: 9995.57},{x: new Date(1776813900000), y: 9995.89},{x: new Date(1776814200000), y: 9995.35},{x: new Date(1776814500000), y: 9994.05},{x: new Date(1776814800000), y: 9992.97},{x: new Date(1776815100000), y: 9989.41},{x: new Date(1776815400000), y: 9989.41},{x: new Date(1776815700000), y: 9989.41},{x: new Date(1776816000000), y: 9989.41},{x: new Date(1776816300000), y: 9989.41},{x: new Date(1776816600000), y: 9989.41},{x: new Date(1776816900000), y: 9989.41},{x: new Date(1776817200000), y: 9989.41},{x: new Date(1776817500000), y: 9989.41},{x: new Date(1776817800000), y: 9989.41},{x: new Date(1776818100000), y: 9989.41},{x: new Date(1776818400000), y: 9989.41},{x: new Date(1776818700000), y: 9989.41},{x: new Date(1776819000000), y: 9989.41},{x: new Date(1776819300000), y: 9989.41},{x: new Date(1776819600000), y: 9989.41},{x: new Date(1776819900000), y: 9989.41},{x: new Date(1776820200000), y: 9988.64},{x: new Date(1776820500000), y: 9986.55},{x: new Date(1776820800000), y: 9986.53},{x: new Date(1776821100000), y: 9986.33},{x: new Date(1776821400000), y: 9986.47},{x: new Date(1776821700000), y: 9987.37},{x: new Date(1776822000000), y: 9987.23},{x: new Date(1776822300000), y: 9987.59},{x: new Date(1776822600000), y: 9987.18},{x: new Date(1776822900000), y: 9987.72},{x: new Date(1776823200000), y: 9987.67},{x: new Date(1776823500000), y: 9988.13},{x: new Date(1776823800000), y: 9992.08},{x: new Date(1776824100000), y: 9994.88},{x: new Date(1776824400000), y: 9994.93},{x: new Date(1776824700000), y: 9997.11},{x: new Date(1776825000000), y: 9996.08},{x: new Date(1776825300000), y: 9995.74},{x: new Date(1776825600000), y: 9997.22},{x: new Date(1776825900000), y: 9996.71},{x: new Date(1776826200000), y: 9999.46},{x: new Date(1776826500000), y: 10000.76},{x: new Date(1776826800000), y: 10000.73},{x: new Date(1776827100000), y: 10000.77},{x: new Date(1776827400000), y: 10000.77},{x: new Date(1776827700000), y: 9998.94},{x: new Date(1776828000000), y: 9999.57},{x: new Date(1776828300000), y: 10000.01},{x: new Date(1776828600000), y: 9998.94},{x: new Date(1776828900000), y: 9999.0},{x: new Date(1776829200000), y: 10000.42},{x: new Date(1776829500000), y: 10000.31},{x: new Date(1776829800000), y: 10000.24},{x: new Date(1776830100000), y: 9999.97},{x: new Date(1776830400000), y: 10000.65},{x: new Date(1776830700000), y: 10000.4},{x: new Date(1776831000000), y: 9999.57},{x: new Date(1776831300000), y: 9999.22},{x: new Date(1776831600000), y: 9998.93},{x: new Date(1776831900000), y: 9999.83},{x: new Date(1776832200000), y: 9999.7},{x: new Date(1776832500000), y: 10001.24},{x: new Date(1776832800000), y: 10000.35},{x: new Date(1776833100000), y: 9999.95},{x: new Date(1776833400000), y: 9999.46},{x: new Date(1776833700000), y: 9999.98},{x: new Date(1776834000000), y: 9999.56},{x: new Date(1776834300000), y: 10000.24},{x: new Date(1776834600000), y: 10000.13},{x: new Date(1776834900000), y: 10004.04},{x: new Date(1776835200000), y: 10006.89},{x: new Date(1776835500000), y: 10007.25},{x: new Date(1776835800000), y: 10006.59},{x: new Date(1776836100000), y: 10004.29},{x: new Date(1776836400000), y: 10004.29},{x: new Date(1776836700000), y: 10004.29},{x: new Date(1776837000000), y: 10004.29},{x: new Date(1776837300000), y: 10004.29},{x: new Date(1776837600000), y: 10004.29},{x: new Date(1776837900000), y: 10004.29},{x: new Date(1776838200000), y: 10004.29},{x: new Date(1776838500000), y: 10004.29},{x: new Date(1776838800000), y: 10004.29},{x: new Date(1776839100000), y: 10004.29},{x: new Date(1776839400000), y: 10004.29},{x: new Date(1776839700000), y: 10004.29},{x: new Date(1776840000000), y: 10004.29},{x: new Date(1776840300000), y: 10004.29},{x: new Date(1776840600000), y: 10003.51},{x: new Date(1776840900000), y: 10003.43},{x: new Date(1776841200000), y: 10003.39},{x: new Date(1776841500000), y: 10003.77},{x: new Date(1776841800000), y: 10004.45},{x: new Date(1776842100000), y: 10003.06},{x: new Date(1776842400000), y: 10002.21},{x: new Date(1776842700000), y: 10002.31},{x: new Date(1776843000000), y: 10002.34},{x: new Date(1776843300000), y: 10002.41},{x: new Date(1776843600000), y: 10004.0},{x: new Date(1776843900000), y: 10003.41},{x: new Date(1776844200000), y: 10003.37},{x: new Date(1776844500000), y: 10003.49},{x: new Date(1776844800000), y: 10003.91},{x: new Date(1776845100000), y: 10004.48},{x: new Date(1776845400000), y: 10004.83},{x: new Date(1776845700000), y: 10004.83},{x: new Date(1776846000000), y: 10003.71},{x: new Date(1776846300000), y: 10003.08},{x: new Date(1776846600000), y: 10003.11},{x: new Date(1776846900000), y: 10003.14},{x: new Date(1776847200000), y: 10002.83},{x: new Date(1776847500000), y: 10003.03},{x: new Date(1776847800000), y: 10003.97},{x: new Date(1776848100000), y: 10003.54},{x: new Date(1776848400000), y: 10003.26},{x: new Date(1776848700000), y: 10004.01},{x: new Date(1776849000000), y: 10003.87},{x: new Date(1776849300000), y: 10003.27},{x: new Date(1776849600000), y: 10003.79},{x: new Date(1776849900000), y: 10004.99},{x: new Date(1776850200000), y: 10004.38},{x: new Date(1776850500000), y: 10004.52},{x: new Date(1776850800000), y: 10004.84},{x: new Date(1776851100000), y: 10004.47},{x: new Date(1776851400000), y: 10003.44},{x: new Date(1776851700000), y: 10003.52}],
+    borderColor: '#58a6ff',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '均线多空排列',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 10000},{x: new Date(1776793200000), y: 10000},{x: new Date(1776793500000), y: 10000},{x: new Date(1776793800000), y: 10000},{x: new Date(1776794100000), y: 10000},{x: new Date(1776794400000), y: 10000},{x: new Date(1776794700000), y: 10000},{x: new Date(1776795000000), y: 10000},{x: new Date(1776795300000), y: 10000},{x: new Date(1776795600000), y: 10000},{x: new Date(1776795900000), y: 9999.25},{x: new Date(1776796200000), y: 9998.23},{x: new Date(1776796500000), y: 9998.61},{x: new Date(1776796800000), y: 9998.77},{x: new Date(1776797100000), y: 10000.02},{x: new Date(1776797400000), y: 9998.91},{x: new Date(1776797700000), y: 9997.85},{x: new Date(1776798000000), y: 9996.58},{x: new Date(1776798300000), y: 9997.04},{x: new Date(1776798600000), y: 9997.9},{x: new Date(1776798900000), y: 9997.87},{x: new Date(1776799200000), y: 9995.66},{x: new Date(1776799500000), y: 9996.19},{x: new Date(1776799800000), y: 9998.27},{x: new Date(1776800100000), y: 10001.45},{x: new Date(1776800400000), y: 10005.32},{x: new Date(1776800700000), y: 10003.89},{x: new Date(1776801000000), y: 10004.45},{x: new Date(1776801300000), y: 10003.73},{x: new Date(1776801600000), y: 10002.96},{x: new Date(1776801900000), y: 10000.45},{x: new Date(1776802200000), y: 9998.13},{x: new Date(1776802500000), y: 9998.88},{x: new Date(1776802800000), y: 9997.69},{x: new Date(1776803100000), y: 9997.49},{x: new Date(1776803400000), y: 9996.09},{x: new Date(1776803700000), y: 9996.44},{x: new Date(1776804000000), y: 9997.31},{x: new Date(1776804300000), y: 9996.56},{x: new Date(1776804600000), y: 9996.82},{x: new Date(1776804900000), y: 9997.04},{x: new Date(1776805200000), y: 9996.91},{x: new Date(1776805500000), y: 9997.77},{x: new Date(1776805800000), y: 9998.26},{x: new Date(1776806100000), y: 9998.17},{x: new Date(1776806400000), y: 9997.94},{x: new Date(1776806700000), y: 9998.23},{x: new Date(1776807000000), y: 9998.1},{x: new Date(1776807300000), y: 9997.96},{x: new Date(1776807600000), y: 9999.43},{x: new Date(1776807900000), y: 9998.89},{x: new Date(1776808200000), y: 9998.59},{x: new Date(1776808500000), y: 9998.56},{x: new Date(1776808800000), y: 9998.66},{x: new Date(1776809100000), y: 9999.1},{x: new Date(1776809400000), y: 9998.54},{x: new Date(1776809700000), y: 10000.92},{x: new Date(1776810000000), y: 10000.48},{x: new Date(1776810300000), y: 10000.33},{x: new Date(1776810600000), y: 10000.27},{x: new Date(1776810900000), y: 10000.33},{x: new Date(1776811200000), y: 9998.79},{x: new Date(1776811500000), y: 9999.14},{x: new Date(1776811800000), y: 9998.26},{x: new Date(1776812100000), y: 9997.6},{x: new Date(1776812400000), y: 9996.44},{x: new Date(1776812700000), y: 9995.56},{x: new Date(1776813000000), y: 9996.27},{x: new Date(1776813300000), y: 9995.62},{x: new Date(1776813600000), y: 9995.78},{x: new Date(1776813900000), y: 9996.1},{x: new Date(1776814200000), y: 9995.56},{x: new Date(1776814500000), y: 9994.26},{x: new Date(1776814800000), y: 9993.18},{x: new Date(1776815100000), y: 9989.62},{x: new Date(1776815400000), y: 9989.62},{x: new Date(1776815700000), y: 9989.62},{x: new Date(1776816000000), y: 9989.62},{x: new Date(1776816300000), y: 9989.62},{x: new Date(1776816600000), y: 9989.62},{x: new Date(1776816900000), y: 9989.62},{x: new Date(1776817200000), y: 9989.62},{x: new Date(1776817500000), y: 9989.62},{x: new Date(1776817800000), y: 9989.62},{x: new Date(1776818100000), y: 9989.62},{x: new Date(1776818400000), y: 9989.62},{x: new Date(1776818700000), y: 9989.62},{x: new Date(1776819000000), y: 9989.62},{x: new Date(1776819300000), y: 9989.62},{x: new Date(1776819600000), y: 9989.62},{x: new Date(1776819900000), y: 9989.62},{x: new Date(1776820200000), y: 9988.85},{x: new Date(1776820500000), y: 9986.76},{x: new Date(1776820800000), y: 9986.74},{x: new Date(1776821100000), y: 9986.54},{x: new Date(1776821400000), y: 9986.68},{x: new Date(1776821700000), y: 9987.58},{x: new Date(1776822000000), y: 9987.44},{x: new Date(1776822300000), y: 9987.8},{x: new Date(1776822600000), y: 9987.39},{x: new Date(1776822900000), y: 9987.93},{x: new Date(1776823200000), y: 9987.88},{x: new Date(1776823500000), y: 9988.34},{x: new Date(1776823800000), y: 9992.29},{x: new Date(1776824100000), y: 9995.09},{x: new Date(1776824400000), y: 9995.14},{x: new Date(1776824700000), y: 9997.32},{x: new Date(1776825000000), y: 9996.29},{x: new Date(1776825300000), y: 9995.95},{x: new Date(1776825600000), y: 9997.43},{x: new Date(1776825900000), y: 9996.92},{x: new Date(1776826200000), y: 9999.67},{x: new Date(1776826500000), y: 10000.97},{x: new Date(1776826800000), y: 10000.94},{x: new Date(1776827100000), y: 10000.98},{x: new Date(1776827400000), y: 10000.98},{x: new Date(1776827700000), y: 9999.16},{x: new Date(1776828000000), y: 9999.78},{x: new Date(1776828300000), y: 10000.22},{x: new Date(1776828600000), y: 9999.15},{x: new Date(1776828900000), y: 9999.21},{x: new Date(1776829200000), y: 10000.63},{x: new Date(1776829500000), y: 10000.52},{x: new Date(1776829800000), y: 10000.45},{x: new Date(1776830100000), y: 10000.18},{x: new Date(1776830400000), y: 10000.86},{x: new Date(1776830700000), y: 10000.61},{x: new Date(1776831000000), y: 9999.78},{x: new Date(1776831300000), y: 9999.43},{x: new Date(1776831600000), y: 9999.15},{x: new Date(1776831900000), y: 10000.04},{x: new Date(1776832200000), y: 9999.91},{x: new Date(1776832500000), y: 10001.45},{x: new Date(1776832800000), y: 10000.56},{x: new Date(1776833100000), y: 10000.16},{x: new Date(1776833400000), y: 9999.67},{x: new Date(1776833700000), y: 10000.19},{x: new Date(1776834000000), y: 9999.77},{x: new Date(1776834300000), y: 10000.45},{x: new Date(1776834600000), y: 10000.34},{x: new Date(1776834900000), y: 10004.25},{x: new Date(1776835200000), y: 10007.1},{x: new Date(1776835500000), y: 10007.46},{x: new Date(1776835800000), y: 10006.81},{x: new Date(1776836100000), y: 10004.5},{x: new Date(1776836400000), y: 10004.5},{x: new Date(1776836700000), y: 10004.5},{x: new Date(1776837000000), y: 10004.5},{x: new Date(1776837300000), y: 10004.5},{x: new Date(1776837600000), y: 10004.5},{x: new Date(1776837900000), y: 10004.5},{x: new Date(1776838200000), y: 10004.5},{x: new Date(1776838500000), y: 10004.5},{x: new Date(1776838800000), y: 10004.5},{x: new Date(1776839100000), y: 10004.5},{x: new Date(1776839400000), y: 10004.5},{x: new Date(1776839700000), y: 10004.5},{x: new Date(1776840000000), y: 10004.5},{x: new Date(1776840300000), y: 10003.72},{x: new Date(1776840600000), y: 10003.21},{x: new Date(1776840900000), y: 10003.29},{x: new Date(1776841200000), y: 10003.34},{x: new Date(1776841500000), y: 10002.95},{x: new Date(1776841800000), y: 10002.27},{x: new Date(1776842100000), y: 10003.66},{x: new Date(1776842400000), y: 10004.51},{x: new Date(1776842700000), y: 10004.41},{x: new Date(1776843000000), y: 10004.39},{x: new Date(1776843300000), y: 10004.31},{x: new Date(1776843600000), y: 10002.72},{x: new Date(1776843900000), y: 10003.31},{x: new Date(1776844200000), y: 10003.36},{x: new Date(1776844500000), y: 10003.23},{x: new Date(1776844800000), y: 10002.81},{x: new Date(1776845100000), y: 10002.25},{x: new Date(1776845400000), y: 10001.9},{x: new Date(1776845700000), y: 10001.89},{x: new Date(1776846000000), y: 10003.01},{x: new Date(1776846300000), y: 10003.65},{x: new Date(1776846600000), y: 10003.62},{x: new Date(1776846900000), y: 10003.58},{x: new Date(1776847200000), y: 10003.89},{x: new Date(1776847500000), y: 10003.7},{x: new Date(1776847800000), y: 10002.75},{x: new Date(1776848100000), y: 10003.19},{x: new Date(1776848400000), y: 10003.47},{x: new Date(1776848700000), y: 10002.71},{x: new Date(1776849000000), y: 10002.86},{x: new Date(1776849300000), y: 10003.46},{x: new Date(1776849600000), y: 10002.94},{x: new Date(1776849900000), y: 10001.73},{x: new Date(1776850200000), y: 10002.34},{x: new Date(1776850500000), y: 10002.21},{x: new Date(1776850800000), y: 10001.88},{x: new Date(1776851100000), y: 10002.25},{x: new Date(1776851400000), y: 10003.28},{x: new Date(1776851700000), y: 10003.2}],
+    borderColor: '#9c27b0',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'RSI 超卖超买',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 9999.24},{x: new Date(1776793200000), y: 10000.99},{x: new Date(1776793500000), y: 10000.45},{x: new Date(1776793800000), y: 9999.48},{x: new Date(1776794100000), y: 9998.84},{x: new Date(1776794400000), y: 9999.0},{x: new Date(1776794700000), y: 9999.17},{x: new Date(1776795000000), y: 9999.06},{x: new Date(1776795300000), y: 9997.93},{x: new Date(1776795600000), y: 9997.8},{x: new Date(1776795900000), y: 9998.01},{x: new Date(1776796200000), y: 9999.03},{x: new Date(1776796500000), y: 9998.65},{x: new Date(1776796800000), y: 9998.49},{x: new Date(1776797100000), y: 9997.24},{x: new Date(1776797400000), y: 9998.35},{x: new Date(1776797700000), y: 9999.41},{x: new Date(1776798000000), y: 10000.68},{x: new Date(1776798300000), y: 10000.22},{x: new Date(1776798600000), y: 9999.36},{x: new Date(1776798900000), y: 9999.39},{x: new Date(1776799200000), y: 10001.6},{x: new Date(1776799500000), y: 10001.07},{x: new Date(1776799800000), y: 9998.99},{x: new Date(1776800100000), y: 9995.06},{x: new Date(1776800400000), y: 9995.06},{x: new Date(1776800700000), y: 9995.06},{x: new Date(1776801000000), y: 9995.06},{x: new Date(1776801300000), y: 9995.06},{x: new Date(1776801600000), y: 9994.3},{x: new Date(1776801900000), y: 9996.81},{x: new Date(1776802200000), y: 9999.14},{x: new Date(1776802500000), y: 9998.39},{x: new Date(1776802800000), y: 9999.57},{x: new Date(1776803100000), y: 9999.78},{x: new Date(1776803400000), y: 10001.18},{x: new Date(1776803700000), y: 10000.82},{x: new Date(1776804000000), y: 9999.95},{x: new Date(1776804300000), y: 10000.71},{x: new Date(1776804600000), y: 10000.44},{x: new Date(1776804900000), y: 10000.23},{x: new Date(1776805200000), y: 10000.36},{x: new Date(1776805500000), y: 9999.5},{x: new Date(1776805800000), y: 9999.01},{x: new Date(1776806100000), y: 9999.09},{x: new Date(1776806400000), y: 9999.33},{x: new Date(1776806700000), y: 9999.04},{x: new Date(1776807000000), y: 9999.16},{x: new Date(1776807300000), y: 9999.3},{x: new Date(1776807600000), y: 9997.84},{x: new Date(1776807900000), y: 9998.38},{x: new Date(1776808200000), y: 9998.68},{x: new Date(1776808500000), y: 9998.7},{x: new Date(1776808800000), y: 9998.61},{x: new Date(1776809100000), y: 9998.17},{x: new Date(1776809400000), y: 9998.72},{x: new Date(1776809700000), y: 9996.35},{x: new Date(1776810000000), y: 9996.79},{x: new Date(1776810300000), y: 9996.94},{x: new Date(1776810600000), y: 9997.0},{x: new Date(1776810900000), y: 9996.94},{x: new Date(1776811200000), y: 9998.48},{x: new Date(1776811500000), y: 9998.12},{x: new Date(1776811800000), y: 9999.01},{x: new Date(1776812100000), y: 9999.67},{x: new Date(1776812400000), y: 10000.83},{x: new Date(1776812700000), y: 10001.7},{x: new Date(1776813000000), y: 10001.0},{x: new Date(1776813300000), y: 10001.64},{x: new Date(1776813600000), y: 10001.48},{x: new Date(1776813900000), y: 10001.16},{x: new Date(1776814200000), y: 10001.7},{x: new Date(1776814500000), y: 10003.01},{x: new Date(1776814800000), y: 10004.09},{x: new Date(1776815100000), y: 10006.12},{x: new Date(1776815400000), y: 10006.12},{x: new Date(1776815700000), y: 10006.12},{x: new Date(1776816000000), y: 10006.12},{x: new Date(1776816300000), y: 10006.12},{x: new Date(1776816600000), y: 10006.12},{x: new Date(1776816900000), y: 10006.12},{x: new Date(1776817200000), y: 10005.36},{x: new Date(1776817500000), y: 10005.45},{x: new Date(1776817800000), y: 10005.62},{x: new Date(1776818100000), y: 10004.78},{x: new Date(1776818400000), y: 10004.85},{x: new Date(1776818700000), y: 10005.34},{x: new Date(1776819000000), y: 10005.41},{x: new Date(1776819300000), y: 10004.45},{x: new Date(1776819600000), y: 10004.65},{x: new Date(1776819900000), y: 10004.74},{x: new Date(1776820200000), y: 10004.22},{x: new Date(1776820500000), y: 10006.31},{x: new Date(1776820800000), y: 10006.33},{x: new Date(1776821100000), y: 10006.54},{x: new Date(1776821400000), y: 10006.39},{x: new Date(1776821700000), y: 10005.49},{x: new Date(1776822000000), y: 10005.63},{x: new Date(1776822300000), y: 10005.27},{x: new Date(1776822600000), y: 10005.68},{x: new Date(1776822900000), y: 10005.14},{x: new Date(1776823200000), y: 10005.19},{x: new Date(1776823500000), y: 10004.74},{x: new Date(1776823800000), y: 10000.01},{x: new Date(1776824100000), y: 10000.01},{x: new Date(1776824400000), y: 10000.01},{x: new Date(1776824700000), y: 10000.01},{x: new Date(1776825000000), y: 10000.01},{x: new Date(1776825300000), y: 10000.01},{x: new Date(1776825600000), y: 10000.01},{x: new Date(1776825900000), y: 10000.01},{x: new Date(1776826200000), y: 10000.01},{x: new Date(1776826500000), y: 10000.01},{x: new Date(1776826800000), y: 10000.01},{x: new Date(1776827100000), y: 10000.01},{x: new Date(1776827400000), y: 10000.01},{x: new Date(1776827700000), y: 9999.24},{x: new Date(1776828000000), y: 9998.61},{x: new Date(1776828300000), y: 9998.17},{x: new Date(1776828600000), y: 9999.24},{x: new Date(1776828900000), y: 9999.18},{x: new Date(1776829200000), y: 9997.76},{x: new Date(1776829500000), y: 9997.87},{x: new Date(1776829800000), y: 9997.94},{x: new Date(1776830100000), y: 9998.21},{x: new Date(1776830400000), y: 9997.53},{x: new Date(1776830700000), y: 9997.78},{x: new Date(1776831000000), y: 9998.61},{x: new Date(1776831300000), y: 9998.96},{x: new Date(1776831600000), y: 9999.25},{x: new Date(1776831900000), y: 9998.35},{x: new Date(1776832200000), y: 9998.48},{x: new Date(1776832500000), y: 9996.94},{x: new Date(1776832800000), y: 9997.83},{x: new Date(1776833100000), y: 9998.23},{x: new Date(1776833400000), y: 9998.73},{x: new Date(1776833700000), y: 9998.21},{x: new Date(1776834000000), y: 9998.62},{x: new Date(1776834300000), y: 9997.94},{x: new Date(1776834600000), y: 9998.06},{x: new Date(1776834900000), y: 9993.36},{x: new Date(1776835200000), y: 9993.36},{x: new Date(1776835500000), y: 9993.36},{x: new Date(1776835800000), y: 9993.36},{x: new Date(1776836100000), y: 9992.58},{x: new Date(1776836400000), y: 9991.58},{x: new Date(1776836700000), y: 9992.06},{x: new Date(1776837000000), y: 9991.98},{x: new Date(1776837300000), y: 9993.06},{x: new Date(1776837600000), y: 9993.37},{x: new Date(1776837900000), y: 9993.52},{x: new Date(1776838200000), y: 9993.48},{x: new Date(1776838500000), y: 9993.06},{x: new Date(1776838800000), y: 9993.45},{x: new Date(1776839100000), y: 9993.26},{x: new Date(1776839400000), y: 9993.64},{x: new Date(1776839700000), y: 9993.55},{x: new Date(1776840000000), y: 9993.29},{x: new Date(1776840300000), y: 9993.33},{x: new Date(1776840600000), y: 9992.82},{x: new Date(1776840900000), y: 9992.9},{x: new Date(1776841200000), y: 9992.94},{x: new Date(1776841500000), y: 9992.56},{x: new Date(1776841800000), y: 9991.88},{x: new Date(1776842100000), y: 9993.27},{x: new Date(1776842400000), y: 9994.12},{x: new Date(1776842700000), y: 9994.02},{x: new Date(1776843000000), y: 9993.99},{x: new Date(1776843300000), y: 9993.92},{x: new Date(1776843600000), y: 9992.33},{x: new Date(1776843900000), y: 9992.92},{x: new Date(1776844200000), y: 9992.96},{x: new Date(1776844500000), y: 9992.84},{x: new Date(1776844800000), y: 9992.42},{x: new Date(1776845100000), y: 9991.85},{x: new Date(1776845400000), y: 9991.5},{x: new Date(1776845700000), y: 9991.5},{x: new Date(1776846000000), y: 9992.62},{x: new Date(1776846300000), y: 9993.25},{x: new Date(1776846600000), y: 9993.22},{x: new Date(1776846900000), y: 9993.19},{x: new Date(1776847200000), y: 9993.5},{x: new Date(1776847500000), y: 9993.3},{x: new Date(1776847800000), y: 9992.36},{x: new Date(1776848100000), y: 9992.79},{x: new Date(1776848400000), y: 9993.07},{x: new Date(1776848700000), y: 9992.32},{x: new Date(1776849000000), y: 9992.46},{x: new Date(1776849300000), y: 9993.06},{x: new Date(1776849600000), y: 9992.54},{x: new Date(1776849900000), y: 9991.34},{x: new Date(1776850200000), y: 9991.95},{x: new Date(1776850500000), y: 9991.81},{x: new Date(1776850800000), y: 9991.49},{x: new Date(1776851100000), y: 9991.86},{x: new Date(1776851400000), y: 9992.89},{x: new Date(1776851700000), y: 9992.81}],
+    borderColor: '#ff9800',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'MACD 趋势动能',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 9999.24},{x: new Date(1776793200000), y: 10000.99},{x: new Date(1776793500000), y: 10000.45},{x: new Date(1776793800000), y: 9999.48},{x: new Date(1776794100000), y: 9998.84},{x: new Date(1776794400000), y: 9999.0},{x: new Date(1776794700000), y: 9999.17},{x: new Date(1776795000000), y: 9999.06},{x: new Date(1776795300000), y: 9997.93},{x: new Date(1776795600000), y: 9997.8},{x: new Date(1776795900000), y: 9998.01},{x: new Date(1776796200000), y: 9999.03},{x: new Date(1776796500000), y: 9998.65},{x: new Date(1776796800000), y: 9998.49},{x: new Date(1776797100000), y: 9997.24},{x: new Date(1776797400000), y: 9998.35},{x: new Date(1776797700000), y: 9999.41},{x: new Date(1776798000000), y: 10000.68},{x: new Date(1776798300000), y: 10000.22},{x: new Date(1776798600000), y: 9999.36},{x: new Date(1776798900000), y: 9999.39},{x: new Date(1776799200000), y: 10001.6},{x: new Date(1776799500000), y: 10001.07},{x: new Date(1776799800000), y: 9998.99},{x: new Date(1776800100000), y: 9995.06},{x: new Date(1776800400000), y: 9995.06},{x: new Date(1776800700000), y: 9995.06},{x: new Date(1776801000000), y: 9995.06},{x: new Date(1776801300000), y: 9995.06},{x: new Date(1776801600000), y: 9995.06},{x: new Date(1776801900000), y: 9994.3},{x: new Date(1776802200000), y: 9996.63},{x: new Date(1776802500000), y: 9995.88},{x: new Date(1776802800000), y: 9997.06},{x: new Date(1776803100000), y: 9997.27},{x: new Date(1776803400000), y: 9998.67},{x: new Date(1776803700000), y: 9998.31},{x: new Date(1776804000000), y: 9997.44},{x: new Date(1776804300000), y: 9998.2},{x: new Date(1776804600000), y: 9997.93},{x: new Date(1776804900000), y: 9997.71},{x: new Date(1776805200000), y: 9997.85},{x: new Date(1776805500000), y: 9996.98},{x: new Date(1776805800000), y: 9996.49},{x: new Date(1776806100000), y: 9996.58},{x: new Date(1776806400000), y: 9996.82},{x: new Date(1776806700000), y: 9996.53},{x: new Date(1776807000000), y: 9996.65},{x: new Date(1776807300000), y: 9996.79},{x: new Date(1776807600000), y: 9995.32},{x: new Date(1776807900000), y: 9995.87},{x: new Date(1776808200000), y: 9996.16},{x: new Date(1776808500000), y: 9996.19},{x: new Date(1776808800000), y: 9996.1},{x: new Date(1776809100000), y: 9995.65},{x: new Date(1776809400000), y: 9996.21},{x: new Date(1776809700000), y: 9993.83},{x: new Date(1776810000000), y: 9994.28},{x: new Date(1776810300000), y: 9994.43},{x: new Date(1776810600000), y: 9994.48},{x: new Date(1776810900000), y: 9994.42},{x: new Date(1776811200000), y: 9995.97},{x: new Date(1776811500000), y: 9995.61},{x: new Date(1776811800000), y: 9996.49},{x: new Date(1776812100000), y: 9997.15},{x: new Date(1776812400000), y: 9998.31},{x: new Date(1776812700000), y: 9999.19},{x: new Date(1776813000000), y: 9998.49},{x: new Date(1776813300000), y: 9999.13},{x: new Date(1776813600000), y: 9998.97},{x: new Date(1776813900000), y: 9998.65},{x: new Date(1776814200000), y: 9999.19},{x: new Date(1776814500000), y: 10000.5},{x: new Date(1776814800000), y: 10001.57},{x: new Date(1776815100000), y: 10003.61},{x: new Date(1776815400000), y: 10003.61},{x: new Date(1776815700000), y: 10003.61},{x: new Date(1776816000000), y: 10003.61},{x: new Date(1776816300000), y: 10003.61},{x: new Date(1776816600000), y: 10003.61},{x: new Date(1776816900000), y: 10002.85},{x: new Date(1776817200000), y: 10003.64},{x: new Date(1776817500000), y: 10003.73},{x: new Date(1776817800000), y: 10003.9},{x: new Date(1776818100000), y: 10003.06},{x: new Date(1776818400000), y: 10003.13},{x: new Date(1776818700000), y: 10003.62},{x: new Date(1776819000000), y: 10003.69},{x: new Date(1776819300000), y: 10002.73},{x: new Date(1776819600000), y: 10002.93},{x: new Date(1776819900000), y: 10003.02},{x: new Date(1776820200000), y: 10002.5},{x: new Date(1776820500000), y: 10004.59},{x: new Date(1776820800000), y: 10004.61},{x: new Date(1776821100000), y: 10004.81},{x: new Date(1776821400000), y: 10004.67},{x: new Date(1776821700000), y: 10003.77},{x: new Date(1776822000000), y: 10003.91},{x: new Date(1776822300000), y: 10003.55},{x: new Date(1776822600000), y: 10003.96},{x: new Date(1776822900000), y: 10003.42},{x: new Date(1776823200000), y: 10003.47},{x: new Date(1776823500000), y: 10003.01},{x: new Date(1776823800000), y: 9998.29},{x: new Date(1776824100000), y: 9998.29},{x: new Date(1776824400000), y: 9998.29},{x: new Date(1776824700000), y: 9998.29},{x: new Date(1776825000000), y: 9998.29},{x: new Date(1776825300000), y: 9998.29},{x: new Date(1776825600000), y: 9998.29},{x: new Date(1776825900000), y: 9998.29},{x: new Date(1776826200000), y: 9998.29},{x: new Date(1776826500000), y: 9998.29},{x: new Date(1776826800000), y: 9998.29},{x: new Date(1776827100000), y: 9998.29},{x: new Date(1776827400000), y: 9997.51},{x: new Date(1776827700000), y: 9999.34},{x: new Date(1776828000000), y: 9998.71},{x: new Date(1776828300000), y: 9998.27},{x: new Date(1776828600000), y: 9999.35},{x: new Date(1776828900000), y: 9999.28},{x: new Date(1776829200000), y: 9997.87},{x: new Date(1776829500000), y: 9997.97},{x: new Date(1776829800000), y: 9998.05},{x: new Date(1776830100000), y: 9998.31},{x: new Date(1776830400000), y: 9997.63},{x: new Date(1776830700000), y: 9997.88},{x: new Date(1776831000000), y: 9998.72},{x: new Date(1776831300000), y: 9999.06},{x: new Date(1776831600000), y: 9999.35},{x: new Date(1776831900000), y: 9998.45},{x: new Date(1776832200000), y: 9998.59},{x: new Date(1776832500000), y: 9997.05},{x: new Date(1776832800000), y: 9997.94},{x: new Date(1776833100000), y: 9998.33},{x: new Date(1776833400000), y: 9998.83},{x: new Date(1776833700000), y: 9998.31},{x: new Date(1776834000000), y: 9998.73},{x: new Date(1776834300000), y: 9998.05},{x: new Date(1776834600000), y: 9998.16},{x: new Date(1776834900000), y: 9994.24},{x: new Date(1776835200000), y: 9990.62},{x: new Date(1776835500000), y: 9990.62},{x: new Date(1776835800000), y: 9990.62},{x: new Date(1776836100000), y: 9990.62},{x: new Date(1776836400000), y: 9990.62},{x: new Date(1776836700000), y: 9989.83},{x: new Date(1776837000000), y: 9989.75},{x: new Date(1776837300000), y: 9990.83},{x: new Date(1776837600000), y: 9991.15},{x: new Date(1776837900000), y: 9991.3},{x: new Date(1776838200000), y: 9991.25},{x: new Date(1776838500000), y: 9990.83},{x: new Date(1776838800000), y: 9991.23},{x: new Date(1776839100000), y: 9991.03},{x: new Date(1776839400000), y: 9991.41},{x: new Date(1776839700000), y: 9991.32},{x: new Date(1776840000000), y: 9991.06},{x: new Date(1776840300000), y: 9991.1},{x: new Date(1776840600000), y: 9990.59},{x: new Date(1776840900000), y: 9990.67},{x: new Date(1776841200000), y: 9990.71},{x: new Date(1776841500000), y: 9990.33},{x: new Date(1776841800000), y: 9989.65},{x: new Date(1776842100000), y: 9991.04},{x: new Date(1776842400000), y: 9991.89},{x: new Date(1776842700000), y: 9991.79},{x: new Date(1776843000000), y: 9991.77},{x: new Date(1776843300000), y: 9991.69},{x: new Date(1776843600000), y: 9990.1},{x: new Date(1776843900000), y: 9990.69},{x: new Date(1776844200000), y: 9990.73},{x: new Date(1776844500000), y: 9990.61},{x: new Date(1776844800000), y: 9990.19},{x: new Date(1776845100000), y: 9989.62},{x: new Date(1776845400000), y: 9989.28},{x: new Date(1776845700000), y: 9989.27},{x: new Date(1776846000000), y: 9990.39},{x: new Date(1776846300000), y: 9991.02},{x: new Date(1776846600000), y: 9991.0},{x: new Date(1776846900000), y: 9990.96},{x: new Date(1776847200000), y: 9991.27},{x: new Date(1776847500000), y: 9991.08},{x: new Date(1776847800000), y: 9990.13},{x: new Date(1776848100000), y: 9990.56},{x: new Date(1776848400000), y: 9990.84},{x: new Date(1776848700000), y: 9990.09},{x: new Date(1776849000000), y: 9990.23},{x: new Date(1776849300000), y: 9990.83},{x: new Date(1776849600000), y: 9990.31},{x: new Date(1776849900000), y: 9989.11},{x: new Date(1776850200000), y: 9989.72},{x: new Date(1776850500000), y: 9989.59},{x: new Date(1776850800000), y: 9989.26},{x: new Date(1776851100000), y: 9989.63},{x: new Date(1776851400000), y: 9990.66},{x: new Date(1776851700000), y: 9990.58}],
+    borderColor: '#4caf50',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'EMA 量能确认',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 10000},{x: new Date(1776793200000), y: 10000},{x: new Date(1776793500000), y: 10000},{x: new Date(1776793800000), y: 10000},{x: new Date(1776794100000), y: 10000},{x: new Date(1776794400000), y: 10000},{x: new Date(1776794700000), y: 10000},{x: new Date(1776795000000), y: 10000},{x: new Date(1776795300000), y: 10000},{x: new Date(1776795600000), y: 10000},{x: new Date(1776795900000), y: 10000},{x: new Date(1776796200000), y: 10000},{x: new Date(1776796500000), y: 10000},{x: new Date(1776796800000), y: 10000},{x: new Date(1776797100000), y: 10000},{x: new Date(1776797400000), y: 10000},{x: new Date(1776797700000), y: 10000},{x: new Date(1776798000000), y: 10000},{x: new Date(1776798300000), y: 10000},{x: new Date(1776798600000), y: 10000},{x: new Date(1776798900000), y: 10000},{x: new Date(1776799200000), y: 10000},{x: new Date(1776799500000), y: 10000},{x: new Date(1776799800000), y: 10000},{x: new Date(1776800100000), y: 9999.25},{x: new Date(1776800400000), y: 10003.11},{x: new Date(1776800700000), y: 10001.68},{x: new Date(1776801000000), y: 10002.25},{x: new Date(1776801300000), y: 10001.52},{x: new Date(1776801600000), y: 10000.76},{x: new Date(1776801900000), y: 9998.25},{x: new Date(1776802200000), y: 9995.17},{x: new Date(1776802500000), y: 9995.17},{x: new Date(1776802800000), y: 9995.17},{x: new Date(1776803100000), y: 9995.17},{x: new Date(1776803400000), y: 9995.17},{x: new Date(1776803700000), y: 9995.17},{x: new Date(1776804000000), y: 9995.17},{x: new Date(1776804300000), y: 9995.17},{x: new Date(1776804600000), y: 9995.17},{x: new Date(1776804900000), y: 9995.17},{x: new Date(1776805200000), y: 9995.17},{x: new Date(1776805500000), y: 9995.17},{x: new Date(1776805800000), y: 9995.17},{x: new Date(1776806100000), y: 9995.17},{x: new Date(1776806400000), y: 9995.17},{x: new Date(1776806700000), y: 9995.17},{x: new Date(1776807000000), y: 9995.17},{x: new Date(1776807300000), y: 9995.17},{x: new Date(1776807600000), y: 9995.17},{x: new Date(1776807900000), y: 9995.17},{x: new Date(1776808200000), y: 9995.17},{x: new Date(1776808500000), y: 9995.17},{x: new Date(1776808800000), y: 9995.17},{x: new Date(1776809100000), y: 9995.17},{x: new Date(1776809400000), y: 9995.17},{x: new Date(1776809700000), y: 9995.17},{x: new Date(1776810000000), y: 9995.17},{x: new Date(1776810300000), y: 9995.17},{x: new Date(1776810600000), y: 9995.17},{x: new Date(1776810900000), y: 9995.17},{x: new Date(1776811200000), y: 9995.17},{x: new Date(1776811500000), y: 9995.17},{x: new Date(1776811800000), y: 9995.17},{x: new Date(1776812100000), y: 9995.17},{x: new Date(1776812400000), y: 9995.17},{x: new Date(1776812700000), y: 9995.17},{x: new Date(1776813000000), y: 9995.17},{x: new Date(1776813300000), y: 9995.17},{x: new Date(1776813600000), y: 9995.17},{x: new Date(1776813900000), y: 9995.17},{x: new Date(1776814200000), y: 9995.17},{x: new Date(1776814500000), y: 9995.17},{x: new Date(1776814800000), y: 9995.17},{x: new Date(1776815100000), y: 9995.17},{x: new Date(1776815400000), y: 9995.17},{x: new Date(1776815700000), y: 9995.17},{x: new Date(1776816000000), y: 9995.17},{x: new Date(1776816300000), y: 9995.17},{x: new Date(1776816600000), y: 9995.17},{x: new Date(1776816900000), y: 9995.17},{x: new Date(1776817200000), y: 9995.17},{x: new Date(1776817500000), y: 9995.17},{x: new Date(1776817800000), y: 9995.17},{x: new Date(1776818100000), y: 9995.17},{x: new Date(1776818400000), y: 9995.17},{x: new Date(1776818700000), y: 9995.17},{x: new Date(1776819000000), y: 9995.17},{x: new Date(1776819300000), y: 9995.17},{x: new Date(1776819600000), y: 9995.17},{x: new Date(1776819900000), y: 9995.17},{x: new Date(1776820200000), y: 9995.17},{x: new Date(1776820500000), y: 9995.17},{x: new Date(1776820800000), y: 9994.4},{x: new Date(1776821100000), y: 9994.61},{x: new Date(1776821400000), y: 9994.46},{x: new Date(1776821700000), y: 9993.56},{x: new Date(1776822000000), y: 9993.71},{x: new Date(1776822300000), y: 9993.35},{x: new Date(1776822600000), y: 9993.76},{x: new Date(1776822900000), y: 9993.21},{x: new Date(1776823200000), y: 9993.26},{x: new Date(1776823500000), y: 9992.81},{x: new Date(1776823800000), y: 9988.08},{x: new Date(1776824100000), y: 9988.08},{x: new Date(1776824400000), y: 9988.08},{x: new Date(1776824700000), y: 9988.08},{x: new Date(1776825000000), y: 9988.08},{x: new Date(1776825300000), y: 9988.08},{x: new Date(1776825600000), y: 9988.08},{x: new Date(1776825900000), y: 9988.08},{x: new Date(1776826200000), y: 9988.08},{x: new Date(1776826500000), y: 9988.08},{x: new Date(1776826800000), y: 9988.08},{x: new Date(1776827100000), y: 9988.08},{x: new Date(1776827400000), y: 9988.08},{x: new Date(1776827700000), y: 9988.08},{x: new Date(1776828000000), y: 9988.08},{x: new Date(1776828300000), y: 9988.08},{x: new Date(1776828600000), y: 9988.08},{x: new Date(1776828900000), y: 9988.08},{x: new Date(1776829200000), y: 9988.08},{x: new Date(1776829500000), y: 9988.08},{x: new Date(1776829800000), y: 9988.08},{x: new Date(1776830100000), y: 9988.08},{x: new Date(1776830400000), y: 9988.08},{x: new Date(1776830700000), y: 9988.08},{x: new Date(1776831000000), y: 9988.08},{x: new Date(1776831300000), y: 9988.08},{x: new Date(1776831600000), y: 9988.08},{x: new Date(1776831900000), y: 9988.08},{x: new Date(1776832200000), y: 9988.08},{x: new Date(1776832500000), y: 9988.08},{x: new Date(1776832800000), y: 9988.08},{x: new Date(1776833100000), y: 9988.08},{x: new Date(1776833400000), y: 9988.08},{x: new Date(1776833700000), y: 9988.08},{x: new Date(1776834000000), y: 9988.08},{x: new Date(1776834300000), y: 9988.08},{x: new Date(1776834600000), y: 9988.08},{x: new Date(1776834900000), y: 9988.08},{x: new Date(1776835200000), y: 9988.08},{x: new Date(1776835500000), y: 9988.08},{x: new Date(1776835800000), y: 9988.08},{x: new Date(1776836100000), y: 9988.08},{x: new Date(1776836400000), y: 9988.08},{x: new Date(1776836700000), y: 9988.08},{x: new Date(1776837000000), y: 9988.08},{x: new Date(1776837300000), y: 9988.08},{x: new Date(1776837600000), y: 9988.08},{x: new Date(1776837900000), y: 9988.08},{x: new Date(1776838200000), y: 9988.08},{x: new Date(1776838500000), y: 9988.08},{x: new Date(1776838800000), y: 9988.08},{x: new Date(1776839100000), y: 9988.08},{x: new Date(1776839400000), y: 9988.08},{x: new Date(1776839700000), y: 9988.08},{x: new Date(1776840000000), y: 9988.08},{x: new Date(1776840300000), y: 9988.08},{x: new Date(1776840600000), y: 9988.08},{x: new Date(1776840900000), y: 9988.08},{x: new Date(1776841200000), y: 9988.08},{x: new Date(1776841500000), y: 9988.08},{x: new Date(1776841800000), y: 9988.08},{x: new Date(1776842100000), y: 9988.08},{x: new Date(1776842400000), y: 9987.31},{x: new Date(1776842700000), y: 9987.21},{x: new Date(1776843000000), y: 9987.18},{x: new Date(1776843300000), y: 9987.11},{x: new Date(1776843600000), y: 9985.52},{x: new Date(1776843900000), y: 9986.1},{x: new Date(1776844200000), y: 9986.15},{x: new Date(1776844500000), y: 9986.03},{x: new Date(1776844800000), y: 9985.61},{x: new Date(1776845100000), y: 9985.04},{x: new Date(1776845400000), y: 9984.69},{x: new Date(1776845700000), y: 9984.68},{x: new Date(1776846000000), y: 9985.8},{x: new Date(1776846300000), y: 9986.44},{x: new Date(1776846600000), y: 9986.41},{x: new Date(1776846900000), y: 9986.37},{x: new Date(1776847200000), y: 9986.68},{x: new Date(1776847500000), y: 9986.49},{x: new Date(1776847800000), y: 9985.54},{x: new Date(1776848100000), y: 9985.98},{x: new Date(1776848400000), y: 9986.26},{x: new Date(1776848700000), y: 9985.51},{x: new Date(1776849000000), y: 9985.65},{x: new Date(1776849300000), y: 9986.25},{x: new Date(1776849600000), y: 9985.73},{x: new Date(1776849900000), y: 9983.74},{x: new Date(1776850200000), y: 9983.74},{x: new Date(1776850500000), y: 9983.74},{x: new Date(1776850800000), y: 9983.74},{x: new Date(1776851100000), y: 9983.74},{x: new Date(1776851400000), y: 9983.74},{x: new Date(1776851700000), y: 9983.74}],
+    borderColor: '#e91e63',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '均线交叉',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 10000},{x: new Date(1776792900000), y: 9999.24},{x: new Date(1776793200000), y: 10000.99},{x: new Date(1776793500000), y: 10000.45},{x: new Date(1776793800000), y: 9999.48},{x: new Date(1776794100000), y: 9998.84},{x: new Date(1776794400000), y: 9999.0},{x: new Date(1776794700000), y: 9999.17},{x: new Date(1776795000000), y: 9999.06},{x: new Date(1776795300000), y: 9997.93},{x: new Date(1776795600000), y: 9997.8},{x: new Date(1776795900000), y: 9998.01},{x: new Date(1776796200000), y: 9999.03},{x: new Date(1776796500000), y: 9998.65},{x: new Date(1776796800000), y: 9998.49},{x: new Date(1776797100000), y: 9995.73},{x: new Date(1776797400000), y: 9994.62},{x: new Date(1776797700000), y: 9992.8},{x: new Date(1776798000000), y: 9992.05},{x: new Date(1776798300000), y: 9991.59},{x: new Date(1776798600000), y: 9990.73},{x: new Date(1776798900000), y: 9990.75},{x: new Date(1776799200000), y: 9992.97},{x: new Date(1776799500000), y: 9992.43},{x: new Date(1776799800000), y: 9990.35},{x: new Date(1776800100000), y: 9985.67},{x: new Date(1776800400000), y: 9989.53},{x: new Date(1776800700000), y: 9988.11},{x: new Date(1776801000000), y: 9987.92},{x: new Date(1776801300000), y: 9987.92},{x: new Date(1776801600000), y: 9987.92},{x: new Date(1776801900000), y: 9987.17},{x: new Date(1776802200000), y: 9989.49},{x: new Date(1776802500000), y: 9988.74},{x: new Date(1776802800000), y: 9989.93},{x: new Date(1776803100000), y: 9990.13},{x: new Date(1776803400000), y: 9990.77},{x: new Date(1776803700000), y: 9990.77},{x: new Date(1776804000000), y: 9990.77},{x: new Date(1776804300000), y: 9990.77},{x: new Date(1776804600000), y: 9990.77},{x: new Date(1776804900000), y: 9990.77},{x: new Date(1776805200000), y: 9990.01},{x: new Date(1776805500000), y: 9990.88},{x: new Date(1776805800000), y: 9991.37},{x: new Date(1776806100000), y: 9991.28},{x: new Date(1776806400000), y: 9991.04},{x: new Date(1776806700000), y: 9991.33},{x: new Date(1776807000000), y: 9991.21},{x: new Date(1776807300000), y: 9991.07},{x: new Date(1776807600000), y: 9992.54},{x: new Date(1776807900000), y: 9991.99},{x: new Date(1776808200000), y: 9991.7},{x: new Date(1776808500000), y: 9991.67},{x: new Date(1776808800000), y: 9991.76},{x: new Date(1776809100000), y: 9992.21},{x: new Date(1776809400000), y: 9991.65},{x: new Date(1776809700000), y: 9994.03},{x: new Date(1776810000000), y: 9993.58},{x: new Date(1776810300000), y: 9992.68},{x: new Date(1776810600000), y: 9992.68},{x: new Date(1776810900000), y: 9992.68},{x: new Date(1776811200000), y: 9991.92},{x: new Date(1776811500000), y: 9991.57},{x: new Date(1776811800000), y: 9992.45},{x: new Date(1776812100000), y: 9993.11},{x: new Date(1776812400000), y: 9994.27},{x: new Date(1776812700000), y: 9995.15},{x: new Date(1776813000000), y: 9994.44},{x: new Date(1776813300000), y: 9995.09},{x: new Date(1776813600000), y: 9994.17},{x: new Date(1776813900000), y: 9994.17},{x: new Date(1776814200000), y: 9994.17},{x: new Date(1776814500000), y: 9994.17},{x: new Date(1776814800000), y: 9994.17},{x: new Date(1776815100000), y: 9994.17},{x: new Date(1776815400000), y: 9994.17},{x: new Date(1776815700000), y: 9994.17},{x: new Date(1776816000000), y: 9994.17},{x: new Date(1776816300000), y: 9994.17},{x: new Date(1776816600000), y: 9994.17},{x: new Date(1776816900000), y: 9994.17},{x: new Date(1776817200000), y: 9993.41},{x: new Date(1776817500000), y: 9993.5},{x: new Date(1776817800000), y: 9993.67},{x: new Date(1776818100000), y: 9992.83},{x: new Date(1776818400000), y: 9992.9},{x: new Date(1776818700000), y: 9993.39},{x: new Date(1776819000000), y: 9993.46},{x: new Date(1776819300000), y: 9992.5},{x: new Date(1776819600000), y: 9992.7},{x: new Date(1776819900000), y: 9992.79},{x: new Date(1776820200000), y: 9992.27},{x: new Date(1776820500000), y: 9994.36},{x: new Date(1776820800000), y: 9994.38},{x: new Date(1776821100000), y: 9994.58},{x: new Date(1776821400000), y: 9994.44},{x: new Date(1776821700000), y: 9993.54},{x: new Date(1776822000000), y: 9993.68},{x: new Date(1776822300000), y: 9993.32},{x: new Date(1776822600000), y: 9993.73},{x: new Date(1776822900000), y: 9993.19},{x: new Date(1776823200000), y: 9993.24},{x: new Date(1776823500000), y: 9992.78},{x: new Date(1776823800000), y: 9988.06},{x: new Date(1776824100000), y: 9988.06},{x: new Date(1776824400000), y: 9988.06},{x: new Date(1776824700000), y: 9988.06},{x: new Date(1776825000000), y: 9988.06},{x: new Date(1776825300000), y: 9988.06},{x: new Date(1776825600000), y: 9988.06},{x: new Date(1776825900000), y: 9988.06},{x: new Date(1776826200000), y: 9988.06},{x: new Date(1776826500000), y: 9988.06},{x: new Date(1776826800000), y: 9988.06},{x: new Date(1776827100000), y: 9988.06},{x: new Date(1776827400000), y: 9988.06},{x: new Date(1776827700000), y: 9988.06},{x: new Date(1776828000000), y: 9987.28},{x: new Date(1776828300000), y: 9986.84},{x: new Date(1776828600000), y: 9987.92},{x: new Date(1776828900000), y: 9987.85},{x: new Date(1776829200000), y: 9986.44},{x: new Date(1776829500000), y: 9986.54},{x: new Date(1776829800000), y: 9986.62},{x: new Date(1776830100000), y: 9986.88},{x: new Date(1776830400000), y: 9986.2},{x: new Date(1776830700000), y: 9986.45},{x: new Date(1776831000000), y: 9987.29},{x: new Date(1776831300000), y: 9987.63},{x: new Date(1776831600000), y: 9987.92},{x: new Date(1776831900000), y: 9987.02},{x: new Date(1776832200000), y: 9987.16},{x: new Date(1776832500000), y: 9985.62},{x: new Date(1776832800000), y: 9986.51},{x: new Date(1776833100000), y: 9986.9},{x: new Date(1776833400000), y: 9987.4},{x: new Date(1776833700000), y: 9986.88},{x: new Date(1776834000000), y: 9987.29},{x: new Date(1776834300000), y: 9986.62},{x: new Date(1776834600000), y: 9986.73},{x: new Date(1776834900000), y: 9982.03},{x: new Date(1776835200000), y: 9982.03},{x: new Date(1776835500000), y: 9982.03},{x: new Date(1776835800000), y: 9982.03},{x: new Date(1776836100000), y: 9982.03},{x: new Date(1776836400000), y: 9982.03},{x: new Date(1776836700000), y: 9981.25},{x: new Date(1776837000000), y: 9981.17},{x: new Date(1776837300000), y: 9982.25},{x: new Date(1776837600000), y: 9982.56},{x: new Date(1776837900000), y: 9982.71},{x: new Date(1776838200000), y: 9982.67},{x: new Date(1776838500000), y: 9982.25},{x: new Date(1776838800000), y: 9982.64},{x: new Date(1776839100000), y: 9982.45},{x: new Date(1776839400000), y: 9982.83},{x: new Date(1776839700000), y: 9982.74},{x: new Date(1776840000000), y: 9982.48},{x: new Date(1776840300000), y: 9982.52},{x: new Date(1776840600000), y: 9982.01},{x: new Date(1776840900000), y: 9982.09},{x: new Date(1776841200000), y: 9982.13},{x: new Date(1776841500000), y: 9981.75},{x: new Date(1776841800000), y: 9981.07},{x: new Date(1776842100000), y: 9982.46},{x: new Date(1776842400000), y: 9983.31},{x: new Date(1776842700000), y: 9983.21},{x: new Date(1776843000000), y: 9983.18},{x: new Date(1776843300000), y: 9983.11},{x: new Date(1776843600000), y: 9981.52},{x: new Date(1776843900000), y: 9982.11},{x: new Date(1776844200000), y: 9982.15},{x: new Date(1776844500000), y: 9982.03},{x: new Date(1776844800000), y: 9981.61},{x: new Date(1776845100000), y: 9981.04},{x: new Date(1776845400000), y: 9980.69},{x: new Date(1776845700000), y: 9980.69},{x: new Date(1776846000000), y: 9981.81},{x: new Date(1776846300000), y: 9982.44},{x: new Date(1776846600000), y: 9982.41},{x: new Date(1776846900000), y: 9982.38},{x: new Date(1776847200000), y: 9982.69},{x: new Date(1776847500000), y: 9982.49},{x: new Date(1776847800000), y: 9981.55},{x: new Date(1776848100000), y: 9981.98},{x: new Date(1776848400000), y: 9982.26},{x: new Date(1776848700000), y: 9981.51},{x: new Date(1776849000000), y: 9981.65},{x: new Date(1776849300000), y: 9982.25},{x: new Date(1776849600000), y: 9981.73},{x: new Date(1776849900000), y: 9980.53},{x: new Date(1776850200000), y: 9981.14},{x: new Date(1776850500000), y: 9981.0},{x: new Date(1776850800000), y: 9980.68},{x: new Date(1776851100000), y: 9981.05},{x: new Date(1776851400000), y: 9982.08},{x: new Date(1776851700000), y: 9982.0}],
+    borderColor: '#00bcd4',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'CCI 趋势反转',
+    data: [{x: new Date(1776792000000), y: 10000},{x: new Date(1776792300000), y: 10000},{x: new Date(1776792600000), y: 9999.25},{x: new Date(1776792900000), y: 10001.83},{x: new Date(1776793200000), y: 10003.58},{x: new Date(1776793500000), y: 10003.04},{x: new Date(1776793800000), y: 10002.06},{x: new Date(1776794100000), y: 10001.42},{x: new Date(1776794400000), y: 10001.59},{x: new Date(1776794700000), y: 10001.75},{x: new Date(1776795000000), y: 10001.65},{x: new Date(1776795300000), y: 10000.52},{x: new Date(1776795600000), y: 10000.39},{x: new Date(1776795900000), y: 10000.6},{x: new Date(1776796200000), y: 10001.62},{x: new Date(1776796500000), y: 10001.23},{x: new Date(1776796800000), y: 10001.08},{x: new Date(1776797100000), y: 9999.82},{x: new Date(1776797400000), y: 10000.94},{x: new Date(1776797700000), y: 10002.0},{x: new Date(1776798000000), y: 10003.26},{x: new Date(1776798300000), y: 10002.8},{x: new Date(1776798600000), y: 10001.95},{x: new Date(1776798900000), y: 10001.97},{x: new Date(1776799200000), y: 10004.18},{x: new Date(1776799500000), y: 10003.65},{x: new Date(1776799800000), y: 10001.57},{x: new Date(1776800100000), y: 9998.39},{x: new Date(1776800400000), y: 9993.78},{x: new Date(1776800700000), y: 9993.78},{x: new Date(1776801000000), y: 9993.78},{x: new Date(1776801300000), y: 9993.03},{x: new Date(1776801600000), y: 9993.79},{x: new Date(1776801900000), y: 9996.3},{x: new Date(1776802200000), y: 9998.63},{x: new Date(1776802500000), y: 9997.88},{x: new Date(1776802800000), y: 9999.06},{x: new Date(1776803100000), y: 9999.27},{x: new Date(1776803400000), y: 10000.67},{x: new Date(1776803700000), y: 10000.31},{x: new Date(1776804000000), y: 9999.44},{x: new Date(1776804300000), y: 10000.2},{x: new Date(1776804600000), y: 9999.93},{x: new Date(1776804900000), y: 9999.72},{x: new Date(1776805200000), y: 9999.85},{x: new Date(1776805500000), y: 9998.99},{x: new Date(1776805800000), y: 9998.5},{x: new Date(1776806100000), y: 9998.58},{x: new Date(1776806400000), y: 9998.82},{x: new Date(1776806700000), y: 9998.53},{x: new Date(1776807000000), y: 9998.65},{x: new Date(1776807300000), y: 9998.79},{x: new Date(1776807600000), y: 9997.33},{x: new Date(1776807900000), y: 9997.87},{x: new Date(1776808200000), y: 9998.17},{x: new Date(1776808500000), y: 9998.19},{x: new Date(1776808800000), y: 9998.1},{x: new Date(1776809100000), y: 9997.66},{x: new Date(1776809400000), y: 9998.21},{x: new Date(1776809700000), y: 9995.84},{x: new Date(1776810000000), y: 9996.28},{x: new Date(1776810300000), y: 9996.43},{x: new Date(1776810600000), y: 9996.49},{x: new Date(1776810900000), y: 9996.43},{x: new Date(1776811200000), y: 9997.97},{x: new Date(1776811500000), y: 9997.61},{x: new Date(1776811800000), y: 9998.5},{x: new Date(1776812100000), y: 9999.16},{x: new Date(1776812400000), y: 10000.32},{x: new Date(1776812700000), y: 10000.43},{x: new Date(1776813000000), y: 10000.43},{x: new Date(1776813300000), y: 10000.43},{x: new Date(1776813600000), y: 9999.68},{x: new Date(1776813900000), y: 10000.0},{x: new Date(1776814200000), y: 9999.45},{x: new Date(1776814500000), y: 9998.15},{x: new Date(1776814800000), y: 9997.07},{x: new Date(1776815100000), y: 9993.51},{x: new Date(1776815400000), y: 9993.51},{x: new Date(1776815700000), y: 9993.51},{x: new Date(1776816000000), y: 9993.51},{x: new Date(1776816300000), y: 9993.51},{x: new Date(1776816600000), y: 9992.74},{x: new Date(1776816900000), y: 9993.33},{x: new Date(1776817200000), y: 9994.12},{x: new Date(1776817500000), y: 9994.21},{x: new Date(1776817800000), y: 9994.38},{x: new Date(1776818100000), y: 9993.54},{x: new Date(1776818400000), y: 9993.62},{x: new Date(1776818700000), y: 9994.11},{x: new Date(1776819000000), y: 9994.17},{x: new Date(1776819300000), y: 9993.22},{x: new Date(1776819600000), y: 9993.42},{x: new Date(1776819900000), y: 9993.5},{x: new Date(1776820200000), y: 9992.98},{x: new Date(1776820500000), y: 9995.08},{x: new Date(1776820800000), y: 9995.1},{x: new Date(1776821100000), y: 9995.3},{x: new Date(1776821400000), y: 9995.16},{x: new Date(1776821700000), y: 9994.25},{x: new Date(1776822000000), y: 9994.4},{x: new Date(1776822300000), y: 9994.04},{x: new Date(1776822600000), y: 9994.45},{x: new Date(1776822900000), y: 9993.9},{x: new Date(1776823200000), y: 9993.95},{x: new Date(1776823500000), y: 9993.5},{x: new Date(1776823800000), y: 9989.54},{x: new Date(1776824100000), y: 9985.97},{x: new Date(1776824400000), y: 9985.97},{x: new Date(1776824700000), y: 9985.97},{x: new Date(1776825000000), y: 9985.97},{x: new Date(1776825300000), y: 9985.2},{x: new Date(1776825600000), y: 9983.72},{x: new Date(1776825900000), y: 9984.23},{x: new Date(1776826200000), y: 9980.71},{x: new Date(1776826500000), y: 9980.71},{x: new Date(1776826800000), y: 9980.71},{x: new Date(1776827100000), y: 9980.71},{x: new Date(1776827400000), y: 9980.71},{x: new Date(1776827700000), y: 9979.94},{x: new Date(1776828000000), y: 9979.31},{x: new Date(1776828300000), y: 9978.87},{x: new Date(1776828600000), y: 9979.95},{x: new Date(1776828900000), y: 9979.88},{x: new Date(1776829200000), y: 9978.47},{x: new Date(1776829500000), y: 9978.57},{x: new Date(1776829800000), y: 9978.65},{x: new Date(1776830100000), y: 9978.91},{x: new Date(1776830400000), y: 9978.23},{x: new Date(1776830700000), y: 9978.48},{x: new Date(1776831000000), y: 9979.32},{x: new Date(1776831300000), y: 9979.66},{x: new Date(1776831600000), y: 9979.95},{x: new Date(1776831900000), y: 9979.05},{x: new Date(1776832200000), y: 9979.19},{x: new Date(1776832500000), y: 9977.65},{x: new Date(1776832800000), y: 9978.53},{x: new Date(1776833100000), y: 9978.93},{x: new Date(1776833400000), y: 9979.43},{x: new Date(1776833700000), y: 9978.91},{x: new Date(1776834000000), y: 9979.32},{x: new Date(1776834300000), y: 9978.65},{x: new Date(1776834600000), y: 9978.76},{x: new Date(1776834900000), y: 9974.06},{x: new Date(1776835200000), y: 9974.06},{x: new Date(1776835500000), y: 9974.06},{x: new Date(1776835800000), y: 9974.06},{x: new Date(1776836100000), y: 9973.28},{x: new Date(1776836400000), y: 9972.29},{x: new Date(1776836700000), y: 9972.77},{x: new Date(1776837000000), y: 9972.69},{x: new Date(1776837300000), y: 9973.77},{x: new Date(1776837600000), y: 9974.08},{x: new Date(1776837900000), y: 9974.23},{x: new Date(1776838200000), y: 9974.18},{x: new Date(1776838500000), y: 9973.76},{x: new Date(1776838800000), y: 9974.16},{x: new Date(1776839100000), y: 9973.96},{x: new Date(1776839400000), y: 9974.34},{x: new Date(1776839700000), y: 9974.25},{x: new Date(1776840000000), y: 9973.99},{x: new Date(1776840300000), y: 9974.03},{x: new Date(1776840600000), y: 9973.52},{x: new Date(1776840900000), y: 9973.6},{x: new Date(1776841200000), y: 9973.65},{x: new Date(1776841500000), y: 9973.26},{x: new Date(1776841800000), y: 9972.58},{x: new Date(1776842100000), y: 9973.97},{x: new Date(1776842400000), y: 9974.82},{x: new Date(1776842700000), y: 9974.72},{x: new Date(1776843000000), y: 9974.7},{x: new Date(1776843300000), y: 9974.62},{x: new Date(1776843600000), y: 9973.03},{x: new Date(1776843900000), y: 9973.62},{x: new Date(1776844200000), y: 9973.66},{x: new Date(1776844500000), y: 9973.54},{x: new Date(1776844800000), y: 9973.12},{x: new Date(1776845100000), y: 9972.55},{x: new Date(1776845400000), y: 9972.21},{x: new Date(1776845700000), y: 9972.2},{x: new Date(1776846000000), y: 9973.32},{x: new Date(1776846300000), y: 9973.95},{x: new Date(1776846600000), y: 9973.93},{x: new Date(1776846900000), y: 9973.89},{x: new Date(1776847200000), y: 9974.2},{x: new Date(1776847500000), y: 9974.01},{x: new Date(1776847800000), y: 9973.06},{x: new Date(1776848100000), y: 9973.49},{x: new Date(1776848400000), y: 9973.78},{x: new Date(1776848700000), y: 9973.02},{x: new Date(1776849000000), y: 9973.16},{x: new Date(1776849300000), y: 9973.76},{x: new Date(1776849600000), y: 9973.25},{x: new Date(1776849900000), y: 9972.04},{x: new Date(1776850200000), y: 9972.65},{x: new Date(1776850500000), y: 9972.52},{x: new Date(1776850800000), y: 9972.19},{x: new Date(1776851100000), y: 9972.56},{x: new Date(1776851400000), y: 9973.59},{x: new Date(1776851700000), y: 9973.51}],
+    borderColor: '#795548',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  ]
+};
+new Chart(document.getElementById('equityChart'), {
+  type: 'line',
+  data: equityData,
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { type: 'time', time: { tooltipFormat: 'MM-dd HH:mm' }, title: { display: true, text: '日期', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+      y: { title: { display: true, text: '权益 (USDT)', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+    },
+    plugins: {
+      legend: { position: 'top', labels: { color: '#c9d1d9' } },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2) } }
+    }
+  }
+});
+</script>
+</body>
+</html>

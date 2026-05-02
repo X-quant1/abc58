@@ -1,0 +1,614 @@
+[
+  {
+    "timeframe": "5m",
+    "klines_count": 599,
+    "best_strategy": {
+      "id": 3,
+      "name": "RSI超卖超买-1H",
+      "type": "rsi",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 10.0,
+        "trade_count": 20,
+        "max_drawdown": 0.0,
+        "tp": 28,
+        "sl": 28,
+        "trailing_act": 20,
+        "trailing_cb": 30
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 3,
+        "name": "RSI超卖超买-1H",
+        "type": "rsi",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 10.0,
+          "trade_count": 20,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 4,
+        "name": "KDJ金叉死叉-1H",
+        "type": "kdj",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 4.55,
+          "trade_count": 22,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 5,
+        "name": "CCI趋势反转-1H",
+        "type": "cci",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 7.69,
+          "trade_count": 26,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 6,
+        "name": "RSI+MACD共振-1H",
+        "type": "rsi_macd",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 11.11,
+          "trade_count": 9,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 7,
+        "name": "SuperTrend趋势-1H",
+        "type": "supertrend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 40.0,
+          "trade_count": 5,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  },
+  {
+    "timeframe": "15m",
+    "klines_count": 599,
+    "best_strategy": {
+      "id": 3,
+      "name": "RSI超卖超买-1H",
+      "type": "rsi",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 28.95,
+        "trade_count": 38,
+        "max_drawdown": 0.0,
+        "tp": 28,
+        "sl": 28,
+        "trailing_act": 20,
+        "trailing_cb": 80
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 3,
+        "name": "RSI超卖超买-1H",
+        "type": "rsi",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 28.95,
+          "trade_count": 38,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 80
+        },
+        "test_count": 375
+      },
+      {
+        "id": 4,
+        "name": "KDJ金叉死叉-1H",
+        "type": "kdj",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 20.0,
+          "trade_count": 40,
+          "max_drawdown": 0.0,
+          "tp": 30,
+          "sl": 30,
+          "trailing_act": 20,
+          "trailing_cb": 80
+        },
+        "test_count": 375
+      },
+      {
+        "id": 5,
+        "name": "CCI趋势反转-1H",
+        "type": "cci",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 21.43,
+          "trade_count": 42,
+          "max_drawdown": 0.0,
+          "tp": 50,
+          "sl": 50,
+          "trailing_act": 20,
+          "trailing_cb": 60
+        },
+        "test_count": 375
+      },
+      {
+        "id": 6,
+        "name": "RSI+MACD共振-1H",
+        "type": "rsi_macd",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 20.0,
+          "trade_count": 5,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 7,
+        "name": "SuperTrend趋势-1H",
+        "type": "supertrend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 9,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  },
+  {
+    "timeframe": "30m",
+    "klines_count": 599,
+    "best_strategy": {
+      "id": 6,
+      "name": "RSI+MACD共振-1H",
+      "type": "rsi_macd",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 20.0,
+        "trade_count": 5,
+        "max_drawdown": 0.0,
+        "tp": 28,
+        "sl": 28,
+        "trailing_act": 20,
+        "trailing_cb": 30
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 6,
+        "name": "RSI+MACD共振-1H",
+        "type": "rsi_macd",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 20.0,
+          "trade_count": 5,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 7,
+        "name": "SuperTrend趋势-1H",
+        "type": "supertrend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 10.0,
+          "trade_count": 10,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 8,
+        "name": "EMA量能确认-1H",
+        "type": "ema_volume",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 14.29,
+          "trade_count": 7,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 9,
+        "name": "双时间框架EMA-1H",
+        "type": "dual_ema",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 8.33,
+          "trade_count": 12,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 10,
+        "name": "均线多空排列-1H",
+        "type": "ma_ribbon",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 24.39,
+          "trade_count": 41,
+          "max_drawdown": 0.01,
+          "tp": 30,
+          "sl": 30,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  },
+  {
+    "timeframe": "1h",
+    "klines_count": 599,
+    "best_strategy": {
+      "id": 6,
+      "name": "RSI+MACD共振-1H",
+      "type": "rsi_macd",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 33.33,
+        "trade_count": 3,
+        "max_drawdown": 0.0,
+        "tp": 28,
+        "sl": 28,
+        "trailing_act": 20,
+        "trailing_cb": 30
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 6,
+        "name": "RSI+MACD共振-1H",
+        "type": "rsi_macd",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 33.33,
+          "trade_count": 3,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 7,
+        "name": "SuperTrend趋势-1H",
+        "type": "supertrend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 8,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 8,
+        "name": "EMA量能确认-1H",
+        "type": "ema_volume",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 9.09,
+          "trade_count": 11,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 9,
+        "name": "双时间框架EMA-1H",
+        "type": "dual_ema",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 16.67,
+          "trade_count": 12,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 10,
+        "name": "均线多空排列-1H",
+        "type": "ma_ribbon",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 25.0,
+          "trade_count": 40,
+          "max_drawdown": 0.01,
+          "tp": 75,
+          "sl": 50,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  },
+  {
+    "timeframe": "4h",
+    "klines_count": 500,
+    "best_strategy": {
+      "id": 3,
+      "name": "RSI超卖超买-1H",
+      "type": "rsi",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 10.2,
+        "trade_count": 49,
+        "max_drawdown": 0.01,
+        "tp": 50,
+        "sl": 50,
+        "trailing_act": 20,
+        "trailing_cb": 50
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 3,
+        "name": "RSI超卖超买-1H",
+        "type": "rsi",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 10.2,
+          "trade_count": 49,
+          "max_drawdown": 0.01,
+          "tp": 50,
+          "sl": 50,
+          "trailing_act": 20,
+          "trailing_cb": 50
+        },
+        "test_count": 375
+      },
+      {
+        "id": 4,
+        "name": "KDJ金叉死叉-1H",
+        "type": "kdj",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 18.42,
+          "trade_count": 38,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 6,
+        "name": "RSI+MACD共振-1H",
+        "type": "rsi_macd",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 3,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 7,
+        "name": "SuperTrend趋势-1H",
+        "type": "supertrend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 6,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 8,
+        "name": "EMA量能确认-1H",
+        "type": "ema_volume",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 22.22,
+          "trade_count": 9,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  },
+  {
+    "timeframe": "1d",
+    "klines_count": 200,
+    "best_strategy": {
+      "id": 2,
+      "name": "12H稳定测试-趋势突破",
+      "type": "trend_break",
+      "best_params": {
+        "total_return": 0.61,
+        "win_rate": 55.56,
+        "trade_count": 9,
+        "max_drawdown": 0.54,
+        "tp": 28,
+        "sl": 28,
+        "trailing_act": 20,
+        "trailing_cb": 30
+      },
+      "test_count": 375
+    },
+    "all_strategies": [
+      {
+        "id": 2,
+        "name": "12H稳定测试-趋势突破",
+        "type": "trend_break",
+        "best_params": {
+          "total_return": 0.61,
+          "win_rate": 55.56,
+          "trade_count": 9,
+          "max_drawdown": 0.54,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 1,
+        "name": "BTC双均线策略",
+        "type": "ma_cross",
+        "best_params": {
+          "total_return": 0.14,
+          "win_rate": 75.0,
+          "trade_count": 4,
+          "max_drawdown": 0.2,
+          "tp": 100,
+          "sl": 50,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 5,
+        "name": "CCI趋势反转-1H",
+        "type": "cci",
+        "best_params": {
+          "total_return": 0.0,
+          "win_rate": 52.94,
+          "trade_count": 17,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 9,
+        "name": "双时间框架EMA-1H",
+        "type": "dual_ema",
+        "best_params": {
+          "total_return": 0.0,
+          "win_rate": 33.33,
+          "trade_count": 3,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      },
+      {
+        "id": 12,
+        "name": "多时间框架趋势-1H",
+        "type": "multi_tf_trend",
+        "best_params": {
+          "total_return": -0.0,
+          "win_rate": 50.0,
+          "trade_count": 8,
+          "max_drawdown": 0.0,
+          "tp": 28,
+          "sl": 28,
+          "trailing_act": 20,
+          "trailing_cb": 30
+        },
+        "test_count": 375
+      }
+    ]
+  }
+]

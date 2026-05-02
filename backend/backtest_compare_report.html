@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>BTC 多周期回测对比报告</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { text-align: center; color: #f7931a; margin-bottom: 5px; font-size: 26px; }
+  .subtitle { text-align: center; color: #8b949e; margin-bottom: 8px; font-size: 13px; }
+  .config { text-align: center; color: #58a6ff; margin-bottom: 25px; font-size: 12px; font-family: monospace; }
+  .section { background: #161b22; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #30363d; }
+  .section h2 { color: #f7931a; margin-bottom: 12px; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #21262d; color: #f7931a; padding: 8px 5px; text-align: center; font-weight: 600; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 1; }
+  td { padding: 6px 5px; text-align: center; border-bottom: 1px solid #21262d; }
+  tr:hover { background: #1c2128; }
+  .positive { color: #ef5350; font-weight: 600; }
+  .negative { color: #26a69a; font-weight: 600; }
+  .best { background: #2d2000 !important; }
+  .tf-header { background: #21262d; color: #58a6ff; font-weight: 700; font-size: 13px; }
+  .note { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #8b949e; }
+  .note strong { color: #f7931a; }
+  .chart-container { background: #161b22; border-radius: 12px; padding: 16px; margin-bottom: 25px; border: 1px solid #30363d; }
+  canvas { max-height: 400px; }
+</style>
+</head>
+<body>
+<h1>BTC 多周期回测对比报告</h1>
+<p class="subtitle">BTC-USDT-SWAP | 300根K线/周期 | 杠杆: 100x | 每策略最优止盈止损</p>
+<p class="config">对比 15m / 30m / 1h / 2h / 4h 五个时间框架的表现</p>
+
+<div class="note">
+  <strong>说明：</strong> 同一套短线参数（MA 3/7, RSI 6, MACD 6/13/5等），每个策略使用参数扫描得出的最优止盈止损组合。<br>
+  高亮行 = 该策略在所有周期中收益率最高的周期。
+</div>
+
+<div class="section">
+<h2>收益率 (%) 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best positive">0.2</td>
+    <td class=" positive">0.2</td>
+    <td class=" positive">0.1</td>
+    <td class=" positive">0.1</td>
+    <td class=" negative">-0.8</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class=" negative">-0.5</td>
+    <td class=" negative">-0.2</td>
+    <td class="best negative">-0.1</td>
+    <td class=" negative">-0.1</td>
+    <td class=" negative">-0.9</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best positive">0.2</td>
+    <td class=" negative">-0.2</td>
+    <td class=" negative">-0.0</td>
+    <td class=" negative">-0.0</td>
+    <td class=" negative">-0.2</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" negative">-0.4</td>
+    <td class=" negative">-0.1</td>
+    <td class="best positive">0.2</td>
+    <td class=" positive">0.2</td>
+    <td class=" positive">0.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class=" negative">-0.3</td>
+    <td class=" positive">0.1</td>
+    <td class=" positive">0.2</td>
+    <td class=" positive">0.2</td>
+    <td class="best positive">0.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" negative">-1.0</td>
+    <td class="best positive">0.0</td>
+    <td class=" negative">-0.1</td>
+    <td class=" negative">-0.1</td>
+    <td class=" negative">-0.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class=" positive">0.3</td>
+    <td class=" negative">-0.2</td>
+    <td class="best positive">0.8</td>
+    <td class=" positive">0.8</td>
+    <td class=" positive">0.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" negative">-0.7</td>
+    <td class="best positive">0.2</td>
+    <td class=" negative">-0.3</td>
+    <td class=" negative">-0.3</td>
+    <td class=" negative">-0.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class=" negative">-0.0</td>
+    <td class=" negative">-0.0</td>
+    <td class="best positive">0.1</td>
+    <td class=" positive">0.1</td>
+    <td class=" negative">-0.6</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class=" negative">-0.2</td>
+    <td class="best positive">0.5</td>
+    <td class=" positive">0.1</td>
+    <td class=" positive">0.1</td>
+    <td class=" negative">-0.4</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>夏普比率 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">1.31</td>
+    <td class=" ">0.92</td>
+    <td class=" ">0.26</td>
+    <td class=" ">0.26</td>
+    <td class=" ">-1.72</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class=" ">-2.72</td>
+    <td class=" ">-0.98</td>
+    <td class="best ">-0.15</td>
+    <td class=" ">-0.15</td>
+    <td class=" ">-1.85</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">1.30</td>
+    <td class=" ">-1.07</td>
+    <td class=" ">-0.17</td>
+    <td class=" ">-0.17</td>
+    <td class=" ">-0.61</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">-3.31</td>
+    <td class=" ">-0.84</td>
+    <td class="best ">2.04</td>
+    <td class=" ">2.04</td>
+    <td class=" ">0.25</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class=" ">-1.42</td>
+    <td class=" ">0.36</td>
+    <td class="best ">0.67</td>
+    <td class=" ">0.67</td>
+    <td class=" ">0.51</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">-4.94</td>
+    <td class="best ">0.14</td>
+    <td class=" ">-0.27</td>
+    <td class=" ">-0.27</td>
+    <td class=" ">-0.30</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class=" ">1.49</td>
+    <td class=" ">-0.67</td>
+    <td class="best ">2.74</td>
+    <td class=" ">2.74</td>
+    <td class=" ">0.76</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" ">-3.46</td>
+    <td class="best ">0.80</td>
+    <td class=" ">-1.26</td>
+    <td class=" ">-1.26</td>
+    <td class=" ">-0.70</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class=" ">-0.16</td>
+    <td class=" ">-0.15</td>
+    <td class="best ">0.30</td>
+    <td class=" ">0.30</td>
+    <td class=" ">-1.17</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class=" ">-1.37</td>
+    <td class="best ">2.25</td>
+    <td class=" ">0.57</td>
+    <td class=" ">0.57</td>
+    <td class=" ">-1.08</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>胜率 (%) 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">50.0</td>
+    <td class=" ">40.0</td>
+    <td class=" ">37.5</td>
+    <td class=" ">37.5</td>
+    <td class=" ">22.2</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class=" ">16.7</td>
+    <td class=" ">31.2</td>
+    <td class="best ">43.8</td>
+    <td class=" ">43.8</td>
+    <td class=" ">37.0</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">50.0</td>
+    <td class=" ">25.0</td>
+    <td class=" ">25.0</td>
+    <td class=" ">25.0</td>
+    <td class=" ">33.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">12.5</td>
+    <td class=" ">40.0</td>
+    <td class="best ">83.3</td>
+    <td class=" ">83.3</td>
+    <td class=" ">54.5</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class=" ">0.0</td>
+    <td class=" ">42.9</td>
+    <td class=" ">37.5</td>
+    <td class=" ">37.5</td>
+    <td class="best ">44.4</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">20.7</td>
+    <td class=" ">50.0</td>
+    <td class="best ">54.2</td>
+    <td class=" ">54.2</td>
+    <td class=" ">53.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class="best ">100.0</td>
+    <td class=" ">28.6</td>
+    <td class=" ">100.0</td>
+    <td class=" ">100.0</td>
+    <td class=" ">50.0</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" ">17.6</td>
+    <td class="best ">47.1</td>
+    <td class=" ">31.6</td>
+    <td class=" ">31.6</td>
+    <td class=" ">40.0</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class=" ">25.0</td>
+    <td class=" ">30.0</td>
+    <td class="best ">40.0</td>
+    <td class=" ">40.0</td>
+    <td class=" ">26.9</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class=" ">0.0</td>
+    <td class="best ">75.0</td>
+    <td class=" ">50.0</td>
+    <td class=" ">50.0</td>
+    <td class=" ">22.2</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>交易数 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">2</td>
+    <td class=" ">5</td>
+    <td class=" ">8</td>
+    <td class=" ">8</td>
+    <td class=" ">18</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class="best ">12</td>
+    <td class=" ">16</td>
+    <td class=" ">16</td>
+    <td class=" ">16</td>
+    <td class=" ">27</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">2</td>
+    <td class=" ">4</td>
+    <td class=" ">4</td>
+    <td class=" ">4</td>
+    <td class=" ">6</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">8</td>
+    <td class="best ">5</td>
+    <td class=" ">6</td>
+    <td class=" ">6</td>
+    <td class=" ">11</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class="best ">3</td>
+    <td class=" ">7</td>
+    <td class=" ">8</td>
+    <td class=" ">8</td>
+    <td class=" ">18</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">29</td>
+    <td class="best ">20</td>
+    <td class=" ">24</td>
+    <td class=" ">24</td>
+    <td class=" ">32</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class="best ">2</td>
+    <td class=" ">7</td>
+    <td class=" ">4</td>
+    <td class=" ">4</td>
+    <td class=" ">14</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class="best ">17</td>
+    <td class=" ">17</td>
+    <td class=" ">19</td>
+    <td class=" ">19</td>
+    <td class=" ">30</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class="best ">8</td>
+    <td class=" ">10</td>
+    <td class=" ">15</td>
+    <td class=" ">15</td>
+    <td class=" ">26</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class="best ">2</td>
+    <td class=" ">4</td>
+    <td class=" ">8</td>
+    <td class=" ">8</td>
+    <td class=" ">9</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>盈亏比 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">10.15</td>
+    <td class=" ">3.01</td>
+    <td class=" ">2.05</td>
+    <td class=" ">2.05</td>
+    <td class=" ">1.65</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class=" ">1.16</td>
+    <td class="best ">1.71</td>
+    <td class=" ">1.31</td>
+    <td class=" ">1.31</td>
+    <td class=" ">0.98</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">66.39</td>
+    <td class=" ">1.48</td>
+    <td class=" ">2.80</td>
+    <td class=" ">2.80</td>
+    <td class=" ">1.45</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">0.62</td>
+    <td class=" ">0.95</td>
+    <td class=" ">0.87</td>
+    <td class=" ">0.87</td>
+    <td class="best ">1.03</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class=" ">0.00</td>
+    <td class=" ">1.68</td>
+    <td class="best ">2.43</td>
+    <td class=" ">2.43</td>
+    <td class=" ">1.55</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">0.72</td>
+    <td class="best ">1.25</td>
+    <td class=" ">0.90</td>
+    <td class=" ">0.90</td>
+    <td class=" ">0.89</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class=" ">14.53</td>
+    <td class=" ">1.75</td>
+    <td class="best ">20.62</td>
+    <td class=" ">20.62</td>
+    <td class=" ">1.40</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" ">1.18</td>
+    <td class="best ">1.62</td>
+    <td class=" ">1.57</td>
+    <td class=" ">1.57</td>
+    <td class=" ">1.29</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class="best ">2.94</td>
+    <td class=" ">2.39</td>
+    <td class=" ">1.83</td>
+    <td class=" ">1.83</td>
+    <td class=" ">1.95</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class=" ">0.00</td>
+    <td class="best ">1.93</td>
+    <td class=" ">1.40</td>
+    <td class=" ">1.40</td>
+    <td class=" ">1.81</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>最大回撤 (%) 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">0.2</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.5</td>
+    <td class=" ">0.5</td>
+    <td class=" ">1.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class=" ">0.5</td>
+    <td class="best ">0.3</td>
+    <td class=" ">0.5</td>
+    <td class=" ">0.5</td>
+    <td class=" ">1.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">0.2</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.6</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">0.4</td>
+    <td class=" ">0.2</td>
+    <td class="best ">0.1</td>
+    <td class=" ">0.1</td>
+    <td class=" ">0.4</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class="best ">0.3</td>
+    <td class=" ">0.5</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.3</td>
+    <td class=" ">1.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">1.0</td>
+    <td class="best ">0.2</td>
+    <td class=" ">0.5</td>
+    <td class=" ">0.5</td>
+    <td class=" ">0.4</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class=" ">0.2</td>
+    <td class=" ">0.5</td>
+    <td class="best ">0.2</td>
+    <td class=" ">0.2</td>
+    <td class=" ">0.5</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" ">0.7</td>
+    <td class="best ">0.3</td>
+    <td class=" ">0.7</td>
+    <td class=" ">0.7</td>
+    <td class=" ">0.9</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class=" ">0.3</td>
+    <td class="best ">0.3</td>
+    <td class=" ">0.3</td>
+    <td class=" ">0.3</td>
+    <td class=" ">1.0</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class=" ">0.2</td>
+    <td class="best ">0.2</td>
+    <td class=" ">0.4</td>
+    <td class=" ">0.4</td>
+    <td class=" ">0.6</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>手续费 ($) 对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m (3天)</th>
+  <th>30m (6天)</th>
+  <th>1h (12天)</th>
+  <th>2h (12天)</th>
+  <th>4h (49天)</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td class="best ">1.55</td>
+    <td class=" ">3.81</td>
+    <td class=" ">6.03</td>
+    <td class=" ">6.03</td>
+    <td class=" ">12.81</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td class="best ">9.13</td>
+    <td class=" ">12.13</td>
+    <td class=" ">12.09</td>
+    <td class=" ">12.09</td>
+    <td class=" ">19.23</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td class="best ">1.54</td>
+    <td class=" ">3.01</td>
+    <td class=" ">3.03</td>
+    <td class=" ">3.03</td>
+    <td class=" ">4.23</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td class=" ">6.06</td>
+    <td class="best ">3.78</td>
+    <td class=" ">4.52</td>
+    <td class=" ">4.52</td>
+    <td class=" ">7.56</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td class="best ">2.30</td>
+    <td class=" ">5.32</td>
+    <td class=" ">6.08</td>
+    <td class=" ">6.08</td>
+    <td class=" ">12.76</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td class=" ">22.05</td>
+    <td class="best ">15.15</td>
+    <td class=" ">18.02</td>
+    <td class=" ">18.02</td>
+    <td class=" ">22.59</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td class="best ">1.54</td>
+    <td class=" ">5.33</td>
+    <td class=" ">3.05</td>
+    <td class=" ">3.05</td>
+    <td class=" ">9.96</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td class=" ">12.92</td>
+    <td class="best ">12.88</td>
+    <td class=" ">14.27</td>
+    <td class=" ">14.27</td>
+    <td class=" ">21.45</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td class="best ">6.09</td>
+    <td class=" ">7.58</td>
+    <td class=" ">11.31</td>
+    <td class=" ">11.31</td>
+    <td class=" ">18.46</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td class="best ">1.53</td>
+    <td class=" ">3.04</td>
+    <td class=" ">6.05</td>
+    <td class=" ">6.05</td>
+    <td class=" ">6.39</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>信号频率（信号数/天）对比</h2>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;min-width:100px;">策略</th>
+  <th>15m</th>
+  <th>30m</th>
+  <th>1h</th>
+  <th>2h</th>
+  <th>4h</th>
+</tr>
+</thead>
+<tbody>
+  <tr><td style="text-align:left;font-weight:600;">布林带突破</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.8</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.4</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">CCI 趋势反转</td>
+    <td style="color:#4caf50;font-weight:600;">4.0</td>
+    <td style="color:#ff9800;font-weight:600;">2.7</td>
+    <td style="color:#ff9800;font-weight:600;">1.3</td>
+    <td style="color:#ff9800;font-weight:600;">1.3</td>
+    <td style="color:#8b949e;font-weight:600;">0.6</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">双时间框架EMA</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.3</td>
+    <td style="color:#8b949e;font-weight:600;">0.3</td>
+    <td style="color:#8b949e;font-weight:600;">0.1</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">EMA 量能确认</td>
+    <td style="color:#ff9800;font-weight:600;">2.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.8</td>
+    <td style="color:#8b949e;font-weight:600;">0.5</td>
+    <td style="color:#8b949e;font-weight:600;">0.5</td>
+    <td style="color:#8b949e;font-weight:600;">0.2</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">KDJ 金叉死叉</td>
+    <td style="color:#ff9800;font-weight:600;">1.0</td>
+    <td style="color:#ff9800;font-weight:600;">1.2</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.4</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线交叉</td>
+    <td style="color:#4caf50;font-weight:600;">9.7</td>
+    <td style="color:#4caf50;font-weight:600;">3.3</td>
+    <td style="color:#ff9800;font-weight:600;">2.0</td>
+    <td style="color:#ff9800;font-weight:600;">2.0</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">均线多空排列</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#ff9800;font-weight:600;">1.2</td>
+    <td style="color:#8b949e;font-weight:600;">0.3</td>
+    <td style="color:#8b949e;font-weight:600;">0.3</td>
+    <td style="color:#8b949e;font-weight:600;">0.3</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">MACD 趋势动能</td>
+    <td style="color:#4caf50;font-weight:600;">5.7</td>
+    <td style="color:#ff9800;font-weight:600;">2.8</td>
+    <td style="color:#ff9800;font-weight:600;">1.6</td>
+    <td style="color:#ff9800;font-weight:600;">1.6</td>
+    <td style="color:#8b949e;font-weight:600;">0.6</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">RSI 超卖超买</td>
+    <td style="color:#ff9800;font-weight:600;">2.7</td>
+    <td style="color:#ff9800;font-weight:600;">1.7</td>
+    <td style="color:#ff9800;font-weight:600;">1.2</td>
+    <td style="color:#ff9800;font-weight:600;">1.2</td>
+    <td style="color:#8b949e;font-weight:600;">0.5</td>
+  </tr>
+  <tr><td style="text-align:left;font-weight:600;">SuperTrend 趋势</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.7</td>
+    <td style="color:#8b949e;font-weight:600;">0.2</td>
+  </tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="chart-container">
+<h2 style="color:#f7931a;margin-bottom:12px;font-size:16px;">各策略不同周期收益率对比</h2>
+<canvas id="returnChart" height="350"></canvas>
+</div>
+
+<div class="chart-container">
+<h2 style="color:#f7931a;margin-bottom:12px;font-size:16px;">各策略不同周期夏普比率对比</h2>
+<canvas id="sharpeChart" height="350"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+const returnDatasets = [
+  {
+    label: '15m',
+    data: [0.24, -0.53, 0.23, -0.4, -0.28, -1.0, 0.28, -0.71, -0.04, -0.21],
+    backgroundColor: '#e91e63',
+    borderColor: '#e91e63',
+    borderWidth: 1,
+  },
+  {
+    label: '30m',
+    data: [0.19, -0.21, -0.16, -0.09, 0.07, 0.01, -0.16, 0.16, -0.03, 0.45],
+    backgroundColor: '#ff9800',
+    borderColor: '#ff9800',
+    borderWidth: 1,
+  },
+  {
+    label: '1h',
+    data: [0.08, -0.05, -0.04, 0.2, 0.19, -0.05, 0.81, -0.31, 0.08, 0.14],
+    backgroundColor: '#f7931a',
+    borderColor: '#f7931a',
+    borderWidth: 1,
+  },
+  {
+    label: '2h',
+    data: [0.08, -0.05, -0.04, 0.2, 0.19, -0.05, 0.81, -0.31, 0.08, 0.14],
+    backgroundColor: '#4caf50',
+    borderColor: '#4caf50',
+    borderWidth: 1,
+  },
+  {
+    label: '4h',
+    data: [-0.85, -0.86, -0.17, 0.05, 0.26, -0.1, 0.31, -0.35, -0.58, -0.41],
+    backgroundColor: '#58a6ff',
+    borderColor: '#58a6ff',
+    borderWidth: 1,
+  },
+];
+const labels = ["\u5e03\u6797\u5e26\u7a81\u7834", "CCI \u8d8b\u52bf\u53cd\u8f6c", "\u53cc\u65f6\u95f4\u6846\u67b6EMA", "EMA \u91cf\u80fd\u786e\u8ba4", "KDJ \u91d1\u53c9\u6b7b\u53c9", "\u5747\u7ebf\u4ea4\u53c9", "\u5747\u7ebf\u591a\u7a7a\u6392\u5217", "MACD \u8d8b\u52bf\u52a8\u80fd", "RSI \u8d85\u5356\u8d85\u4e70", "SuperTrend \u8d8b\u52bf"];
+
+new Chart(document.getElementById('returnChart'), {
+  type: 'bar',
+  data: { labels: labels, datasets: returnDatasets },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { color: '#c9d1d9' } },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' } }
+    },
+    scales: {
+      x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+      y: { title: { display: true, text: '收益率 (%)', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+    }
+  }
+});
+const sharpeDatasets = [
+  {
+    label: '15m',
+    data: [1.31, -2.72, 1.3, -3.31, -1.42, -4.94, 1.49, -3.46, -0.16, -1.37],
+    backgroundColor: '#e91e63',
+    borderColor: '#e91e63',
+    borderWidth: 1,
+  },
+  {
+    label: '30m',
+    data: [0.92, -0.98, -1.07, -0.84, 0.36, 0.14, -0.67, 0.8, -0.15, 2.25],
+    backgroundColor: '#ff9800',
+    borderColor: '#ff9800',
+    borderWidth: 1,
+  },
+  {
+    label: '1h',
+    data: [0.26, -0.15, -0.17, 2.04, 0.67, -0.27, 2.74, -1.26, 0.3, 0.57],
+    backgroundColor: '#f7931a',
+    borderColor: '#f7931a',
+    borderWidth: 1,
+  },
+  {
+    label: '2h',
+    data: [0.26, -0.15, -0.17, 2.04, 0.67, -0.27, 2.74, -1.26, 0.3, 0.57],
+    backgroundColor: '#4caf50',
+    borderColor: '#4caf50',
+    borderWidth: 1,
+  },
+  {
+    label: '4h',
+    data: [-1.72, -1.85, -0.61, 0.25, 0.51, -0.3, 0.76, -0.7, -1.17, -1.08],
+    backgroundColor: '#58a6ff',
+    borderColor: '#58a6ff',
+    borderWidth: 1,
+  },
+];
+
+new Chart(document.getElementById('sharpeChart'), {
+  type: 'bar',
+  data: { labels: labels, datasets: sharpeDatasets },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { color: '#c9d1d9' } },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) } }
+    },
+    scales: {
+      x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+      y: { title: { display: true, text: '夏普比率', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+    }
+  }
+});
+</script>
+</body>
+</html>

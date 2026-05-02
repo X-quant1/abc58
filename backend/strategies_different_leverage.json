@@ -1,0 +1,87 @@
+[
+  {
+    "leverage": 10,
+    "best_strategy": {
+      "id": 1,
+      "name": "BTC双均线策略",
+      "type": "ma_cross",
+      "best_params": {
+        "total_return": 0.7,
+        "win_rate": 83.33,
+        "trade_count": 6,
+        "max_drawdown": 0.19,
+        "tp": 30,
+        "sl": 25,
+        "trailing": 20
+      }
+    }
+  },
+  {
+    "leverage": 20,
+    "best_strategy": {
+      "id": 1,
+      "name": "BTC双均线策略",
+      "type": "ma_cross",
+      "best_params": {
+        "total_return": 0.22,
+        "win_rate": 50.0,
+        "trade_count": 10,
+        "max_drawdown": 0.32,
+        "tp": 60,
+        "sl": 25,
+        "trailing": 30
+      }
+    }
+  },
+  {
+    "leverage": 30,
+    "best_strategy": {
+      "id": 3,
+      "name": "RSI超卖超买-1H",
+      "type": "rsi",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 34.21,
+        "trade_count": 38,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 15
+      }
+    }
+  },
+  {
+    "leverage": 50,
+    "best_strategy": {
+      "id": 3,
+      "name": "RSI超卖超买-1H",
+      "type": "rsi",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 42.86,
+        "trade_count": 35,
+        "max_drawdown": 0.01,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 30
+      }
+    }
+  },
+  {
+    "leverage": 100,
+    "best_strategy": {
+      "id": 7,
+      "name": "SuperTrend趋势-1H",
+      "type": "supertrend",
+      "best_params": {
+        "total_return": -0.0,
+        "win_rate": 12.5,
+        "trade_count": 8,
+        "max_drawdown": 0.0,
+        "tp": 25,
+        "sl": 25,
+        "trailing": 10
+      }
+    }
+  }
+]

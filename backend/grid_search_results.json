@@ -1,0 +1,1250 @@
+{
+  "bollinger_regime_on": [
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.5,
+      "sharpe": 2.2,
+      "win_rate": 83.33,
+      "trades": 6
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.42,
+      "sharpe": 1.52,
+      "win_rate": 42.86,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.42,
+      "sharpe": 1.63,
+      "win_rate": 50.0,
+      "trades": 6
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.41,
+      "sharpe": 1.45,
+      "win_rate": 42.86,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 1.5,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.39,
+      "sharpe": 1.55,
+      "win_rate": 62.5,
+      "trades": 8
+    },
+    {
+      "params": {
+        "period": 25,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.38,
+      "sharpe": 1.73,
+      "win_rate": 80.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.35,
+      "sharpe": 1.3,
+      "win_rate": 50.0,
+      "trades": 10
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 1.5,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.35,
+      "sharpe": 1.56,
+      "win_rate": 55.56,
+      "trades": 9
+    },
+    {
+      "params": {
+        "period": 15,
+        "std_dev": 1.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.34,
+      "sharpe": 1.49,
+      "win_rate": 60.0,
+      "trades": 10
+    },
+    {
+      "params": {
+        "period": 15,
+        "std_dev": 1.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.34,
+      "sharpe": 1.43,
+      "win_rate": 66.67,
+      "trades": 9
+    },
+    {
+      "params": {
+        "period": 15,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.34,
+      "sharpe": 1.33,
+      "win_rate": 62.5,
+      "trades": 8
+    },
+    {
+      "params": {
+        "period": 15,
+        "std_dev": 2.0,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.32,
+      "sharpe": 1.28,
+      "win_rate": 50.0,
+      "trades": 8
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 2.0,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.3,
+      "sharpe": 1.31,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.3,
+      "sharpe": 1.27,
+      "win_rate": 57.14,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 25,
+        "std_dev": 1.5,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.3,
+      "sharpe": 1.18,
+      "win_rate": 66.67,
+      "trades": 6
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.79,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.79,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.79,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.79,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.28,
+      "sharpe": 1.05,
+      "win_rate": 53.33,
+      "trades": 15
+    }
+  ],
+  "bollinger_regime_off": [
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.36,
+      "sharpe": 1.43,
+      "win_rate": 71.43,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.33,
+      "sharpe": 2.74,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.33,
+      "sharpe": 2.74,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.33,
+      "sharpe": 2.74,
+      "win_rate": 100.0,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 1.04,
+      "win_rate": 37.5,
+      "trades": 8
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 2.0,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 1.16,
+      "win_rate": 57.14,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 1.85,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.28,
+      "sharpe": 0.97,
+      "win_rate": 37.5,
+      "trades": 8
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 1.5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.28,
+      "sharpe": 1.0,
+      "win_rate": 42.86,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.27,
+      "sharpe": 1.1,
+      "win_rate": 60.0,
+      "trades": 10
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.26,
+      "sharpe": 0.99,
+      "win_rate": 62.5,
+      "trades": 16
+    },
+    {
+      "params": {
+        "period": 25,
+        "std_dev": 1.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.26,
+      "sharpe": 0.94,
+      "win_rate": 57.14,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 0.8,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.25,
+      "sharpe": 1.58,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 0.82,
+      "win_rate": 45.45,
+      "trades": 11
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 1.52,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period": 25,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 0.97,
+      "win_rate": 66.67,
+      "trades": 6
+    },
+    {
+      "params": {
+        "period": 10,
+        "std_dev": 2.0,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.22,
+      "sharpe": 0.83,
+      "win_rate": 57.14,
+      "trades": 7
+    },
+    {
+      "params": {
+        "period": 30,
+        "std_dev": 2.5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.22,
+      "sharpe": 1.98,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period": 15,
+        "std_dev": 2.0,
+        "take_profit_pct": 1.5,
+        "stop_loss_pct": 1.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.21,
+      "sharpe": 0.85,
+      "win_rate": 55.56,
+      "trades": 9
+    },
+    {
+      "params": {
+        "period": 20,
+        "std_dev": 2.5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.14,
+      "win_rate": 60.0,
+      "trades": 5
+    }
+  ],
+  "ribbon_macd_regime_on": [
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.29,
+      "sharpe": 2.23,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 2.13,
+      "win_rate": 100.0,
+      "trades": 1
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 2.13,
+      "win_rate": 100.0,
+      "trades": 1
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 2.13,
+      "win_rate": 100.0,
+      "trades": 1
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.23,
+      "sharpe": 2.13,
+      "win_rate": 100.0,
+      "trades": 1
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.27,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.27,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 1.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.2,
+      "sharpe": 1.94,
+      "win_rate": 100.0,
+      "trades": 2
+    }
+  ],
+  "ribbon_macd_regime_off": [
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.44,
+      "sharpe": 2.55,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.44,
+      "sharpe": 2.55,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.41,
+      "sharpe": 2.25,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.41,
+      "sharpe": 2.25,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.4,
+      "sharpe": 2.34,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.4,
+      "sharpe": 2.34,
+      "win_rate": 66.67,
+      "trades": 3
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 1.72,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 1.72,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 1.72,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 10,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 1.72,
+      "win_rate": 75.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 2.06,
+      "win_rate": 50.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.37,
+      "sharpe": 2.06,
+      "win_rate": 50.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 13,
+        "macd_signal": 9,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.33,
+      "sharpe": 1.77,
+      "win_rate": 40.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 5,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 13,
+        "macd_signal": 9,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.33,
+      "sharpe": 1.77,
+      "win_rate": 40.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.56,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.43,
+      "win_rate": 40.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 13,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.3,
+      "win_rate": 50.0,
+      "trades": 4
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 6,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 2.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.56,
+      "win_rate": 60.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 0.5,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.43,
+      "win_rate": 40.0,
+      "trades": 5
+    },
+    {
+      "params": {
+        "period1": 3,
+        "period2": 7,
+        "period3": 21,
+        "period4": 55,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 5,
+        "take_profit_pct": 3.0,
+        "stop_loss_pct": 1.0,
+        "inst_id": "BTC-USDT-SWAP"
+      },
+      "return": 0.31,
+      "sharpe": 1.3,
+      "win_rate": 50.0,
+      "trades": 4
+    }
+  ]
+}

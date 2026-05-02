@@ -1,0 +1,420 @@
+{
+  "timestamp": "2026-04-27T22:57:51.893202",
+  "config": {
+    "initial_capital": 10000,
+    "leverage": 100,
+    "symbol": "BTC-USDT-SWAP",
+    "timeframe": "1h",
+    "klines_count": 300
+  },
+  "results": [
+    {
+      "strategy_id": 3,
+      "strategy_name": "RSI超卖超买-1H",
+      "strategy_type": "rsi",
+      "best_params": {
+        "rsi_period": 6,
+        "rsi_overbought": 70,
+        "rsi_oversold": 20
+      },
+      "best_return": 0.0,
+      "best_win_rate": 80.0,
+      "best_sharpe": 1.56,
+      "all_results": [
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 25
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 75,
+            "rsi_oversold": 20
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 75,
+            "rsi_oversold": 25
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 75,
+            "rsi_oversold": 30
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 80,
+            "rsi_oversold": 20
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 80,
+            "rsi_oversold": 25
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 80,
+            "rsi_oversold": 30
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        },
+        {
+          "params": {
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20
+          },
+          "total_return": 0.0,
+          "win_rate": 80.0,
+          "trade_count": 5,
+          "sharpe_ratio": 1.56
+        }
+      ]
+    },
+    {
+      "strategy_id": 6,
+      "strategy_name": "RSI+MACD共振-1H",
+      "strategy_type": "rsi_macd",
+      "best_params": {
+        "rsi_period": 6,
+        "rsi_overbought": 70,
+        "rsi_oversold": 20,
+        "macd_fast": 6,
+        "macd_slow": 18,
+        "macd_signal": 5
+      },
+      "best_return": -0.0,
+      "best_win_rate": 0.0,
+      "best_sharpe": -2.59,
+      "all_results": [
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 18,
+            "macd_signal": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 2,
+          "sharpe_ratio": -2.59
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 18,
+            "macd_signal": 7
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 1,
+          "sharpe_ratio": -1.83
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 18,
+            "macd_signal": 9
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 1,
+          "sharpe_ratio": -1.83
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 21,
+            "macd_signal": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 2,
+          "sharpe_ratio": -2.59
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 21,
+            "macd_signal": 7
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 1,
+          "sharpe_ratio": -1.83
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 21,
+            "macd_signal": 9
+          },
+          "total_return": 0.0,
+          "win_rate": 0,
+          "trade_count": 0,
+          "sharpe_ratio": 0
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 26,
+            "macd_signal": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 1,
+          "sharpe_ratio": -1.83
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 26,
+            "macd_signal": 7
+          },
+          "total_return": 0.0,
+          "win_rate": 0,
+          "trade_count": 0,
+          "sharpe_ratio": 0
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 6,
+            "macd_slow": 26,
+            "macd_signal": 9
+          },
+          "total_return": 0.0,
+          "win_rate": 100.0,
+          "trade_count": 1,
+          "sharpe_ratio": 0.99
+        },
+        {
+          "params": {
+            "rsi_period": 6,
+            "rsi_overbought": 70,
+            "rsi_oversold": 20,
+            "macd_fast": 9,
+            "macd_slow": 18,
+            "macd_signal": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 1,
+          "sharpe_ratio": -1.83
+        }
+      ]
+    },
+    {
+      "strategy_id": 10,
+      "strategy_name": "均线多空排列-1H",
+      "strategy_type": "ma_cross",
+      "best_params": {
+        "fast_period": 5,
+        "slow_period": 20,
+        "signal_period": 3
+      },
+      "best_return": -0.0,
+      "best_win_rate": 30.0,
+      "best_sharpe": -0.31,
+      "all_results": [
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 20,
+            "signal_period": 3
+          },
+          "total_return": -0.0,
+          "win_rate": 30.0,
+          "trade_count": 10,
+          "sharpe_ratio": -0.31
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 20,
+            "signal_period": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 30.0,
+          "trade_count": 10,
+          "sharpe_ratio": -0.31
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 20,
+            "signal_period": 7
+          },
+          "total_return": -0.0,
+          "win_rate": 30.0,
+          "trade_count": 10,
+          "sharpe_ratio": -0.31
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 30,
+            "signal_period": 3
+          },
+          "total_return": -0.0,
+          "win_rate": 25.0,
+          "trade_count": 8,
+          "sharpe_ratio": -0.3
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 30,
+            "signal_period": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 25.0,
+          "trade_count": 8,
+          "sharpe_ratio": -0.3
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 30,
+            "signal_period": 7
+          },
+          "total_return": -0.0,
+          "win_rate": 25.0,
+          "trade_count": 8,
+          "sharpe_ratio": -0.3
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 40,
+            "signal_period": 3
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 4,
+          "sharpe_ratio": -2.56
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 40,
+            "signal_period": 5
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 4,
+          "sharpe_ratio": -2.56
+        },
+        {
+          "params": {
+            "fast_period": 5,
+            "slow_period": 40,
+            "signal_period": 7
+          },
+          "total_return": -0.0,
+          "win_rate": 0.0,
+          "trade_count": 4,
+          "sharpe_ratio": -2.56
+        },
+        {
+          "params": {
+            "fast_period": 7,
+            "slow_period": 20,
+            "signal_period": 3
+          },
+          "total_return": -0.0,
+          "win_rate": 37.5,
+          "trade_count": 8,
+          "sharpe_ratio": -2.44
+        }
+      ]
+    }
+  ]
+}

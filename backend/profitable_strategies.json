@@ -1,0 +1,353 @@
+[
+  {
+    "id": 6,
+    "name": "RSI+MACD共振-1H",
+    "type": "rsi_macd",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 33.33,
+      "trade_count": 3,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "rsi_period": 6,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "rsi_oversold": 30,
+      "rsi_overbought": 70,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 7,
+    "name": "SuperTrend趋势-1H",
+    "type": "supertrend",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 0.0,
+      "trade_count": 7,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "atr_period": 10,
+      "multiplier": 3,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 8,
+    "name": "EMA量能确认-1H",
+    "type": "ema_volume",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 10.0,
+      "trade_count": 10,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "fast_period": 12,
+      "slow_period": 26,
+      "vol_period": 20,
+      "vol_mult": 1.5,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 9,
+    "name": "双时间框架EMA-1H",
+    "type": "dual_ema",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 23.08,
+      "trade_count": 13,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "trend_period": 50,
+      "signal_period": 10,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 11,
+    "name": "量价突破-1H",
+    "type": "vol_break",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 12.5,
+      "trade_count": 24,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "lookback": 10,
+      "vol_mult": 1.0,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 12,
+    "name": "多时间框架趋势-1H",
+    "type": "multi_tf_trend",
+    "best_params": {
+      "total_return": -0.0,
+      "win_rate": 12.12,
+      "trade_count": 33,
+      "max_drawdown": 0.0,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "trend_period": 50,
+      "signal_period": 10,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 3,
+    "name": "RSI超卖超买-1H",
+    "type": "rsi",
+    "best_params": {
+      "total_return": -0.01,
+      "win_rate": 8.77,
+      "trade_count": 57,
+      "max_drawdown": 0.01,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "period": 6,
+      "oversold": 40,
+      "overbought": 60,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 4,
+    "name": "KDJ金叉死叉-1H",
+    "type": "kdj",
+    "best_params": {
+      "total_return": -0.01,
+      "win_rate": 7.02,
+      "trade_count": 57,
+      "max_drawdown": 0.01,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "k_period": 7,
+      "d_period": 3,
+      "j_smooth": 3,
+      "overbought": 70,
+      "oversold": 30,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 5,
+    "name": "CCI趋势反转-1H",
+    "type": "cci",
+    "best_params": {
+      "total_return": -0.01,
+      "win_rate": 14.49,
+      "trade_count": 69,
+      "max_drawdown": 0.01,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "period": 10,
+      "overbought": 80,
+      "oversold": -80,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 10,
+    "name": "均线多空排列-1H",
+    "type": "ma_ribbon",
+    "best_params": {
+      "total_return": -0.01,
+      "win_rate": 19.05,
+      "trade_count": 42,
+      "max_drawdown": 0.01,
+      "tp": 15,
+      "sl": 10,
+      "trailing": 5
+    },
+    "all_params": {
+      "period1": 3,
+      "period2": 7,
+      "period3": 13,
+      "period4": 21,
+      "timeframe": "1h",
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 0.01,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 10,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  },
+  {
+    "id": 1,
+    "name": "BTC双均线策略",
+    "type": "ma_cross",
+    "best_params": {
+      "total_return": -0.16,
+      "win_rate": 33.33,
+      "trade_count": 24,
+      "max_drawdown": 0.21,
+      "tp": 15,
+      "sl": 25,
+      "trailing": 30
+    },
+    "all_params": {
+      "fast_period": 7,
+      "slow_period": 25,
+      "inst_id": "BTC-USDT-SWAP",
+      "size": 1,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 25,
+      "td_mode": "cross",
+      "trailing_stop_pct": 30,
+      "timeframe": "1h"
+    }
+  },
+  {
+    "id": 2,
+    "name": "12H稳定测试-趋势突破",
+    "type": "trend_break",
+    "best_params": {
+      "total_return": -0.35,
+      "win_rate": 9.09,
+      "trade_count": 22,
+      "max_drawdown": 0.38,
+      "tp": 15,
+      "sl": 25,
+      "trailing": 5
+    },
+    "all_params": {
+      "ema_period": 21,
+      "boll_period": 10,
+      "boll_std": 1.5,
+      "vol_ma_period": 10,
+      "vol_ratio": 1.0,
+      "timeframe": "1h",
+      "use_regime_filter": true,
+      "inst_id": "BTC-USDT-SWAP",
+      "size_mode": "fixed",
+      "size": 1,
+      "size_pct": 10,
+      "leverage": 100,
+      "take_profit_pct": 15,
+      "stop_loss_pct": 25,
+      "trailing_stop_pct": 5,
+      "td_mode": "cross"
+    }
+  }
+]

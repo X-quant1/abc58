@@ -1,0 +1,14 @@
+{
+  "name": "测试MACD策略",
+  "type": "macd_divergence",
+  "inst_id": "BTC-USDT-SWAP",
+  "size": 1,
+  "leverage": 100,
+  "take_profit_pct": 60,
+  "stop_loss_pct": 35,
+  "trail_activate_pct": 50,
+  "trail_callback_points": 25,
+  "cooldown_minutes": 5,
+  "timeframes": ["1h"],
+  "description": "MACD背离策略测试"
+}

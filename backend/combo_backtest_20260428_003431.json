@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-04-28T00:34:31.299634",
+  "config": {
+    "initial_capital": 10000,
+    "leverage": 100,
+    "symbol": "BTC-USDT-SWAP",
+    "timeframe": "1h",
+    "klines_count": 2000
+  },
+  "results": [
+    {
+      "category": "单策略",
+      "name": "RSI+MACD（单策略）",
+      "type": "rsi_macd",
+      "total_return": 0.05,
+      "win_rate": 45.45,
+      "trade_count": 22,
+      "sharpe_ratio": 0.08,
+      "max_drawdown": 0.2
+    },
+    {
+      "category": "单策略",
+      "name": "趋势突破（单策略）",
+      "type": "trend_break",
+      "total_return": -0.69,
+      "win_rate": 42.31,
+      "trade_count": 104,
+      "sharpe_ratio": -0.44,
+      "max_drawdown": 1.17
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"smtp_host": "smtp.exmail.qq.com", "smtp_port": 465, "smtp_user": "guojietong@szjclh.cn", "smtp_password": "gAAAAABp6x3qmfs9-mjDf3Qq89jpjXg3I3H7u3wImXU1-BWm5FIJl4fxDJM0vaEaZ2wV1AX7pn0DxyHyqRNtRsAyisPKXFvprOJlPfqPwa7jET_VIKdsyg8=", "smtp_to": "120560483@qq.com", "smtp_ssl": true, "email_enabled": true, "notify_trade": false, "notify_error": false, "notify_system": false}

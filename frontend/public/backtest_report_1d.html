@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>BTC Quant Backtest Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+  h1 { text-align: center; color: #f7931a; margin-bottom: 5px; font-size: 28px; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+  .summary { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .summary h2 { color: #333; margin-bottom: 15px; font-size: 18px; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-table th { background: #f7931a; color: #fff; padding: 10px 8px; text-align: center; font-weight: 600; }
+  .summary-table td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; }
+  .summary-table tr:hover { background: #fff8f0; }
+  .positive { color: #ef5350; font-weight: 600; }
+  .negative { color: #26a69a; font-weight: 600; }
+  .strategy-card { background: #fff; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+  .strategy-header { background: linear-gradient(135deg, #f7931a, #ff9f43); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .strategy-header h3 { font-size: 18px; }
+  .strategy-header .stats { font-size: 13px; opacity: 0.95; }
+  .strategy-body { padding: 0; }
+  .trade-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .trade-table th { background: #fafafa; padding: 10px 8px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #eee; position: sticky; top: 0; }
+  .trade-table td { padding: 8px; border-bottom: 1px solid #f5f5f5; }
+  .trade-table tr:hover { background: #fff8f0; }
+  .trade-table .open-long { color: #ef5350; font-weight: 600; }
+  .trade-table .open-short { color: #26a69a; font-weight: 600; }
+  .trade-table .close-long { color: #26a69a; }
+  .trade-table .close-short { color: #ef5350; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-long { background: #fde8e8; color: #ef5350; }
+  .badge-short { background: #e0f5f0; color: #26a69a; }
+  .badge-tp { background: #e8f5e9; color: #4caf50; }
+  .badge-sl { background: #fce4ec; color: #e91e63; }
+  .badge-signal { background: #e3f2fd; color: #1976d2; }
+  .badge-trailing { background: #fff3e0; color: #ff9800; }
+  .badge-end { background: #f3e5f5; color: #9c27b0; }
+  .pair-row { background: #fafafa; }
+  .no-trades { padding: 30px; text-align: center; color: #999; }
+  .top3 { background: #fff8e1 !important; }
+</style>
+</head>
+<body>
+<h1>BTC Quant Backtest Report</h1>
+<p class="subtitle">BTC-USDT-SWAP | 1d | 2025-06-27 ~ 2026-04-22 (299 days) | Capital: $10000 | Leverage: 10x | Fee: 0.05% | Slippage: 0.05%</p>
+
+<div class="summary">
+<h2>Strategy Comparison</h2>
+<table class="summary-table">
+<thead>
+<tr>
+  <th>#</th><th>Strategy</th><th>Return</th><th>MaxDD</th><th>Sharpe</th><th>WinRate</th><th>P/F</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Fees</th><th>Final</th>
+</tr>
+</thead>
+<tbody>
+<tr class="top3">
+  <td>1</td>
+  <td><strong>KDJ 金叉死叉</strong></td>
+  <td class="positive">4.4%</td>
+  <td>1.3%</td>
+  <td>2.13</td>
+  <td>100.0%</td>
+  <td>440.09</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$1.00</td>
+  <td>$10439.48</td>
+</tr>
+<tr class="top3">
+  <td>2</td>
+  <td><strong>CCI 趋势反转</strong></td>
+  <td class="positive">4.4%</td>
+  <td>1.3%</td>
+  <td>2.13</td>
+  <td>100.0%</td>
+  <td>440.09</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$1.00</td>
+  <td>$10439.48</td>
+</tr>
+<tr class="top3">
+  <td>3</td>
+  <td><strong>RSI 超卖超买</strong></td>
+  <td class="positive">4.4%</td>
+  <td>1.3%</td>
+  <td>2.12</td>
+  <td>100.0%</td>
+  <td>436.74</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$1.00</td>
+  <td>$10436.13</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><strong>双时间框架EMA</strong></td>
+  <td class="positive">3.6%</td>
+  <td>1.3%</td>
+  <td>1.82</td>
+  <td>100.0%</td>
+  <td>361.55</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$0.96</td>
+  <td>$10360.98</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><strong>MACD 趋势动能</strong></td>
+  <td class="positive">3.4%</td>
+  <td>1.3%</td>
+  <td>1.69</td>
+  <td>100.0%</td>
+  <td>336.05</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$0.95</td>
+  <td>$10335.49</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><strong>SuperTrend 趋势</strong></td>
+  <td class="positive">3.4%</td>
+  <td>1.3%</td>
+  <td>1.69</td>
+  <td>100.0%</td>
+  <td>336.05</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$0.95</td>
+  <td>$10335.49</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><strong>均线交叉</strong></td>
+  <td class="positive">3.3%</td>
+  <td>1.3%</td>
+  <td>1.65</td>
+  <td>100.0%</td>
+  <td>326.22</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$0.94</td>
+  <td>$10325.67</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><strong>EMA 量能确认</strong></td>
+  <td class="positive">3.3%</td>
+  <td>1.3%</td>
+  <td>1.65</td>
+  <td>100.0%</td>
+  <td>326.22</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>$0.94</td>
+  <td>$10325.67</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><strong>均线多空排列</strong></td>
+  <td class="positive">1.4%</td>
+  <td>1.5%</td>
+  <td>0.75</td>
+  <td>50.0%</td>
+  <td>2.28</td>
+  <td>2</td>
+  <td>1</td>
+  <td>1</td>
+  <td>$2.08</td>
+  <td>$10142.46</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><strong>布林带突破</strong></td>
+  <td class="positive">1.1%</td>
+  <td>1.5%</td>
+  <td>0.61</td>
+  <td>50.0%</td>
+  <td>1.87</td>
+  <td>2</td>
+  <td>1</td>
+  <td>1</td>
+  <td>$2.09</td>
+  <td>$10115.27</td>
+</tr>
+</tbody></table></div>
+<h2 style="text-align:center; color:#333; margin-bottom:20px;">Trade-by-Trade Details</h2>
+
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#1 KDJ 金叉死叉</h3>
+  <div class="stats">
+    Return: <strong class="positive">4.4%</strong> |
+    Sharpe: 2.13 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-08 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$122133.80</td>
+  <td>1</td>
+  <td>$122.19</td>
+  <td class=""></td>
+  <td>$0.61</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$440.09</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#2 CCI 趋势反转</h3>
+  <div class="stats">
+    Return: <strong class="positive">4.4%</strong> |
+    Sharpe: 2.13 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-08 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$122133.80</td>
+  <td>1</td>
+  <td>$122.19</td>
+  <td class=""></td>
+  <td>$0.61</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$440.09</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#3 RSI 超卖超买</h3>
+  <div class="stats">
+    Return: <strong class="positive">4.4%</strong> |
+    Sharpe: 2.12 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-07 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$121798.57</td>
+  <td>1</td>
+  <td>$121.86</td>
+  <td class=""></td>
+  <td>$0.61</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$436.74</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#4 双时间框架EMA</h3>
+  <div class="stats">
+    Return: <strong class="positive">3.6%</strong> |
+    Sharpe: 1.82 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-13 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$114279.93</td>
+  <td>1</td>
+  <td>$114.34</td>
+  <td class=""></td>
+  <td>$0.57</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$361.55</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#5 MACD 趋势动能</h3>
+  <div class="stats">
+    Return: <strong class="positive">3.4%</strong> |
+    Sharpe: 1.69 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-11 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$111729.71</td>
+  <td>1</td>
+  <td>$111.79</td>
+  <td class=""></td>
+  <td>$0.56</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$336.05</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#6 SuperTrend 趋势</h3>
+  <div class="stats">
+    Return: <strong class="positive">3.4%</strong> |
+    Sharpe: 1.69 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-11 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$111729.71</td>
+  <td>1</td>
+  <td>$111.79</td>
+  <td class=""></td>
+  <td>$0.56</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$336.05</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#7 均线交叉</h3>
+  <div class="stats">
+    Return: <strong class="positive">3.3%</strong> |
+    Sharpe: 1.65 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-15 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$110747.20</td>
+  <td>1</td>
+  <td>$110.80</td>
+  <td class=""></td>
+  <td>$0.55</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$326.22</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#8 EMA 量能确认</h3>
+  <div class="stats">
+    Return: <strong class="positive">3.3%</strong> |
+    Sharpe: 1.65 |
+    WinRate: 100.0% |
+    Trades: 1
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-15 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$110747.20</td>
+  <td>1</td>
+  <td>$110.80</td>
+  <td class=""></td>
+  <td>$0.55</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$326.22</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#9 均线多空排列</h3>
+  <div class="stats">
+    Return: <strong class="positive">1.4%</strong> |
+    Sharpe: 0.75 |
+    WinRate: 50.0% |
+    Trades: 2
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-05 00:00</td>
+  <td class="open-long">Open</td>
+  <td><span class="badge badge-long">Long</span></td>
+  <td>$122868.40</td>
+  <td>1</td>
+  <td>$122.81</td>
+  <td class=""></td>
+  <td>$0.61</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2025-10-11 00:00</td>
+  <td class="close-long">Close</td>
+  <td><span class="badge badge-long">Long</span></td>
+  <td>$111729.71</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-111.95</td>
+  <td>$0.56</td>
+  <td><span class="badge badge-sl">SL</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>2025-11-05 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$103678.53</td>
+  <td>1</td>
+  <td>$103.73</td>
+  <td class=""></td>
+  <td>$0.52</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$255.53</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#10 布林带突破</h3>
+  <div class="stats">
+    Return: <strong class="positive">1.1%</strong> |
+    Sharpe: 0.61 |
+    WinRate: 50.0% |
+    Trades: 2
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>Time</th><th>Action</th><th>Direction</th><th>Price</th><th>Size</th><th>Margin</th><th>PnL</th><th>Fee</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>2025-10-06 00:00</td>
+  <td class="open-long">Open</td>
+  <td><span class="badge badge-long">Long</span></td>
+  <td>$125062.30</td>
+  <td>1</td>
+  <td>$125.00</td>
+  <td class=""></td>
+  <td>$0.63</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>2025-10-11 00:00</td>
+  <td class="close-long">Close</td>
+  <td><span class="badge badge-long">Long</span></td>
+  <td>$111729.71</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-133.88</td>
+  <td>$0.56</td>
+  <td><span class="badge badge-sl">SL</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>2025-11-04 00:00</td>
+  <td class="open-short">Open</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$103154.30</td>
+  <td>1</td>
+  <td>$103.21</td>
+  <td class=""></td>
+  <td>$0.52</td>
+  <td></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>2026-04-22 00:00</td>
+  <td class="close-short">Close</td>
+  <td><span class="badge badge-short">Short</span></td>
+  <td>$78086.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$250.29</td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">End</span></td>
+</tr>
+</tbody></table></div></div>
+<h2 style="text-align:center; color:#333; margin:30px 0 20px;">Equity Curves</h2>
+<div class="strategy-card" style="padding:20px;">
+<canvas id="equityChart" height="400"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+const equityData = {
+  datasets: [
+  {
+    label: 'KDJ 金叉死叉',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 9998.78},{x: new Date(1759939200000), y: 10009.11},{x: new Date(1760025600000), y: 10030.56},{x: new Date(1760112000000), y: 10102.87},{x: new Date(1760198400000), y: 10088.74},{x: new Date(1760284800000), y: 10077.36},{x: new Date(1760371200000), y: 10091.78},{x: new Date(1760457600000), y: 10112.7},{x: new Date(1760544000000), y: 10135.15},{x: new Date(1760630400000), y: 10152.79},{x: new Date(1760716800000), y: 10151.26},{x: new Date(1760803200000), y: 10135.93},{x: new Date(1760889600000), y: 10109.19},{x: new Date(1760976000000), y: 10086.46},{x: new Date(1761062400000), y: 10136.6},{x: new Date(1761148800000), y: 10121.73},{x: new Date(1761235200000), y: 10120.17},{x: new Date(1761321600000), y: 10106.81},{x: new Date(1761408000000), y: 10083.73},{x: new Date(1761494400000), y: 10071.13},{x: new Date(1761580800000), y: 10074.27},{x: new Date(1761667200000), y: 10105.58},{x: new Date(1761753600000), y: 10143.57},{x: new Date(1761840000000), y: 10118.84},{x: new Date(1761926400000), y: 10117.73},{x: new Date(1762012800000), y: 10119.56},{x: new Date(1762099200000), y: 10163.26},{x: new Date(1762185600000), y: 10188.67},{x: new Date(1762272000000), y: 10183.42},{x: new Date(1762358400000), y: 10200.58},{x: new Date(1762444800000), y: 10212.7},{x: new Date(1762531200000), y: 10203.48},{x: new Date(1762617600000), y: 10183.2},{x: new Date(1762704000000), y: 10169.94},{x: new Date(1762790400000), y: 10186.0},{x: new Date(1762876800000), y: 10198.91},{x: new Date(1762963200000), y: 10206.84},{x: new Date(1763049600000), y: 10252.7},{x: new Date(1763136000000), y: 10258.08},{x: new Date(1763222400000), y: 10274.83},{x: new Date(1763308800000), y: 10281.14},{x: new Date(1763395200000), y: 10291.67},{x: new Date(1763481600000), y: 10321.22},{x: new Date(1763568000000), y: 10322.1},{x: new Date(1763654400000), y: 10391.34},{x: new Date(1763740800000), y: 10377.9},{x: new Date(1763827200000), y: 10349.89},{x: new Date(1763913600000), y: 10354.57},{x: new Date(1764000000000), y: 10350.85},{x: new Date(1764086400000), y: 10351.08},{x: new Date(1764172800000), y: 10311.13},{x: new Date(1764259200000), y: 10297.17},{x: new Date(1764345600000), y: 10310.05},{x: new Date(1764432000000), y: 10306.33},{x: new Date(1764518400000), y: 10373.86},{x: new Date(1764604800000), y: 10312.25},{x: new Date(1764691200000), y: 10296.93},{x: new Date(1764777600000), y: 10291.04},{x: new Date(1764864000000), y: 10316.17},{x: new Date(1764950400000), y: 10323.16},{x: new Date(1765036800000), y: 10325.18},{x: new Date(1765123200000), y: 10321.11},{x: new Date(1765209600000), y: 10293.66},{x: new Date(1765296000000), y: 10300.03},{x: new Date(1765382400000), y: 10321.98},{x: new Date(1765468800000), y: 10321.31},{x: new Date(1765555200000), y: 10319.72},{x: new Date(1765641600000), y: 10330.45},{x: new Date(1765728000000), y: 10350.3},{x: new Date(1765814400000), y: 10341.04},{x: new Date(1765900800000), y: 10348.41},{x: new Date(1765987200000), y: 10335.59},{x: new Date(1766073600000), y: 10341.15},{x: new Date(1766160000000), y: 10338.98},{x: new Date(1766246400000), y: 10340.02},{x: new Date(1766332800000), y: 10323.39},{x: new Date(1766419200000), y: 10346.28},{x: new Date(1766505600000), y: 10350.3},{x: new Date(1766592000000), y: 10337.06},{x: new Date(1766678400000), y: 10349.34},{x: new Date(1766764800000), y: 10345.13},{x: new Date(1766851200000), y: 10342.34},{x: new Date(1766937600000), y: 10343.86},{x: new Date(1767024000000), y: 10330.68},{x: new Date(1767110400000), y: 10341.28},{x: new Date(1767196800000), y: 10340.39},{x: new Date(1767283200000), y: 10326.62},{x: new Date(1767369600000), y: 10321.01},{x: new Date(1767456000000), y: 10307.4},{x: new Date(1767542400000), y: 10281.16},{x: new Date(1767628800000), y: 10284.25},{x: new Date(1767715200000), y: 10307.26},{x: new Date(1767801600000), y: 10312.82},{x: new Date(1767888000000), y: 10308.89},{x: new Date(1767974400000), y: 10314.12},{x: new Date(1768060800000), y: 10311.98},{x: new Date(1768147200000), y: 10304.06},{x: new Date(1768233600000), y: 10286.17},{x: new Date(1768320000000), y: 10253.17},{x: new Date(1768406400000), y: 10253.31},{x: new Date(1768492800000), y: 10274.83},{x: new Date(1768579200000), y: 10265.02},{x: new Date(1768665600000), y: 10269.59},{x: new Date(1768752000000), y: 10290.1},{x: new Date(1768838400000), y: 10313.92},{x: new Date(1768924800000), y: 10317.93},{x: new Date(1769011200000), y: 10330.7},{x: new Date(1769097600000), y: 10323.19},{x: new Date(1769184000000), y: 10327.93},{x: new Date(1769270400000), y: 10336.17},{x: new Date(1769356800000), y: 10344.3},{x: new Date(1769443200000), y: 10340.34},{x: new Date(1769529600000), y: 10325.92},{x: new Date(1769616000000), y: 10371.22},{x: new Date(1769702400000), y: 10391.87},{x: new Date(1769788800000), y: 10407.71},{x: new Date(1769875200000), y: 10444.72},{x: new Date(1769961600000), y: 10432.21},{x: new Date(1770048000000), y: 10439.39},{x: new Date(1770134400000), y: 10479.33},{x: new Date(1770220800000), y: 10545.9},{x: new Date(1770307200000), y: 10534.44},{x: new Date(1770393600000), y: 10529.13},{x: new Date(1770480000000), y: 10508.91},{x: new Date(1770566400000), y: 10525.06},{x: new Date(1770652800000), y: 10527.85},{x: new Date(1770739200000), y: 10555.51},{x: new Date(1770825600000), y: 10549.42},{x: new Date(1770912000000), y: 10533.69},{x: new Date(1770998400000), y: 10522.79},{x: new Date(1771084800000), y: 10529.78},{x: new Date(1771171200000), y: 10545.34},{x: new Date(1771257600000), y: 10546.75},{x: new Date(1771344000000), y: 10543.77},{x: new Date(1771430400000), y: 10556.64},{x: new Date(1771516800000), y: 10544.94},{x: new Date(1771603200000), y: 10534.58},{x: new Date(1771689600000), y: 10543.81},{x: new Date(1771776000000), y: 10564.13},{x: new Date(1771862400000), y: 10581.0},{x: new Date(1771948800000), y: 10546.7},{x: new Date(1772035200000), y: 10546.93},{x: new Date(1772121600000), y: 10559.72},{x: new Date(1772208000000), y: 10572.36},{x: new Date(1772294400000), y: 10552.31},{x: new Date(1772380800000), y: 10529.56},{x: new Date(1772467200000), y: 10543.48},{x: new Date(1772553600000), y: 10486.81},{x: new Date(1772640000000), y: 10504.26},{x: new Date(1772726400000), y: 10535.81},{x: new Date(1772812800000), y: 10541.92},{x: new Date(1772899200000), y: 10548.64},{x: new Date(1772985600000), y: 10532.07},{x: new Date(1773072000000), y: 10507.29},{x: new Date(1773158400000), y: 10518.37},{x: new Date(1773244800000), y: 10517.46},{x: new Date(1773331200000), y: 10502.41},{x: new Date(1773417600000), y: 10514.94},{x: new Date(1773504000000), y: 10505.95},{x: new Date(1773590400000), y: 10488.04},{x: new Date(1773676800000), y: 10481.55},{x: new Date(1773763200000), y: 10506.05},{x: new Date(1773849600000), y: 10526.63},{x: new Date(1773936000000), y: 10522.02},{x: new Date(1774022400000), y: 10514.43},{x: new Date(1774108800000), y: 10532.29},{x: new Date(1774195200000), y: 10519.4},{x: new Date(1774281600000), y: 10522.03},{x: new Date(1774368000000), y: 10512.41},{x: new Date(1774454400000), y: 10529.83},{x: new Date(1774540800000), y: 10559.71},{x: new Date(1774627200000), y: 10550.53},{x: new Date(1774713600000), y: 10555.47},{x: new Date(1774800000000), y: 10544.49},{x: new Date(1774886400000), y: 10553.4},{x: new Date(1774972800000), y: 10531.55},{x: new Date(1775059200000), y: 10552.2},{x: new Date(1775145600000), y: 10552.41},{x: new Date(1775232000000), y: 10546.93},{x: new Date(1775318400000), y: 10547.68},{x: new Date(1775404800000), y: 10521.08},{x: new Date(1775491200000), y: 10539.05},{x: new Date(1775577600000), y: 10507.65},{x: new Date(1775664000000), y: 10499.28},{x: new Date(1775750400000), y: 10496.17},{x: new Date(1775836800000), y: 10492.1},{x: new Date(1775923200000), y: 10511.86},{x: new Date(1776009600000), y: 10502.05},{x: new Date(1776096000000), y: 10467.45},{x: new Date(1776182400000), y: 10482.29},{x: new Date(1776268800000), y: 10473.71},{x: new Date(1776355200000), y: 10442.91},{x: new Date(1776441600000), y: 10459.01},{x: new Date(1776528000000), y: 10462.22},{x: new Date(1776614400000), y: 10463.62},{x: new Date(1776700800000), y: 10462.33},{x: new Date(1776787200000), y: 10440.26}],
+    borderColor: '#f7931a',
+    backgroundColor: '#f7931a22',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'CCI 趋势反转',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 9998.78},{x: new Date(1759939200000), y: 10009.11},{x: new Date(1760025600000), y: 10030.56},{x: new Date(1760112000000), y: 10102.87},{x: new Date(1760198400000), y: 10088.74},{x: new Date(1760284800000), y: 10077.36},{x: new Date(1760371200000), y: 10091.78},{x: new Date(1760457600000), y: 10112.7},{x: new Date(1760544000000), y: 10135.15},{x: new Date(1760630400000), y: 10152.79},{x: new Date(1760716800000), y: 10151.26},{x: new Date(1760803200000), y: 10135.93},{x: new Date(1760889600000), y: 10109.19},{x: new Date(1760976000000), y: 10086.46},{x: new Date(1761062400000), y: 10136.6},{x: new Date(1761148800000), y: 10121.73},{x: new Date(1761235200000), y: 10120.17},{x: new Date(1761321600000), y: 10106.81},{x: new Date(1761408000000), y: 10083.73},{x: new Date(1761494400000), y: 10071.13},{x: new Date(1761580800000), y: 10074.27},{x: new Date(1761667200000), y: 10105.58},{x: new Date(1761753600000), y: 10143.57},{x: new Date(1761840000000), y: 10118.84},{x: new Date(1761926400000), y: 10117.73},{x: new Date(1762012800000), y: 10119.56},{x: new Date(1762099200000), y: 10163.26},{x: new Date(1762185600000), y: 10188.67},{x: new Date(1762272000000), y: 10183.42},{x: new Date(1762358400000), y: 10200.58},{x: new Date(1762444800000), y: 10212.7},{x: new Date(1762531200000), y: 10203.48},{x: new Date(1762617600000), y: 10183.2},{x: new Date(1762704000000), y: 10169.94},{x: new Date(1762790400000), y: 10186.0},{x: new Date(1762876800000), y: 10198.91},{x: new Date(1762963200000), y: 10206.84},{x: new Date(1763049600000), y: 10252.7},{x: new Date(1763136000000), y: 10258.08},{x: new Date(1763222400000), y: 10274.83},{x: new Date(1763308800000), y: 10281.14},{x: new Date(1763395200000), y: 10291.67},{x: new Date(1763481600000), y: 10321.22},{x: new Date(1763568000000), y: 10322.1},{x: new Date(1763654400000), y: 10391.34},{x: new Date(1763740800000), y: 10377.9},{x: new Date(1763827200000), y: 10349.89},{x: new Date(1763913600000), y: 10354.57},{x: new Date(1764000000000), y: 10350.85},{x: new Date(1764086400000), y: 10351.08},{x: new Date(1764172800000), y: 10311.13},{x: new Date(1764259200000), y: 10297.17},{x: new Date(1764345600000), y: 10310.05},{x: new Date(1764432000000), y: 10306.33},{x: new Date(1764518400000), y: 10373.86},{x: new Date(1764604800000), y: 10312.25},{x: new Date(1764691200000), y: 10296.93},{x: new Date(1764777600000), y: 10291.04},{x: new Date(1764864000000), y: 10316.17},{x: new Date(1764950400000), y: 10323.16},{x: new Date(1765036800000), y: 10325.18},{x: new Date(1765123200000), y: 10321.11},{x: new Date(1765209600000), y: 10293.66},{x: new Date(1765296000000), y: 10300.03},{x: new Date(1765382400000), y: 10321.98},{x: new Date(1765468800000), y: 10321.31},{x: new Date(1765555200000), y: 10319.72},{x: new Date(1765641600000), y: 10330.45},{x: new Date(1765728000000), y: 10350.3},{x: new Date(1765814400000), y: 10341.04},{x: new Date(1765900800000), y: 10348.41},{x: new Date(1765987200000), y: 10335.59},{x: new Date(1766073600000), y: 10341.15},{x: new Date(1766160000000), y: 10338.98},{x: new Date(1766246400000), y: 10340.02},{x: new Date(1766332800000), y: 10323.39},{x: new Date(1766419200000), y: 10346.28},{x: new Date(1766505600000), y: 10350.3},{x: new Date(1766592000000), y: 10337.06},{x: new Date(1766678400000), y: 10349.34},{x: new Date(1766764800000), y: 10345.13},{x: new Date(1766851200000), y: 10342.34},{x: new Date(1766937600000), y: 10343.86},{x: new Date(1767024000000), y: 10330.68},{x: new Date(1767110400000), y: 10341.28},{x: new Date(1767196800000), y: 10340.39},{x: new Date(1767283200000), y: 10326.62},{x: new Date(1767369600000), y: 10321.01},{x: new Date(1767456000000), y: 10307.4},{x: new Date(1767542400000), y: 10281.16},{x: new Date(1767628800000), y: 10284.25},{x: new Date(1767715200000), y: 10307.26},{x: new Date(1767801600000), y: 10312.82},{x: new Date(1767888000000), y: 10308.89},{x: new Date(1767974400000), y: 10314.12},{x: new Date(1768060800000), y: 10311.98},{x: new Date(1768147200000), y: 10304.06},{x: new Date(1768233600000), y: 10286.17},{x: new Date(1768320000000), y: 10253.17},{x: new Date(1768406400000), y: 10253.31},{x: new Date(1768492800000), y: 10274.83},{x: new Date(1768579200000), y: 10265.02},{x: new Date(1768665600000), y: 10269.59},{x: new Date(1768752000000), y: 10290.1},{x: new Date(1768838400000), y: 10313.92},{x: new Date(1768924800000), y: 10317.93},{x: new Date(1769011200000), y: 10330.7},{x: new Date(1769097600000), y: 10323.19},{x: new Date(1769184000000), y: 10327.93},{x: new Date(1769270400000), y: 10336.17},{x: new Date(1769356800000), y: 10344.3},{x: new Date(1769443200000), y: 10340.34},{x: new Date(1769529600000), y: 10325.92},{x: new Date(1769616000000), y: 10371.22},{x: new Date(1769702400000), y: 10391.87},{x: new Date(1769788800000), y: 10407.71},{x: new Date(1769875200000), y: 10444.72},{x: new Date(1769961600000), y: 10432.21},{x: new Date(1770048000000), y: 10439.39},{x: new Date(1770134400000), y: 10479.33},{x: new Date(1770220800000), y: 10545.9},{x: new Date(1770307200000), y: 10534.44},{x: new Date(1770393600000), y: 10529.13},{x: new Date(1770480000000), y: 10508.91},{x: new Date(1770566400000), y: 10525.06},{x: new Date(1770652800000), y: 10527.85},{x: new Date(1770739200000), y: 10555.51},{x: new Date(1770825600000), y: 10549.42},{x: new Date(1770912000000), y: 10533.69},{x: new Date(1770998400000), y: 10522.79},{x: new Date(1771084800000), y: 10529.78},{x: new Date(1771171200000), y: 10545.34},{x: new Date(1771257600000), y: 10546.75},{x: new Date(1771344000000), y: 10543.77},{x: new Date(1771430400000), y: 10556.64},{x: new Date(1771516800000), y: 10544.94},{x: new Date(1771603200000), y: 10534.58},{x: new Date(1771689600000), y: 10543.81},{x: new Date(1771776000000), y: 10564.13},{x: new Date(1771862400000), y: 10581.0},{x: new Date(1771948800000), y: 10546.7},{x: new Date(1772035200000), y: 10546.93},{x: new Date(1772121600000), y: 10559.72},{x: new Date(1772208000000), y: 10572.36},{x: new Date(1772294400000), y: 10552.31},{x: new Date(1772380800000), y: 10529.56},{x: new Date(1772467200000), y: 10543.48},{x: new Date(1772553600000), y: 10486.81},{x: new Date(1772640000000), y: 10504.26},{x: new Date(1772726400000), y: 10535.81},{x: new Date(1772812800000), y: 10541.92},{x: new Date(1772899200000), y: 10548.64},{x: new Date(1772985600000), y: 10532.07},{x: new Date(1773072000000), y: 10507.29},{x: new Date(1773158400000), y: 10518.37},{x: new Date(1773244800000), y: 10517.46},{x: new Date(1773331200000), y: 10502.41},{x: new Date(1773417600000), y: 10514.94},{x: new Date(1773504000000), y: 10505.95},{x: new Date(1773590400000), y: 10488.04},{x: new Date(1773676800000), y: 10481.55},{x: new Date(1773763200000), y: 10506.05},{x: new Date(1773849600000), y: 10526.63},{x: new Date(1773936000000), y: 10522.02},{x: new Date(1774022400000), y: 10514.43},{x: new Date(1774108800000), y: 10532.29},{x: new Date(1774195200000), y: 10519.4},{x: new Date(1774281600000), y: 10522.03},{x: new Date(1774368000000), y: 10512.41},{x: new Date(1774454400000), y: 10529.83},{x: new Date(1774540800000), y: 10559.71},{x: new Date(1774627200000), y: 10550.53},{x: new Date(1774713600000), y: 10555.47},{x: new Date(1774800000000), y: 10544.49},{x: new Date(1774886400000), y: 10553.4},{x: new Date(1774972800000), y: 10531.55},{x: new Date(1775059200000), y: 10552.2},{x: new Date(1775145600000), y: 10552.41},{x: new Date(1775232000000), y: 10546.93},{x: new Date(1775318400000), y: 10547.68},{x: new Date(1775404800000), y: 10521.08},{x: new Date(1775491200000), y: 10539.05},{x: new Date(1775577600000), y: 10507.65},{x: new Date(1775664000000), y: 10499.28},{x: new Date(1775750400000), y: 10496.17},{x: new Date(1775836800000), y: 10492.1},{x: new Date(1775923200000), y: 10511.86},{x: new Date(1776009600000), y: 10502.05},{x: new Date(1776096000000), y: 10467.45},{x: new Date(1776182400000), y: 10482.29},{x: new Date(1776268800000), y: 10473.71},{x: new Date(1776355200000), y: 10442.91},{x: new Date(1776441600000), y: 10459.01},{x: new Date(1776528000000), y: 10462.22},{x: new Date(1776614400000), y: 10463.62},{x: new Date(1776700800000), y: 10462.33},{x: new Date(1776787200000), y: 10440.26}],
+    borderColor: '#ef5350',
+    backgroundColor: '#ef535022',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'RSI 超卖超买',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 9998.78},{x: new Date(1759852800000), y: 9995.43},{x: new Date(1759939200000), y: 10005.76},{x: new Date(1760025600000), y: 10027.21},{x: new Date(1760112000000), y: 10099.52},{x: new Date(1760198400000), y: 10085.39},{x: new Date(1760284800000), y: 10074.01},{x: new Date(1760371200000), y: 10088.43},{x: new Date(1760457600000), y: 10109.35},{x: new Date(1760544000000), y: 10131.8},{x: new Date(1760630400000), y: 10149.43},{x: new Date(1760716800000), y: 10147.91},{x: new Date(1760803200000), y: 10132.58},{x: new Date(1760889600000), y: 10105.84},{x: new Date(1760976000000), y: 10083.11},{x: new Date(1761062400000), y: 10133.25},{x: new Date(1761148800000), y: 10118.38},{x: new Date(1761235200000), y: 10116.82},{x: new Date(1761321600000), y: 10103.46},{x: new Date(1761408000000), y: 10080.38},{x: new Date(1761494400000), y: 10067.78},{x: new Date(1761580800000), y: 10070.92},{x: new Date(1761667200000), y: 10102.23},{x: new Date(1761753600000), y: 10140.22},{x: new Date(1761840000000), y: 10115.49},{x: new Date(1761926400000), y: 10114.37},{x: new Date(1762012800000), y: 10116.21},{x: new Date(1762099200000), y: 10159.91},{x: new Date(1762185600000), y: 10185.32},{x: new Date(1762272000000), y: 10180.07},{x: new Date(1762358400000), y: 10197.22},{x: new Date(1762444800000), y: 10209.35},{x: new Date(1762531200000), y: 10200.13},{x: new Date(1762617600000), y: 10179.85},{x: new Date(1762704000000), y: 10166.59},{x: new Date(1762790400000), y: 10182.65},{x: new Date(1762876800000), y: 10195.56},{x: new Date(1762963200000), y: 10203.49},{x: new Date(1763049600000), y: 10249.35},{x: new Date(1763136000000), y: 10254.72},{x: new Date(1763222400000), y: 10271.48},{x: new Date(1763308800000), y: 10277.79},{x: new Date(1763395200000), y: 10288.31},{x: new Date(1763481600000), y: 10317.87},{x: new Date(1763568000000), y: 10318.75},{x: new Date(1763654400000), y: 10387.99},{x: new Date(1763740800000), y: 10374.55},{x: new Date(1763827200000), y: 10346.54},{x: new Date(1763913600000), y: 10351.22},{x: new Date(1764000000000), y: 10347.5},{x: new Date(1764086400000), y: 10347.73},{x: new Date(1764172800000), y: 10307.78},{x: new Date(1764259200000), y: 10293.82},{x: new Date(1764345600000), y: 10306.7},{x: new Date(1764432000000), y: 10302.98},{x: new Date(1764518400000), y: 10370.51},{x: new Date(1764604800000), y: 10308.9},{x: new Date(1764691200000), y: 10293.58},{x: new Date(1764777600000), y: 10287.69},{x: new Date(1764864000000), y: 10312.82},{x: new Date(1764950400000), y: 10319.81},{x: new Date(1765036800000), y: 10321.83},{x: new Date(1765123200000), y: 10317.76},{x: new Date(1765209600000), y: 10290.31},{x: new Date(1765296000000), y: 10296.68},{x: new Date(1765382400000), y: 10318.63},{x: new Date(1765468800000), y: 10317.96},{x: new Date(1765555200000), y: 10316.37},{x: new Date(1765641600000), y: 10327.1},{x: new Date(1765728000000), y: 10346.95},{x: new Date(1765814400000), y: 10337.69},{x: new Date(1765900800000), y: 10345.06},{x: new Date(1765987200000), y: 10332.24},{x: new Date(1766073600000), y: 10337.8},{x: new Date(1766160000000), y: 10335.63},{x: new Date(1766246400000), y: 10336.67},{x: new Date(1766332800000), y: 10320.04},{x: new Date(1766419200000), y: 10342.93},{x: new Date(1766505600000), y: 10346.95},{x: new Date(1766592000000), y: 10333.71},{x: new Date(1766678400000), y: 10345.99},{x: new Date(1766764800000), y: 10341.78},{x: new Date(1766851200000), y: 10338.98},{x: new Date(1766937600000), y: 10340.51},{x: new Date(1767024000000), y: 10327.33},{x: new Date(1767110400000), y: 10337.93},{x: new Date(1767196800000), y: 10337.04},{x: new Date(1767283200000), y: 10323.27},{x: new Date(1767369600000), y: 10317.66},{x: new Date(1767456000000), y: 10304.05},{x: new Date(1767542400000), y: 10277.81},{x: new Date(1767628800000), y: 10280.9},{x: new Date(1767715200000), y: 10303.91},{x: new Date(1767801600000), y: 10309.47},{x: new Date(1767888000000), y: 10305.54},{x: new Date(1767974400000), y: 10310.76},{x: new Date(1768060800000), y: 10308.63},{x: new Date(1768147200000), y: 10300.71},{x: new Date(1768233600000), y: 10282.82},{x: new Date(1768320000000), y: 10249.82},{x: new Date(1768406400000), y: 10249.96},{x: new Date(1768492800000), y: 10271.48},{x: new Date(1768579200000), y: 10261.67},{x: new Date(1768665600000), y: 10266.24},{x: new Date(1768752000000), y: 10286.75},{x: new Date(1768838400000), y: 10310.57},{x: new Date(1768924800000), y: 10314.58},{x: new Date(1769011200000), y: 10327.34},{x: new Date(1769097600000), y: 10319.83},{x: new Date(1769184000000), y: 10324.58},{x: new Date(1769270400000), y: 10332.82},{x: new Date(1769356800000), y: 10340.95},{x: new Date(1769443200000), y: 10336.99},{x: new Date(1769529600000), y: 10322.57},{x: new Date(1769616000000), y: 10367.87},{x: new Date(1769702400000), y: 10388.52},{x: new Date(1769788800000), y: 10404.36},{x: new Date(1769875200000), y: 10441.37},{x: new Date(1769961600000), y: 10428.86},{x: new Date(1770048000000), y: 10436.04},{x: new Date(1770134400000), y: 10475.98},{x: new Date(1770220800000), y: 10542.55},{x: new Date(1770307200000), y: 10531.09},{x: new Date(1770393600000), y: 10525.78},{x: new Date(1770480000000), y: 10505.56},{x: new Date(1770566400000), y: 10521.71},{x: new Date(1770652800000), y: 10524.5},{x: new Date(1770739200000), y: 10552.16},{x: new Date(1770825600000), y: 10546.07},{x: new Date(1770912000000), y: 10530.34},{x: new Date(1770998400000), y: 10519.44},{x: new Date(1771084800000), y: 10526.43},{x: new Date(1771171200000), y: 10541.99},{x: new Date(1771257600000), y: 10543.4},{x: new Date(1771344000000), y: 10540.42},{x: new Date(1771430400000), y: 10553.29},{x: new Date(1771516800000), y: 10541.58},{x: new Date(1771603200000), y: 10531.23},{x: new Date(1771689600000), y: 10540.46},{x: new Date(1771776000000), y: 10560.78},{x: new Date(1771862400000), y: 10577.65},{x: new Date(1771948800000), y: 10543.35},{x: new Date(1772035200000), y: 10543.58},{x: new Date(1772121600000), y: 10556.37},{x: new Date(1772208000000), y: 10569.01},{x: new Date(1772294400000), y: 10548.96},{x: new Date(1772380800000), y: 10526.21},{x: new Date(1772467200000), y: 10540.13},{x: new Date(1772553600000), y: 10483.46},{x: new Date(1772640000000), y: 10500.91},{x: new Date(1772726400000), y: 10532.46},{x: new Date(1772812800000), y: 10538.57},{x: new Date(1772899200000), y: 10545.29},{x: new Date(1772985600000), y: 10528.71},{x: new Date(1773072000000), y: 10503.94},{x: new Date(1773158400000), y: 10515.02},{x: new Date(1773244800000), y: 10514.11},{x: new Date(1773331200000), y: 10499.06},{x: new Date(1773417600000), y: 10511.59},{x: new Date(1773504000000), y: 10502.6},{x: new Date(1773590400000), y: 10484.69},{x: new Date(1773676800000), y: 10478.2},{x: new Date(1773763200000), y: 10502.7},{x: new Date(1773849600000), y: 10523.28},{x: new Date(1773936000000), y: 10518.67},{x: new Date(1774022400000), y: 10511.08},{x: new Date(1774108800000), y: 10528.94},{x: new Date(1774195200000), y: 10516.05},{x: new Date(1774281600000), y: 10518.68},{x: new Date(1774368000000), y: 10509.06},{x: new Date(1774454400000), y: 10526.48},{x: new Date(1774540800000), y: 10556.36},{x: new Date(1774627200000), y: 10547.18},{x: new Date(1774713600000), y: 10552.11},{x: new Date(1774800000000), y: 10541.14},{x: new Date(1774886400000), y: 10550.05},{x: new Date(1774972800000), y: 10528.2},{x: new Date(1775059200000), y: 10548.85},{x: new Date(1775145600000), y: 10549.06},{x: new Date(1775232000000), y: 10543.58},{x: new Date(1775318400000), y: 10544.33},{x: new Date(1775404800000), y: 10517.73},{x: new Date(1775491200000), y: 10535.69},{x: new Date(1775577600000), y: 10504.3},{x: new Date(1775664000000), y: 10495.93},{x: new Date(1775750400000), y: 10492.82},{x: new Date(1775836800000), y: 10488.75},{x: new Date(1775923200000), y: 10508.51},{x: new Date(1776009600000), y: 10498.7},{x: new Date(1776096000000), y: 10464.09},{x: new Date(1776182400000), y: 10478.94},{x: new Date(1776268800000), y: 10470.36},{x: new Date(1776355200000), y: 10439.56},{x: new Date(1776441600000), y: 10455.66},{x: new Date(1776528000000), y: 10458.87},{x: new Date(1776614400000), y: 10460.27},{x: new Date(1776700800000), y: 10458.98},{x: new Date(1776787200000), y: 10436.91}],
+    borderColor: '#26a69a',
+    backgroundColor: '#26a69a22',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '双时间框架EMA',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 10000},{x: new Date(1759939200000), y: 10000},{x: new Date(1760025600000), y: 10000},{x: new Date(1760112000000), y: 10000},{x: new Date(1760198400000), y: 10000},{x: new Date(1760284800000), y: 9998.86},{x: new Date(1760371200000), y: 10013.28},{x: new Date(1760457600000), y: 10034.2},{x: new Date(1760544000000), y: 10056.65},{x: new Date(1760630400000), y: 10074.29},{x: new Date(1760716800000), y: 10072.76},{x: new Date(1760803200000), y: 10057.43},{x: new Date(1760889600000), y: 10030.69},{x: new Date(1760976000000), y: 10007.96},{x: new Date(1761062400000), y: 10058.1},{x: new Date(1761148800000), y: 10043.23},{x: new Date(1761235200000), y: 10041.67},{x: new Date(1761321600000), y: 10028.31},{x: new Date(1761408000000), y: 10005.23},{x: new Date(1761494400000), y: 9992.63},{x: new Date(1761580800000), y: 9995.77},{x: new Date(1761667200000), y: 10027.08},{x: new Date(1761753600000), y: 10065.07},{x: new Date(1761840000000), y: 10040.34},{x: new Date(1761926400000), y: 10039.23},{x: new Date(1762012800000), y: 10041.06},{x: new Date(1762099200000), y: 10084.76},{x: new Date(1762185600000), y: 10110.17},{x: new Date(1762272000000), y: 10104.92},{x: new Date(1762358400000), y: 10122.08},{x: new Date(1762444800000), y: 10134.2},{x: new Date(1762531200000), y: 10124.98},{x: new Date(1762617600000), y: 10104.7},{x: new Date(1762704000000), y: 10091.44},{x: new Date(1762790400000), y: 10107.5},{x: new Date(1762876800000), y: 10120.41},{x: new Date(1762963200000), y: 10128.34},{x: new Date(1763049600000), y: 10174.2},{x: new Date(1763136000000), y: 10179.58},{x: new Date(1763222400000), y: 10196.33},{x: new Date(1763308800000), y: 10202.64},{x: new Date(1763395200000), y: 10213.17},{x: new Date(1763481600000), y: 10242.72},{x: new Date(1763568000000), y: 10243.6},{x: new Date(1763654400000), y: 10312.84},{x: new Date(1763740800000), y: 10299.4},{x: new Date(1763827200000), y: 10271.39},{x: new Date(1763913600000), y: 10276.07},{x: new Date(1764000000000), y: 10272.35},{x: new Date(1764086400000), y: 10272.58},{x: new Date(1764172800000), y: 10232.63},{x: new Date(1764259200000), y: 10218.67},{x: new Date(1764345600000), y: 10231.55},{x: new Date(1764432000000), y: 10227.83},{x: new Date(1764518400000), y: 10295.36},{x: new Date(1764604800000), y: 10233.75},{x: new Date(1764691200000), y: 10218.43},{x: new Date(1764777600000), y: 10212.54},{x: new Date(1764864000000), y: 10237.67},{x: new Date(1764950400000), y: 10244.66},{x: new Date(1765036800000), y: 10246.68},{x: new Date(1765123200000), y: 10242.61},{x: new Date(1765209600000), y: 10215.16},{x: new Date(1765296000000), y: 10221.53},{x: new Date(1765382400000), y: 10243.48},{x: new Date(1765468800000), y: 10242.81},{x: new Date(1765555200000), y: 10241.22},{x: new Date(1765641600000), y: 10251.95},{x: new Date(1765728000000), y: 10271.8},{x: new Date(1765814400000), y: 10262.54},{x: new Date(1765900800000), y: 10269.91},{x: new Date(1765987200000), y: 10257.09},{x: new Date(1766073600000), y: 10262.65},{x: new Date(1766160000000), y: 10260.48},{x: new Date(1766246400000), y: 10261.52},{x: new Date(1766332800000), y: 10244.89},{x: new Date(1766419200000), y: 10267.78},{x: new Date(1766505600000), y: 10271.8},{x: new Date(1766592000000), y: 10258.56},{x: new Date(1766678400000), y: 10270.84},{x: new Date(1766764800000), y: 10266.63},{x: new Date(1766851200000), y: 10263.84},{x: new Date(1766937600000), y: 10265.36},{x: new Date(1767024000000), y: 10252.18},{x: new Date(1767110400000), y: 10262.78},{x: new Date(1767196800000), y: 10261.89},{x: new Date(1767283200000), y: 10248.12},{x: new Date(1767369600000), y: 10242.51},{x: new Date(1767456000000), y: 10228.9},{x: new Date(1767542400000), y: 10202.66},{x: new Date(1767628800000), y: 10205.75},{x: new Date(1767715200000), y: 10228.76},{x: new Date(1767801600000), y: 10234.32},{x: new Date(1767888000000), y: 10230.39},{x: new Date(1767974400000), y: 10235.62},{x: new Date(1768060800000), y: 10233.48},{x: new Date(1768147200000), y: 10225.56},{x: new Date(1768233600000), y: 10207.67},{x: new Date(1768320000000), y: 10174.67},{x: new Date(1768406400000), y: 10174.81},{x: new Date(1768492800000), y: 10196.33},{x: new Date(1768579200000), y: 10186.52},{x: new Date(1768665600000), y: 10191.09},{x: new Date(1768752000000), y: 10211.6},{x: new Date(1768838400000), y: 10235.42},{x: new Date(1768924800000), y: 10239.43},{x: new Date(1769011200000), y: 10252.2},{x: new Date(1769097600000), y: 10244.69},{x: new Date(1769184000000), y: 10249.43},{x: new Date(1769270400000), y: 10257.67},{x: new Date(1769356800000), y: 10265.8},{x: new Date(1769443200000), y: 10261.84},{x: new Date(1769529600000), y: 10247.42},{x: new Date(1769616000000), y: 10292.72},{x: new Date(1769702400000), y: 10313.37},{x: new Date(1769788800000), y: 10329.21},{x: new Date(1769875200000), y: 10366.22},{x: new Date(1769961600000), y: 10353.71},{x: new Date(1770048000000), y: 10360.89},{x: new Date(1770134400000), y: 10400.83},{x: new Date(1770220800000), y: 10467.4},{x: new Date(1770307200000), y: 10455.94},{x: new Date(1770393600000), y: 10450.63},{x: new Date(1770480000000), y: 10430.41},{x: new Date(1770566400000), y: 10446.56},{x: new Date(1770652800000), y: 10449.35},{x: new Date(1770739200000), y: 10477.01},{x: new Date(1770825600000), y: 10470.92},{x: new Date(1770912000000), y: 10455.19},{x: new Date(1770998400000), y: 10444.29},{x: new Date(1771084800000), y: 10451.28},{x: new Date(1771171200000), y: 10466.84},{x: new Date(1771257600000), y: 10468.25},{x: new Date(1771344000000), y: 10465.27},{x: new Date(1771430400000), y: 10478.14},{x: new Date(1771516800000), y: 10466.44},{x: new Date(1771603200000), y: 10456.08},{x: new Date(1771689600000), y: 10465.31},{x: new Date(1771776000000), y: 10485.63},{x: new Date(1771862400000), y: 10502.5},{x: new Date(1771948800000), y: 10468.2},{x: new Date(1772035200000), y: 10468.43},{x: new Date(1772121600000), y: 10481.22},{x: new Date(1772208000000), y: 10493.86},{x: new Date(1772294400000), y: 10473.81},{x: new Date(1772380800000), y: 10451.06},{x: new Date(1772467200000), y: 10464.98},{x: new Date(1772553600000), y: 10408.31},{x: new Date(1772640000000), y: 10425.76},{x: new Date(1772726400000), y: 10457.31},{x: new Date(1772812800000), y: 10463.42},{x: new Date(1772899200000), y: 10470.14},{x: new Date(1772985600000), y: 10453.57},{x: new Date(1773072000000), y: 10428.79},{x: new Date(1773158400000), y: 10439.87},{x: new Date(1773244800000), y: 10438.96},{x: new Date(1773331200000), y: 10423.91},{x: new Date(1773417600000), y: 10436.44},{x: new Date(1773504000000), y: 10427.45},{x: new Date(1773590400000), y: 10409.54},{x: new Date(1773676800000), y: 10403.05},{x: new Date(1773763200000), y: 10427.55},{x: new Date(1773849600000), y: 10448.13},{x: new Date(1773936000000), y: 10443.52},{x: new Date(1774022400000), y: 10435.93},{x: new Date(1774108800000), y: 10453.79},{x: new Date(1774195200000), y: 10440.9},{x: new Date(1774281600000), y: 10443.53},{x: new Date(1774368000000), y: 10433.91},{x: new Date(1774454400000), y: 10451.33},{x: new Date(1774540800000), y: 10481.21},{x: new Date(1774627200000), y: 10472.03},{x: new Date(1774713600000), y: 10476.97},{x: new Date(1774800000000), y: 10465.99},{x: new Date(1774886400000), y: 10474.9},{x: new Date(1774972800000), y: 10453.05},{x: new Date(1775059200000), y: 10473.7},{x: new Date(1775145600000), y: 10473.91},{x: new Date(1775232000000), y: 10468.43},{x: new Date(1775318400000), y: 10469.18},{x: new Date(1775404800000), y: 10442.58},{x: new Date(1775491200000), y: 10460.55},{x: new Date(1775577600000), y: 10429.15},{x: new Date(1775664000000), y: 10420.78},{x: new Date(1775750400000), y: 10417.67},{x: new Date(1775836800000), y: 10413.6},{x: new Date(1775923200000), y: 10433.36},{x: new Date(1776009600000), y: 10423.55},{x: new Date(1776096000000), y: 10388.95},{x: new Date(1776182400000), y: 10403.79},{x: new Date(1776268800000), y: 10395.21},{x: new Date(1776355200000), y: 10364.41},{x: new Date(1776441600000), y: 10380.51},{x: new Date(1776528000000), y: 10383.72},{x: new Date(1776614400000), y: 10385.12},{x: new Date(1776700800000), y: 10383.83},{x: new Date(1776787200000), y: 10361.76}],
+    borderColor: '#1976d2',
+    backgroundColor: '#1976d222',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'MACD 趋势动能',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 10000},{x: new Date(1759939200000), y: 10000},{x: new Date(1760025600000), y: 10000},{x: new Date(1760112000000), y: 9998.88},{x: new Date(1760198400000), y: 9984.75},{x: new Date(1760284800000), y: 9973.37},{x: new Date(1760371200000), y: 9987.79},{x: new Date(1760457600000), y: 10008.71},{x: new Date(1760544000000), y: 10031.16},{x: new Date(1760630400000), y: 10048.8},{x: new Date(1760716800000), y: 10047.27},{x: new Date(1760803200000), y: 10031.94},{x: new Date(1760889600000), y: 10005.2},{x: new Date(1760976000000), y: 9982.47},{x: new Date(1761062400000), y: 10032.61},{x: new Date(1761148800000), y: 10017.74},{x: new Date(1761235200000), y: 10016.18},{x: new Date(1761321600000), y: 10002.82},{x: new Date(1761408000000), y: 9979.74},{x: new Date(1761494400000), y: 9967.14},{x: new Date(1761580800000), y: 9970.28},{x: new Date(1761667200000), y: 10001.59},{x: new Date(1761753600000), y: 10039.58},{x: new Date(1761840000000), y: 10014.85},{x: new Date(1761926400000), y: 10013.74},{x: new Date(1762012800000), y: 10015.57},{x: new Date(1762099200000), y: 10059.27},{x: new Date(1762185600000), y: 10084.68},{x: new Date(1762272000000), y: 10079.43},{x: new Date(1762358400000), y: 10096.59},{x: new Date(1762444800000), y: 10108.71},{x: new Date(1762531200000), y: 10099.49},{x: new Date(1762617600000), y: 10079.21},{x: new Date(1762704000000), y: 10065.95},{x: new Date(1762790400000), y: 10082.01},{x: new Date(1762876800000), y: 10094.92},{x: new Date(1762963200000), y: 10102.85},{x: new Date(1763049600000), y: 10148.71},{x: new Date(1763136000000), y: 10154.09},{x: new Date(1763222400000), y: 10170.84},{x: new Date(1763308800000), y: 10177.15},{x: new Date(1763395200000), y: 10187.68},{x: new Date(1763481600000), y: 10217.23},{x: new Date(1763568000000), y: 10218.11},{x: new Date(1763654400000), y: 10287.36},{x: new Date(1763740800000), y: 10273.91},{x: new Date(1763827200000), y: 10245.9},{x: new Date(1763913600000), y: 10250.58},{x: new Date(1764000000000), y: 10246.86},{x: new Date(1764086400000), y: 10247.09},{x: new Date(1764172800000), y: 10207.14},{x: new Date(1764259200000), y: 10193.18},{x: new Date(1764345600000), y: 10206.06},{x: new Date(1764432000000), y: 10202.34},{x: new Date(1764518400000), y: 10269.87},{x: new Date(1764604800000), y: 10208.26},{x: new Date(1764691200000), y: 10192.94},{x: new Date(1764777600000), y: 10187.05},{x: new Date(1764864000000), y: 10212.18},{x: new Date(1764950400000), y: 10219.17},{x: new Date(1765036800000), y: 10221.19},{x: new Date(1765123200000), y: 10217.12},{x: new Date(1765209600000), y: 10189.67},{x: new Date(1765296000000), y: 10196.04},{x: new Date(1765382400000), y: 10217.99},{x: new Date(1765468800000), y: 10217.32},{x: new Date(1765555200000), y: 10215.73},{x: new Date(1765641600000), y: 10226.46},{x: new Date(1765728000000), y: 10246.31},{x: new Date(1765814400000), y: 10237.05},{x: new Date(1765900800000), y: 10244.42},{x: new Date(1765987200000), y: 10231.6},{x: new Date(1766073600000), y: 10237.16},{x: new Date(1766160000000), y: 10234.99},{x: new Date(1766246400000), y: 10236.03},{x: new Date(1766332800000), y: 10219.4},{x: new Date(1766419200000), y: 10242.29},{x: new Date(1766505600000), y: 10246.31},{x: new Date(1766592000000), y: 10233.07},{x: new Date(1766678400000), y: 10245.35},{x: new Date(1766764800000), y: 10241.14},{x: new Date(1766851200000), y: 10238.35},{x: new Date(1766937600000), y: 10239.87},{x: new Date(1767024000000), y: 10226.69},{x: new Date(1767110400000), y: 10237.29},{x: new Date(1767196800000), y: 10236.4},{x: new Date(1767283200000), y: 10222.63},{x: new Date(1767369600000), y: 10217.02},{x: new Date(1767456000000), y: 10203.41},{x: new Date(1767542400000), y: 10177.17},{x: new Date(1767628800000), y: 10180.26},{x: new Date(1767715200000), y: 10203.27},{x: new Date(1767801600000), y: 10208.83},{x: new Date(1767888000000), y: 10204.9},{x: new Date(1767974400000), y: 10210.13},{x: new Date(1768060800000), y: 10207.99},{x: new Date(1768147200000), y: 10200.07},{x: new Date(1768233600000), y: 10182.18},{x: new Date(1768320000000), y: 10149.18},{x: new Date(1768406400000), y: 10149.32},{x: new Date(1768492800000), y: 10170.85},{x: new Date(1768579200000), y: 10161.03},{x: new Date(1768665600000), y: 10165.6},{x: new Date(1768752000000), y: 10186.11},{x: new Date(1768838400000), y: 10209.93},{x: new Date(1768924800000), y: 10213.94},{x: new Date(1769011200000), y: 10226.71},{x: new Date(1769097600000), y: 10219.2},{x: new Date(1769184000000), y: 10223.94},{x: new Date(1769270400000), y: 10232.18},{x: new Date(1769356800000), y: 10240.31},{x: new Date(1769443200000), y: 10236.35},{x: new Date(1769529600000), y: 10221.93},{x: new Date(1769616000000), y: 10267.23},{x: new Date(1769702400000), y: 10287.88},{x: new Date(1769788800000), y: 10303.72},{x: new Date(1769875200000), y: 10340.73},{x: new Date(1769961600000), y: 10328.22},{x: new Date(1770048000000), y: 10335.4},{x: new Date(1770134400000), y: 10375.34},{x: new Date(1770220800000), y: 10441.91},{x: new Date(1770307200000), y: 10430.45},{x: new Date(1770393600000), y: 10425.14},{x: new Date(1770480000000), y: 10404.92},{x: new Date(1770566400000), y: 10421.07},{x: new Date(1770652800000), y: 10423.86},{x: new Date(1770739200000), y: 10451.52},{x: new Date(1770825600000), y: 10445.43},{x: new Date(1770912000000), y: 10429.7},{x: new Date(1770998400000), y: 10418.81},{x: new Date(1771084800000), y: 10425.79},{x: new Date(1771171200000), y: 10441.35},{x: new Date(1771257600000), y: 10442.76},{x: new Date(1771344000000), y: 10439.78},{x: new Date(1771430400000), y: 10452.65},{x: new Date(1771516800000), y: 10440.95},{x: new Date(1771603200000), y: 10430.59},{x: new Date(1771689600000), y: 10439.83},{x: new Date(1771776000000), y: 10460.14},{x: new Date(1771862400000), y: 10477.01},{x: new Date(1771948800000), y: 10442.71},{x: new Date(1772035200000), y: 10442.94},{x: new Date(1772121600000), y: 10455.73},{x: new Date(1772208000000), y: 10468.37},{x: new Date(1772294400000), y: 10448.32},{x: new Date(1772380800000), y: 10425.57},{x: new Date(1772467200000), y: 10439.49},{x: new Date(1772553600000), y: 10382.82},{x: new Date(1772640000000), y: 10400.27},{x: new Date(1772726400000), y: 10431.82},{x: new Date(1772812800000), y: 10437.93},{x: new Date(1772899200000), y: 10444.65},{x: new Date(1772985600000), y: 10428.08},{x: new Date(1773072000000), y: 10403.3},{x: new Date(1773158400000), y: 10414.38},{x: new Date(1773244800000), y: 10413.47},{x: new Date(1773331200000), y: 10398.42},{x: new Date(1773417600000), y: 10410.95},{x: new Date(1773504000000), y: 10401.96},{x: new Date(1773590400000), y: 10384.05},{x: new Date(1773676800000), y: 10377.56},{x: new Date(1773763200000), y: 10402.06},{x: new Date(1773849600000), y: 10422.64},{x: new Date(1773936000000), y: 10418.03},{x: new Date(1774022400000), y: 10410.44},{x: new Date(1774108800000), y: 10428.3},{x: new Date(1774195200000), y: 10415.41},{x: new Date(1774281600000), y: 10418.04},{x: new Date(1774368000000), y: 10408.42},{x: new Date(1774454400000), y: 10425.84},{x: new Date(1774540800000), y: 10455.72},{x: new Date(1774627200000), y: 10446.54},{x: new Date(1774713600000), y: 10451.48},{x: new Date(1774800000000), y: 10440.5},{x: new Date(1774886400000), y: 10449.41},{x: new Date(1774972800000), y: 10427.57},{x: new Date(1775059200000), y: 10448.21},{x: new Date(1775145600000), y: 10448.42},{x: new Date(1775232000000), y: 10442.94},{x: new Date(1775318400000), y: 10443.69},{x: new Date(1775404800000), y: 10417.09},{x: new Date(1775491200000), y: 10435.06},{x: new Date(1775577600000), y: 10403.66},{x: new Date(1775664000000), y: 10395.29},{x: new Date(1775750400000), y: 10392.18},{x: new Date(1775836800000), y: 10388.11},{x: new Date(1775923200000), y: 10407.87},{x: new Date(1776009600000), y: 10398.06},{x: new Date(1776096000000), y: 10363.46},{x: new Date(1776182400000), y: 10378.3},{x: new Date(1776268800000), y: 10369.72},{x: new Date(1776355200000), y: 10338.93},{x: new Date(1776441600000), y: 10355.02},{x: new Date(1776528000000), y: 10358.23},{x: new Date(1776614400000), y: 10359.63},{x: new Date(1776700800000), y: 10358.34},{x: new Date(1776787200000), y: 10336.27}],
+    borderColor: '#9c27b0',
+    backgroundColor: '#9c27b022',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'SuperTrend 趋势',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 10000},{x: new Date(1759939200000), y: 10000},{x: new Date(1760025600000), y: 10000},{x: new Date(1760112000000), y: 9998.88},{x: new Date(1760198400000), y: 9984.75},{x: new Date(1760284800000), y: 9973.37},{x: new Date(1760371200000), y: 9987.79},{x: new Date(1760457600000), y: 10008.71},{x: new Date(1760544000000), y: 10031.16},{x: new Date(1760630400000), y: 10048.8},{x: new Date(1760716800000), y: 10047.27},{x: new Date(1760803200000), y: 10031.94},{x: new Date(1760889600000), y: 10005.2},{x: new Date(1760976000000), y: 9982.47},{x: new Date(1761062400000), y: 10032.61},{x: new Date(1761148800000), y: 10017.74},{x: new Date(1761235200000), y: 10016.18},{x: new Date(1761321600000), y: 10002.82},{x: new Date(1761408000000), y: 9979.74},{x: new Date(1761494400000), y: 9967.14},{x: new Date(1761580800000), y: 9970.28},{x: new Date(1761667200000), y: 10001.59},{x: new Date(1761753600000), y: 10039.58},{x: new Date(1761840000000), y: 10014.85},{x: new Date(1761926400000), y: 10013.74},{x: new Date(1762012800000), y: 10015.57},{x: new Date(1762099200000), y: 10059.27},{x: new Date(1762185600000), y: 10084.68},{x: new Date(1762272000000), y: 10079.43},{x: new Date(1762358400000), y: 10096.59},{x: new Date(1762444800000), y: 10108.71},{x: new Date(1762531200000), y: 10099.49},{x: new Date(1762617600000), y: 10079.21},{x: new Date(1762704000000), y: 10065.95},{x: new Date(1762790400000), y: 10082.01},{x: new Date(1762876800000), y: 10094.92},{x: new Date(1762963200000), y: 10102.85},{x: new Date(1763049600000), y: 10148.71},{x: new Date(1763136000000), y: 10154.09},{x: new Date(1763222400000), y: 10170.84},{x: new Date(1763308800000), y: 10177.15},{x: new Date(1763395200000), y: 10187.68},{x: new Date(1763481600000), y: 10217.23},{x: new Date(1763568000000), y: 10218.11},{x: new Date(1763654400000), y: 10287.36},{x: new Date(1763740800000), y: 10273.91},{x: new Date(1763827200000), y: 10245.9},{x: new Date(1763913600000), y: 10250.58},{x: new Date(1764000000000), y: 10246.86},{x: new Date(1764086400000), y: 10247.09},{x: new Date(1764172800000), y: 10207.14},{x: new Date(1764259200000), y: 10193.18},{x: new Date(1764345600000), y: 10206.06},{x: new Date(1764432000000), y: 10202.34},{x: new Date(1764518400000), y: 10269.87},{x: new Date(1764604800000), y: 10208.26},{x: new Date(1764691200000), y: 10192.94},{x: new Date(1764777600000), y: 10187.05},{x: new Date(1764864000000), y: 10212.18},{x: new Date(1764950400000), y: 10219.17},{x: new Date(1765036800000), y: 10221.19},{x: new Date(1765123200000), y: 10217.12},{x: new Date(1765209600000), y: 10189.67},{x: new Date(1765296000000), y: 10196.04},{x: new Date(1765382400000), y: 10217.99},{x: new Date(1765468800000), y: 10217.32},{x: new Date(1765555200000), y: 10215.73},{x: new Date(1765641600000), y: 10226.46},{x: new Date(1765728000000), y: 10246.31},{x: new Date(1765814400000), y: 10237.05},{x: new Date(1765900800000), y: 10244.42},{x: new Date(1765987200000), y: 10231.6},{x: new Date(1766073600000), y: 10237.16},{x: new Date(1766160000000), y: 10234.99},{x: new Date(1766246400000), y: 10236.03},{x: new Date(1766332800000), y: 10219.4},{x: new Date(1766419200000), y: 10242.29},{x: new Date(1766505600000), y: 10246.31},{x: new Date(1766592000000), y: 10233.07},{x: new Date(1766678400000), y: 10245.35},{x: new Date(1766764800000), y: 10241.14},{x: new Date(1766851200000), y: 10238.35},{x: new Date(1766937600000), y: 10239.87},{x: new Date(1767024000000), y: 10226.69},{x: new Date(1767110400000), y: 10237.29},{x: new Date(1767196800000), y: 10236.4},{x: new Date(1767283200000), y: 10222.63},{x: new Date(1767369600000), y: 10217.02},{x: new Date(1767456000000), y: 10203.41},{x: new Date(1767542400000), y: 10177.17},{x: new Date(1767628800000), y: 10180.26},{x: new Date(1767715200000), y: 10203.27},{x: new Date(1767801600000), y: 10208.83},{x: new Date(1767888000000), y: 10204.9},{x: new Date(1767974400000), y: 10210.13},{x: new Date(1768060800000), y: 10207.99},{x: new Date(1768147200000), y: 10200.07},{x: new Date(1768233600000), y: 10182.18},{x: new Date(1768320000000), y: 10149.18},{x: new Date(1768406400000), y: 10149.32},{x: new Date(1768492800000), y: 10170.85},{x: new Date(1768579200000), y: 10161.03},{x: new Date(1768665600000), y: 10165.6},{x: new Date(1768752000000), y: 10186.11},{x: new Date(1768838400000), y: 10209.93},{x: new Date(1768924800000), y: 10213.94},{x: new Date(1769011200000), y: 10226.71},{x: new Date(1769097600000), y: 10219.2},{x: new Date(1769184000000), y: 10223.94},{x: new Date(1769270400000), y: 10232.18},{x: new Date(1769356800000), y: 10240.31},{x: new Date(1769443200000), y: 10236.35},{x: new Date(1769529600000), y: 10221.93},{x: new Date(1769616000000), y: 10267.23},{x: new Date(1769702400000), y: 10287.88},{x: new Date(1769788800000), y: 10303.72},{x: new Date(1769875200000), y: 10340.73},{x: new Date(1769961600000), y: 10328.22},{x: new Date(1770048000000), y: 10335.4},{x: new Date(1770134400000), y: 10375.34},{x: new Date(1770220800000), y: 10441.91},{x: new Date(1770307200000), y: 10430.45},{x: new Date(1770393600000), y: 10425.14},{x: new Date(1770480000000), y: 10404.92},{x: new Date(1770566400000), y: 10421.07},{x: new Date(1770652800000), y: 10423.86},{x: new Date(1770739200000), y: 10451.52},{x: new Date(1770825600000), y: 10445.43},{x: new Date(1770912000000), y: 10429.7},{x: new Date(1770998400000), y: 10418.81},{x: new Date(1771084800000), y: 10425.79},{x: new Date(1771171200000), y: 10441.35},{x: new Date(1771257600000), y: 10442.76},{x: new Date(1771344000000), y: 10439.78},{x: new Date(1771430400000), y: 10452.65},{x: new Date(1771516800000), y: 10440.95},{x: new Date(1771603200000), y: 10430.59},{x: new Date(1771689600000), y: 10439.83},{x: new Date(1771776000000), y: 10460.14},{x: new Date(1771862400000), y: 10477.01},{x: new Date(1771948800000), y: 10442.71},{x: new Date(1772035200000), y: 10442.94},{x: new Date(1772121600000), y: 10455.73},{x: new Date(1772208000000), y: 10468.37},{x: new Date(1772294400000), y: 10448.32},{x: new Date(1772380800000), y: 10425.57},{x: new Date(1772467200000), y: 10439.49},{x: new Date(1772553600000), y: 10382.82},{x: new Date(1772640000000), y: 10400.27},{x: new Date(1772726400000), y: 10431.82},{x: new Date(1772812800000), y: 10437.93},{x: new Date(1772899200000), y: 10444.65},{x: new Date(1772985600000), y: 10428.08},{x: new Date(1773072000000), y: 10403.3},{x: new Date(1773158400000), y: 10414.38},{x: new Date(1773244800000), y: 10413.47},{x: new Date(1773331200000), y: 10398.42},{x: new Date(1773417600000), y: 10410.95},{x: new Date(1773504000000), y: 10401.96},{x: new Date(1773590400000), y: 10384.05},{x: new Date(1773676800000), y: 10377.56},{x: new Date(1773763200000), y: 10402.06},{x: new Date(1773849600000), y: 10422.64},{x: new Date(1773936000000), y: 10418.03},{x: new Date(1774022400000), y: 10410.44},{x: new Date(1774108800000), y: 10428.3},{x: new Date(1774195200000), y: 10415.41},{x: new Date(1774281600000), y: 10418.04},{x: new Date(1774368000000), y: 10408.42},{x: new Date(1774454400000), y: 10425.84},{x: new Date(1774540800000), y: 10455.72},{x: new Date(1774627200000), y: 10446.54},{x: new Date(1774713600000), y: 10451.48},{x: new Date(1774800000000), y: 10440.5},{x: new Date(1774886400000), y: 10449.41},{x: new Date(1774972800000), y: 10427.57},{x: new Date(1775059200000), y: 10448.21},{x: new Date(1775145600000), y: 10448.42},{x: new Date(1775232000000), y: 10442.94},{x: new Date(1775318400000), y: 10443.69},{x: new Date(1775404800000), y: 10417.09},{x: new Date(1775491200000), y: 10435.06},{x: new Date(1775577600000), y: 10403.66},{x: new Date(1775664000000), y: 10395.29},{x: new Date(1775750400000), y: 10392.18},{x: new Date(1775836800000), y: 10388.11},{x: new Date(1775923200000), y: 10407.87},{x: new Date(1776009600000), y: 10398.06},{x: new Date(1776096000000), y: 10363.46},{x: new Date(1776182400000), y: 10378.3},{x: new Date(1776268800000), y: 10369.72},{x: new Date(1776355200000), y: 10338.93},{x: new Date(1776441600000), y: 10355.02},{x: new Date(1776528000000), y: 10358.23},{x: new Date(1776614400000), y: 10359.63},{x: new Date(1776700800000), y: 10358.34},{x: new Date(1776787200000), y: 10336.27}],
+    borderColor: '#ff9800',
+    backgroundColor: '#ff980022',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '均线交叉',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 10000},{x: new Date(1759939200000), y: 10000},{x: new Date(1760025600000), y: 10000},{x: new Date(1760112000000), y: 10000},{x: new Date(1760198400000), y: 10000},{x: new Date(1760284800000), y: 10000},{x: new Date(1760371200000), y: 10000},{x: new Date(1760457600000), y: 9998.89},{x: new Date(1760544000000), y: 10021.34},{x: new Date(1760630400000), y: 10038.98},{x: new Date(1760716800000), y: 10037.45},{x: new Date(1760803200000), y: 10022.12},{x: new Date(1760889600000), y: 9995.38},{x: new Date(1760976000000), y: 9972.65},{x: new Date(1761062400000), y: 10022.79},{x: new Date(1761148800000), y: 10007.92},{x: new Date(1761235200000), y: 10006.36},{x: new Date(1761321600000), y: 9993.0},{x: new Date(1761408000000), y: 9969.92},{x: new Date(1761494400000), y: 9957.32},{x: new Date(1761580800000), y: 9960.46},{x: new Date(1761667200000), y: 9991.77},{x: new Date(1761753600000), y: 10029.76},{x: new Date(1761840000000), y: 10005.03},{x: new Date(1761926400000), y: 10003.92},{x: new Date(1762012800000), y: 10005.75},{x: new Date(1762099200000), y: 10049.45},{x: new Date(1762185600000), y: 10074.86},{x: new Date(1762272000000), y: 10069.61},{x: new Date(1762358400000), y: 10086.77},{x: new Date(1762444800000), y: 10098.89},{x: new Date(1762531200000), y: 10089.67},{x: new Date(1762617600000), y: 10069.39},{x: new Date(1762704000000), y: 10056.13},{x: new Date(1762790400000), y: 10072.19},{x: new Date(1762876800000), y: 10085.1},{x: new Date(1762963200000), y: 10093.03},{x: new Date(1763049600000), y: 10138.89},{x: new Date(1763136000000), y: 10144.27},{x: new Date(1763222400000), y: 10161.02},{x: new Date(1763308800000), y: 10167.33},{x: new Date(1763395200000), y: 10177.86},{x: new Date(1763481600000), y: 10207.41},{x: new Date(1763568000000), y: 10208.29},{x: new Date(1763654400000), y: 10277.54},{x: new Date(1763740800000), y: 10264.09},{x: new Date(1763827200000), y: 10236.08},{x: new Date(1763913600000), y: 10240.76},{x: new Date(1764000000000), y: 10237.04},{x: new Date(1764086400000), y: 10237.27},{x: new Date(1764172800000), y: 10197.32},{x: new Date(1764259200000), y: 10183.36},{x: new Date(1764345600000), y: 10196.24},{x: new Date(1764432000000), y: 10192.52},{x: new Date(1764518400000), y: 10260.05},{x: new Date(1764604800000), y: 10198.44},{x: new Date(1764691200000), y: 10183.12},{x: new Date(1764777600000), y: 10177.23},{x: new Date(1764864000000), y: 10202.36},{x: new Date(1764950400000), y: 10209.35},{x: new Date(1765036800000), y: 10211.37},{x: new Date(1765123200000), y: 10207.3},{x: new Date(1765209600000), y: 10179.85},{x: new Date(1765296000000), y: 10186.22},{x: new Date(1765382400000), y: 10208.17},{x: new Date(1765468800000), y: 10207.5},{x: new Date(1765555200000), y: 10205.91},{x: new Date(1765641600000), y: 10216.64},{x: new Date(1765728000000), y: 10236.49},{x: new Date(1765814400000), y: 10227.23},{x: new Date(1765900800000), y: 10234.6},{x: new Date(1765987200000), y: 10221.78},{x: new Date(1766073600000), y: 10227.34},{x: new Date(1766160000000), y: 10225.17},{x: new Date(1766246400000), y: 10226.21},{x: new Date(1766332800000), y: 10209.58},{x: new Date(1766419200000), y: 10232.47},{x: new Date(1766505600000), y: 10236.49},{x: new Date(1766592000000), y: 10223.25},{x: new Date(1766678400000), y: 10235.53},{x: new Date(1766764800000), y: 10231.32},{x: new Date(1766851200000), y: 10228.53},{x: new Date(1766937600000), y: 10230.05},{x: new Date(1767024000000), y: 10216.87},{x: new Date(1767110400000), y: 10227.47},{x: new Date(1767196800000), y: 10226.58},{x: new Date(1767283200000), y: 10212.81},{x: new Date(1767369600000), y: 10207.2},{x: new Date(1767456000000), y: 10193.59},{x: new Date(1767542400000), y: 10167.35},{x: new Date(1767628800000), y: 10170.44},{x: new Date(1767715200000), y: 10193.45},{x: new Date(1767801600000), y: 10199.01},{x: new Date(1767888000000), y: 10195.08},{x: new Date(1767974400000), y: 10200.31},{x: new Date(1768060800000), y: 10198.17},{x: new Date(1768147200000), y: 10190.25},{x: new Date(1768233600000), y: 10172.36},{x: new Date(1768320000000), y: 10139.36},{x: new Date(1768406400000), y: 10139.5},{x: new Date(1768492800000), y: 10161.03},{x: new Date(1768579200000), y: 10151.21},{x: new Date(1768665600000), y: 10155.78},{x: new Date(1768752000000), y: 10176.29},{x: new Date(1768838400000), y: 10200.11},{x: new Date(1768924800000), y: 10204.12},{x: new Date(1769011200000), y: 10216.89},{x: new Date(1769097600000), y: 10209.38},{x: new Date(1769184000000), y: 10214.12},{x: new Date(1769270400000), y: 10222.36},{x: new Date(1769356800000), y: 10230.49},{x: new Date(1769443200000), y: 10226.53},{x: new Date(1769529600000), y: 10212.11},{x: new Date(1769616000000), y: 10257.41},{x: new Date(1769702400000), y: 10278.06},{x: new Date(1769788800000), y: 10293.9},{x: new Date(1769875200000), y: 10330.91},{x: new Date(1769961600000), y: 10318.4},{x: new Date(1770048000000), y: 10325.58},{x: new Date(1770134400000), y: 10365.52},{x: new Date(1770220800000), y: 10432.09},{x: new Date(1770307200000), y: 10420.63},{x: new Date(1770393600000), y: 10415.32},{x: new Date(1770480000000), y: 10395.1},{x: new Date(1770566400000), y: 10411.25},{x: new Date(1770652800000), y: 10414.04},{x: new Date(1770739200000), y: 10441.7},{x: new Date(1770825600000), y: 10435.61},{x: new Date(1770912000000), y: 10419.88},{x: new Date(1770998400000), y: 10408.99},{x: new Date(1771084800000), y: 10415.97},{x: new Date(1771171200000), y: 10431.53},{x: new Date(1771257600000), y: 10432.94},{x: new Date(1771344000000), y: 10429.96},{x: new Date(1771430400000), y: 10442.83},{x: new Date(1771516800000), y: 10431.13},{x: new Date(1771603200000), y: 10420.77},{x: new Date(1771689600000), y: 10430.01},{x: new Date(1771776000000), y: 10450.32},{x: new Date(1771862400000), y: 10467.19},{x: new Date(1771948800000), y: 10432.89},{x: new Date(1772035200000), y: 10433.12},{x: new Date(1772121600000), y: 10445.91},{x: new Date(1772208000000), y: 10458.55},{x: new Date(1772294400000), y: 10438.5},{x: new Date(1772380800000), y: 10415.75},{x: new Date(1772467200000), y: 10429.67},{x: new Date(1772553600000), y: 10373.0},{x: new Date(1772640000000), y: 10390.45},{x: new Date(1772726400000), y: 10422.0},{x: new Date(1772812800000), y: 10428.11},{x: new Date(1772899200000), y: 10434.83},{x: new Date(1772985600000), y: 10418.26},{x: new Date(1773072000000), y: 10393.48},{x: new Date(1773158400000), y: 10404.56},{x: new Date(1773244800000), y: 10403.65},{x: new Date(1773331200000), y: 10388.6},{x: new Date(1773417600000), y: 10401.13},{x: new Date(1773504000000), y: 10392.14},{x: new Date(1773590400000), y: 10374.23},{x: new Date(1773676800000), y: 10367.74},{x: new Date(1773763200000), y: 10392.24},{x: new Date(1773849600000), y: 10412.82},{x: new Date(1773936000000), y: 10408.21},{x: new Date(1774022400000), y: 10400.62},{x: new Date(1774108800000), y: 10418.48},{x: new Date(1774195200000), y: 10405.59},{x: new Date(1774281600000), y: 10408.22},{x: new Date(1774368000000), y: 10398.6},{x: new Date(1774454400000), y: 10416.02},{x: new Date(1774540800000), y: 10445.9},{x: new Date(1774627200000), y: 10436.72},{x: new Date(1774713600000), y: 10441.66},{x: new Date(1774800000000), y: 10430.68},{x: new Date(1774886400000), y: 10439.59},{x: new Date(1774972800000), y: 10417.75},{x: new Date(1775059200000), y: 10438.39},{x: new Date(1775145600000), y: 10438.6},{x: new Date(1775232000000), y: 10433.12},{x: new Date(1775318400000), y: 10433.87},{x: new Date(1775404800000), y: 10407.27},{x: new Date(1775491200000), y: 10425.24},{x: new Date(1775577600000), y: 10393.84},{x: new Date(1775664000000), y: 10385.47},{x: new Date(1775750400000), y: 10382.36},{x: new Date(1775836800000), y: 10378.29},{x: new Date(1775923200000), y: 10398.05},{x: new Date(1776009600000), y: 10388.24},{x: new Date(1776096000000), y: 10353.64},{x: new Date(1776182400000), y: 10368.48},{x: new Date(1776268800000), y: 10359.9},{x: new Date(1776355200000), y: 10329.11},{x: new Date(1776441600000), y: 10345.2},{x: new Date(1776528000000), y: 10348.41},{x: new Date(1776614400000), y: 10349.81},{x: new Date(1776700800000), y: 10348.52},{x: new Date(1776787200000), y: 10326.45}],
+    borderColor: '#4caf50',
+    backgroundColor: '#4caf5022',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'EMA 量能确认',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 10000},{x: new Date(1759766400000), y: 10000},{x: new Date(1759852800000), y: 10000},{x: new Date(1759939200000), y: 10000},{x: new Date(1760025600000), y: 10000},{x: new Date(1760112000000), y: 10000},{x: new Date(1760198400000), y: 10000},{x: new Date(1760284800000), y: 10000},{x: new Date(1760371200000), y: 10000},{x: new Date(1760457600000), y: 9998.89},{x: new Date(1760544000000), y: 10021.34},{x: new Date(1760630400000), y: 10038.98},{x: new Date(1760716800000), y: 10037.45},{x: new Date(1760803200000), y: 10022.12},{x: new Date(1760889600000), y: 9995.38},{x: new Date(1760976000000), y: 9972.65},{x: new Date(1761062400000), y: 10022.79},{x: new Date(1761148800000), y: 10007.92},{x: new Date(1761235200000), y: 10006.36},{x: new Date(1761321600000), y: 9993.0},{x: new Date(1761408000000), y: 9969.92},{x: new Date(1761494400000), y: 9957.32},{x: new Date(1761580800000), y: 9960.46},{x: new Date(1761667200000), y: 9991.77},{x: new Date(1761753600000), y: 10029.76},{x: new Date(1761840000000), y: 10005.03},{x: new Date(1761926400000), y: 10003.92},{x: new Date(1762012800000), y: 10005.75},{x: new Date(1762099200000), y: 10049.45},{x: new Date(1762185600000), y: 10074.86},{x: new Date(1762272000000), y: 10069.61},{x: new Date(1762358400000), y: 10086.77},{x: new Date(1762444800000), y: 10098.89},{x: new Date(1762531200000), y: 10089.67},{x: new Date(1762617600000), y: 10069.39},{x: new Date(1762704000000), y: 10056.13},{x: new Date(1762790400000), y: 10072.19},{x: new Date(1762876800000), y: 10085.1},{x: new Date(1762963200000), y: 10093.03},{x: new Date(1763049600000), y: 10138.89},{x: new Date(1763136000000), y: 10144.27},{x: new Date(1763222400000), y: 10161.02},{x: new Date(1763308800000), y: 10167.33},{x: new Date(1763395200000), y: 10177.86},{x: new Date(1763481600000), y: 10207.41},{x: new Date(1763568000000), y: 10208.29},{x: new Date(1763654400000), y: 10277.54},{x: new Date(1763740800000), y: 10264.09},{x: new Date(1763827200000), y: 10236.08},{x: new Date(1763913600000), y: 10240.76},{x: new Date(1764000000000), y: 10237.04},{x: new Date(1764086400000), y: 10237.27},{x: new Date(1764172800000), y: 10197.32},{x: new Date(1764259200000), y: 10183.36},{x: new Date(1764345600000), y: 10196.24},{x: new Date(1764432000000), y: 10192.52},{x: new Date(1764518400000), y: 10260.05},{x: new Date(1764604800000), y: 10198.44},{x: new Date(1764691200000), y: 10183.12},{x: new Date(1764777600000), y: 10177.23},{x: new Date(1764864000000), y: 10202.36},{x: new Date(1764950400000), y: 10209.35},{x: new Date(1765036800000), y: 10211.37},{x: new Date(1765123200000), y: 10207.3},{x: new Date(1765209600000), y: 10179.85},{x: new Date(1765296000000), y: 10186.22},{x: new Date(1765382400000), y: 10208.17},{x: new Date(1765468800000), y: 10207.5},{x: new Date(1765555200000), y: 10205.91},{x: new Date(1765641600000), y: 10216.64},{x: new Date(1765728000000), y: 10236.49},{x: new Date(1765814400000), y: 10227.23},{x: new Date(1765900800000), y: 10234.6},{x: new Date(1765987200000), y: 10221.78},{x: new Date(1766073600000), y: 10227.34},{x: new Date(1766160000000), y: 10225.17},{x: new Date(1766246400000), y: 10226.21},{x: new Date(1766332800000), y: 10209.58},{x: new Date(1766419200000), y: 10232.47},{x: new Date(1766505600000), y: 10236.49},{x: new Date(1766592000000), y: 10223.25},{x: new Date(1766678400000), y: 10235.53},{x: new Date(1766764800000), y: 10231.32},{x: new Date(1766851200000), y: 10228.53},{x: new Date(1766937600000), y: 10230.05},{x: new Date(1767024000000), y: 10216.87},{x: new Date(1767110400000), y: 10227.47},{x: new Date(1767196800000), y: 10226.58},{x: new Date(1767283200000), y: 10212.81},{x: new Date(1767369600000), y: 10207.2},{x: new Date(1767456000000), y: 10193.59},{x: new Date(1767542400000), y: 10167.35},{x: new Date(1767628800000), y: 10170.44},{x: new Date(1767715200000), y: 10193.45},{x: new Date(1767801600000), y: 10199.01},{x: new Date(1767888000000), y: 10195.08},{x: new Date(1767974400000), y: 10200.31},{x: new Date(1768060800000), y: 10198.17},{x: new Date(1768147200000), y: 10190.25},{x: new Date(1768233600000), y: 10172.36},{x: new Date(1768320000000), y: 10139.36},{x: new Date(1768406400000), y: 10139.5},{x: new Date(1768492800000), y: 10161.03},{x: new Date(1768579200000), y: 10151.21},{x: new Date(1768665600000), y: 10155.78},{x: new Date(1768752000000), y: 10176.29},{x: new Date(1768838400000), y: 10200.11},{x: new Date(1768924800000), y: 10204.12},{x: new Date(1769011200000), y: 10216.89},{x: new Date(1769097600000), y: 10209.38},{x: new Date(1769184000000), y: 10214.12},{x: new Date(1769270400000), y: 10222.36},{x: new Date(1769356800000), y: 10230.49},{x: new Date(1769443200000), y: 10226.53},{x: new Date(1769529600000), y: 10212.11},{x: new Date(1769616000000), y: 10257.41},{x: new Date(1769702400000), y: 10278.06},{x: new Date(1769788800000), y: 10293.9},{x: new Date(1769875200000), y: 10330.91},{x: new Date(1769961600000), y: 10318.4},{x: new Date(1770048000000), y: 10325.58},{x: new Date(1770134400000), y: 10365.52},{x: new Date(1770220800000), y: 10432.09},{x: new Date(1770307200000), y: 10420.63},{x: new Date(1770393600000), y: 10415.32},{x: new Date(1770480000000), y: 10395.1},{x: new Date(1770566400000), y: 10411.25},{x: new Date(1770652800000), y: 10414.04},{x: new Date(1770739200000), y: 10441.7},{x: new Date(1770825600000), y: 10435.61},{x: new Date(1770912000000), y: 10419.88},{x: new Date(1770998400000), y: 10408.99},{x: new Date(1771084800000), y: 10415.97},{x: new Date(1771171200000), y: 10431.53},{x: new Date(1771257600000), y: 10432.94},{x: new Date(1771344000000), y: 10429.96},{x: new Date(1771430400000), y: 10442.83},{x: new Date(1771516800000), y: 10431.13},{x: new Date(1771603200000), y: 10420.77},{x: new Date(1771689600000), y: 10430.01},{x: new Date(1771776000000), y: 10450.32},{x: new Date(1771862400000), y: 10467.19},{x: new Date(1771948800000), y: 10432.89},{x: new Date(1772035200000), y: 10433.12},{x: new Date(1772121600000), y: 10445.91},{x: new Date(1772208000000), y: 10458.55},{x: new Date(1772294400000), y: 10438.5},{x: new Date(1772380800000), y: 10415.75},{x: new Date(1772467200000), y: 10429.67},{x: new Date(1772553600000), y: 10373.0},{x: new Date(1772640000000), y: 10390.45},{x: new Date(1772726400000), y: 10422.0},{x: new Date(1772812800000), y: 10428.11},{x: new Date(1772899200000), y: 10434.83},{x: new Date(1772985600000), y: 10418.26},{x: new Date(1773072000000), y: 10393.48},{x: new Date(1773158400000), y: 10404.56},{x: new Date(1773244800000), y: 10403.65},{x: new Date(1773331200000), y: 10388.6},{x: new Date(1773417600000), y: 10401.13},{x: new Date(1773504000000), y: 10392.14},{x: new Date(1773590400000), y: 10374.23},{x: new Date(1773676800000), y: 10367.74},{x: new Date(1773763200000), y: 10392.24},{x: new Date(1773849600000), y: 10412.82},{x: new Date(1773936000000), y: 10408.21},{x: new Date(1774022400000), y: 10400.62},{x: new Date(1774108800000), y: 10418.48},{x: new Date(1774195200000), y: 10405.59},{x: new Date(1774281600000), y: 10408.22},{x: new Date(1774368000000), y: 10398.6},{x: new Date(1774454400000), y: 10416.02},{x: new Date(1774540800000), y: 10445.9},{x: new Date(1774627200000), y: 10436.72},{x: new Date(1774713600000), y: 10441.66},{x: new Date(1774800000000), y: 10430.68},{x: new Date(1774886400000), y: 10439.59},{x: new Date(1774972800000), y: 10417.75},{x: new Date(1775059200000), y: 10438.39},{x: new Date(1775145600000), y: 10438.6},{x: new Date(1775232000000), y: 10433.12},{x: new Date(1775318400000), y: 10433.87},{x: new Date(1775404800000), y: 10407.27},{x: new Date(1775491200000), y: 10425.24},{x: new Date(1775577600000), y: 10393.84},{x: new Date(1775664000000), y: 10385.47},{x: new Date(1775750400000), y: 10382.36},{x: new Date(1775836800000), y: 10378.29},{x: new Date(1775923200000), y: 10398.05},{x: new Date(1776009600000), y: 10388.24},{x: new Date(1776096000000), y: 10353.64},{x: new Date(1776182400000), y: 10368.48},{x: new Date(1776268800000), y: 10359.9},{x: new Date(1776355200000), y: 10329.11},{x: new Date(1776441600000), y: 10345.2},{x: new Date(1776528000000), y: 10348.41},{x: new Date(1776614400000), y: 10349.81},{x: new Date(1776700800000), y: 10348.52},{x: new Date(1776787200000), y: 10326.45}],
+    borderColor: '#e91e63',
+    backgroundColor: '#e91e6322',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '均线多空排列',
+    data: [{x: new Date(1759593600000), y: 9998.77},{x: new Date(1759680000000), y: 10020.7},{x: new Date(1759766400000), y: 9989.3},{x: new Date(1759852800000), y: 9992.65},{x: new Date(1759939200000), y: 9982.31},{x: new Date(1760025600000), y: 9960.87},{x: new Date(1760112000000), y: 9887.44},{x: new Date(1760198400000), y: 9887.44},{x: new Date(1760284800000), y: 9887.44},{x: new Date(1760371200000), y: 9887.44},{x: new Date(1760457600000), y: 9887.44},{x: new Date(1760544000000), y: 9887.44},{x: new Date(1760630400000), y: 9887.44},{x: new Date(1760716800000), y: 9887.44},{x: new Date(1760803200000), y: 9887.44},{x: new Date(1760889600000), y: 9887.44},{x: new Date(1760976000000), y: 9887.44},{x: new Date(1761062400000), y: 9887.44},{x: new Date(1761148800000), y: 9887.44},{x: new Date(1761235200000), y: 9887.44},{x: new Date(1761321600000), y: 9887.44},{x: new Date(1761408000000), y: 9887.44},{x: new Date(1761494400000), y: 9887.44},{x: new Date(1761580800000), y: 9887.44},{x: new Date(1761667200000), y: 9887.44},{x: new Date(1761753600000), y: 9887.44},{x: new Date(1761840000000), y: 9887.44},{x: new Date(1761926400000), y: 9887.44},{x: new Date(1762012800000), y: 9887.44},{x: new Date(1762099200000), y: 9887.44},{x: new Date(1762185600000), y: 9887.44},{x: new Date(1762272000000), y: 9886.4},{x: new Date(1762358400000), y: 9903.56},{x: new Date(1762444800000), y: 9915.68},{x: new Date(1762531200000), y: 9906.46},{x: new Date(1762617600000), y: 9886.18},{x: new Date(1762704000000), y: 9872.92},{x: new Date(1762790400000), y: 9888.98},{x: new Date(1762876800000), y: 9901.89},{x: new Date(1762963200000), y: 9909.82},{x: new Date(1763049600000), y: 9955.68},{x: new Date(1763136000000), y: 9961.06},{x: new Date(1763222400000), y: 9977.81},{x: new Date(1763308800000), y: 9984.12},{x: new Date(1763395200000), y: 9994.65},{x: new Date(1763481600000), y: 10024.2},{x: new Date(1763568000000), y: 10025.08},{x: new Date(1763654400000), y: 10094.32},{x: new Date(1763740800000), y: 10080.88},{x: new Date(1763827200000), y: 10052.87},{x: new Date(1763913600000), y: 10057.55},{x: new Date(1764000000000), y: 10053.83},{x: new Date(1764086400000), y: 10054.06},{x: new Date(1764172800000), y: 10014.11},{x: new Date(1764259200000), y: 10000.15},{x: new Date(1764345600000), y: 10013.03},{x: new Date(1764432000000), y: 10009.31},{x: new Date(1764518400000), y: 10076.84},{x: new Date(1764604800000), y: 10015.23},{x: new Date(1764691200000), y: 9999.91},{x: new Date(1764777600000), y: 9994.02},{x: new Date(1764864000000), y: 10019.15},{x: new Date(1764950400000), y: 10026.14},{x: new Date(1765036800000), y: 10028.16},{x: new Date(1765123200000), y: 10024.09},{x: new Date(1765209600000), y: 9996.64},{x: new Date(1765296000000), y: 10003.01},{x: new Date(1765382400000), y: 10024.96},{x: new Date(1765468800000), y: 10024.29},{x: new Date(1765555200000), y: 10022.7},{x: new Date(1765641600000), y: 10033.43},{x: new Date(1765728000000), y: 10053.28},{x: new Date(1765814400000), y: 10044.02},{x: new Date(1765900800000), y: 10051.39},{x: new Date(1765987200000), y: 10038.57},{x: new Date(1766073600000), y: 10044.13},{x: new Date(1766160000000), y: 10041.96},{x: new Date(1766246400000), y: 10043.0},{x: new Date(1766332800000), y: 10026.37},{x: new Date(1766419200000), y: 10049.26},{x: new Date(1766505600000), y: 10053.28},{x: new Date(1766592000000), y: 10040.04},{x: new Date(1766678400000), y: 10052.32},{x: new Date(1766764800000), y: 10048.11},{x: new Date(1766851200000), y: 10045.32},{x: new Date(1766937600000), y: 10046.84},{x: new Date(1767024000000), y: 10033.66},{x: new Date(1767110400000), y: 10044.26},{x: new Date(1767196800000), y: 10043.37},{x: new Date(1767283200000), y: 10029.6},{x: new Date(1767369600000), y: 10023.99},{x: new Date(1767456000000), y: 10010.38},{x: new Date(1767542400000), y: 9984.14},{x: new Date(1767628800000), y: 9987.23},{x: new Date(1767715200000), y: 10010.24},{x: new Date(1767801600000), y: 10015.8},{x: new Date(1767888000000), y: 10011.87},{x: new Date(1767974400000), y: 10017.1},{x: new Date(1768060800000), y: 10014.96},{x: new Date(1768147200000), y: 10007.04},{x: new Date(1768233600000), y: 9989.15},{x: new Date(1768320000000), y: 9956.15},{x: new Date(1768406400000), y: 9956.29},{x: new Date(1768492800000), y: 9977.81},{x: new Date(1768579200000), y: 9968.0},{x: new Date(1768665600000), y: 9972.57},{x: new Date(1768752000000), y: 9993.08},{x: new Date(1768838400000), y: 10016.9},{x: new Date(1768924800000), y: 10020.91},{x: new Date(1769011200000), y: 10033.68},{x: new Date(1769097600000), y: 10026.17},{x: new Date(1769184000000), y: 10030.91},{x: new Date(1769270400000), y: 10039.15},{x: new Date(1769356800000), y: 10047.28},{x: new Date(1769443200000), y: 10043.32},{x: new Date(1769529600000), y: 10028.9},{x: new Date(1769616000000), y: 10074.2},{x: new Date(1769702400000), y: 10094.85},{x: new Date(1769788800000), y: 10110.69},{x: new Date(1769875200000), y: 10147.7},{x: new Date(1769961600000), y: 10135.19},{x: new Date(1770048000000), y: 10142.37},{x: new Date(1770134400000), y: 10182.31},{x: new Date(1770220800000), y: 10248.88},{x: new Date(1770307200000), y: 10237.42},{x: new Date(1770393600000), y: 10232.11},{x: new Date(1770480000000), y: 10211.89},{x: new Date(1770566400000), y: 10228.04},{x: new Date(1770652800000), y: 10230.83},{x: new Date(1770739200000), y: 10258.49},{x: new Date(1770825600000), y: 10252.4},{x: new Date(1770912000000), y: 10236.67},{x: new Date(1770998400000), y: 10225.77},{x: new Date(1771084800000), y: 10232.76},{x: new Date(1771171200000), y: 10248.32},{x: new Date(1771257600000), y: 10249.73},{x: new Date(1771344000000), y: 10246.75},{x: new Date(1771430400000), y: 10259.62},{x: new Date(1771516800000), y: 10247.92},{x: new Date(1771603200000), y: 10237.56},{x: new Date(1771689600000), y: 10246.79},{x: new Date(1771776000000), y: 10267.11},{x: new Date(1771862400000), y: 10283.98},{x: new Date(1771948800000), y: 10249.68},{x: new Date(1772035200000), y: 10249.91},{x: new Date(1772121600000), y: 10262.7},{x: new Date(1772208000000), y: 10275.34},{x: new Date(1772294400000), y: 10255.29},{x: new Date(1772380800000), y: 10232.54},{x: new Date(1772467200000), y: 10246.46},{x: new Date(1772553600000), y: 10189.79},{x: new Date(1772640000000), y: 10207.24},{x: new Date(1772726400000), y: 10238.79},{x: new Date(1772812800000), y: 10244.9},{x: new Date(1772899200000), y: 10251.62},{x: new Date(1772985600000), y: 10235.05},{x: new Date(1773072000000), y: 10210.27},{x: new Date(1773158400000), y: 10221.35},{x: new Date(1773244800000), y: 10220.44},{x: new Date(1773331200000), y: 10205.39},{x: new Date(1773417600000), y: 10217.92},{x: new Date(1773504000000), y: 10208.93},{x: new Date(1773590400000), y: 10191.02},{x: new Date(1773676800000), y: 10184.53},{x: new Date(1773763200000), y: 10209.03},{x: new Date(1773849600000), y: 10229.61},{x: new Date(1773936000000), y: 10225.0},{x: new Date(1774022400000), y: 10217.41},{x: new Date(1774108800000), y: 10235.27},{x: new Date(1774195200000), y: 10222.38},{x: new Date(1774281600000), y: 10225.01},{x: new Date(1774368000000), y: 10215.39},{x: new Date(1774454400000), y: 10232.81},{x: new Date(1774540800000), y: 10262.69},{x: new Date(1774627200000), y: 10253.51},{x: new Date(1774713600000), y: 10258.45},{x: new Date(1774800000000), y: 10247.47},{x: new Date(1774886400000), y: 10256.38},{x: new Date(1774972800000), y: 10234.53},{x: new Date(1775059200000), y: 10255.18},{x: new Date(1775145600000), y: 10255.39},{x: new Date(1775232000000), y: 10249.91},{x: new Date(1775318400000), y: 10250.66},{x: new Date(1775404800000), y: 10224.06},{x: new Date(1775491200000), y: 10242.03},{x: new Date(1775577600000), y: 10210.63},{x: new Date(1775664000000), y: 10202.26},{x: new Date(1775750400000), y: 10199.15},{x: new Date(1775836800000), y: 10195.08},{x: new Date(1775923200000), y: 10214.84},{x: new Date(1776009600000), y: 10205.03},{x: new Date(1776096000000), y: 10170.43},{x: new Date(1776182400000), y: 10185.27},{x: new Date(1776268800000), y: 10176.69},{x: new Date(1776355200000), y: 10145.89},{x: new Date(1776441600000), y: 10161.99},{x: new Date(1776528000000), y: 10165.2},{x: new Date(1776614400000), y: 10166.6},{x: new Date(1776700800000), y: 10165.31},{x: new Date(1776787200000), y: 10143.24}],
+    borderColor: '#00bcd4',
+    backgroundColor: '#00bcd422',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '布林带突破',
+    data: [{x: new Date(1759593600000), y: 10000},{x: new Date(1759680000000), y: 9998.75},{x: new Date(1759766400000), y: 9967.35},{x: new Date(1759852800000), y: 9970.7},{x: new Date(1759939200000), y: 9960.36},{x: new Date(1760025600000), y: 9938.92},{x: new Date(1760112000000), y: 9865.49},{x: new Date(1760198400000), y: 9865.49},{x: new Date(1760284800000), y: 9865.49},{x: new Date(1760371200000), y: 9865.49},{x: new Date(1760457600000), y: 9865.49},{x: new Date(1760544000000), y: 9865.49},{x: new Date(1760630400000), y: 9865.49},{x: new Date(1760716800000), y: 9865.49},{x: new Date(1760803200000), y: 9865.49},{x: new Date(1760889600000), y: 9865.49},{x: new Date(1760976000000), y: 9865.49},{x: new Date(1761062400000), y: 9865.49},{x: new Date(1761148800000), y: 9865.49},{x: new Date(1761235200000), y: 9865.49},{x: new Date(1761321600000), y: 9865.49},{x: new Date(1761408000000), y: 9865.49},{x: new Date(1761494400000), y: 9865.49},{x: new Date(1761580800000), y: 9865.49},{x: new Date(1761667200000), y: 9865.49},{x: new Date(1761753600000), y: 9865.49},{x: new Date(1761840000000), y: 9865.49},{x: new Date(1761926400000), y: 9865.49},{x: new Date(1762012800000), y: 9865.49},{x: new Date(1762099200000), y: 9865.49},{x: new Date(1762185600000), y: 9864.46},{x: new Date(1762272000000), y: 9859.21},{x: new Date(1762358400000), y: 9876.37},{x: new Date(1762444800000), y: 9888.49},{x: new Date(1762531200000), y: 9879.27},{x: new Date(1762617600000), y: 9858.99},{x: new Date(1762704000000), y: 9845.73},{x: new Date(1762790400000), y: 9861.79},{x: new Date(1762876800000), y: 9874.7},{x: new Date(1762963200000), y: 9882.63},{x: new Date(1763049600000), y: 9928.49},{x: new Date(1763136000000), y: 9933.87},{x: new Date(1763222400000), y: 9950.62},{x: new Date(1763308800000), y: 9956.93},{x: new Date(1763395200000), y: 9967.46},{x: new Date(1763481600000), y: 9997.01},{x: new Date(1763568000000), y: 9997.89},{x: new Date(1763654400000), y: 10067.13},{x: new Date(1763740800000), y: 10053.69},{x: new Date(1763827200000), y: 10025.68},{x: new Date(1763913600000), y: 10030.36},{x: new Date(1764000000000), y: 10026.64},{x: new Date(1764086400000), y: 10026.87},{x: new Date(1764172800000), y: 9986.92},{x: new Date(1764259200000), y: 9972.96},{x: new Date(1764345600000), y: 9985.84},{x: new Date(1764432000000), y: 9982.12},{x: new Date(1764518400000), y: 10049.65},{x: new Date(1764604800000), y: 9988.04},{x: new Date(1764691200000), y: 9972.72},{x: new Date(1764777600000), y: 9966.83},{x: new Date(1764864000000), y: 9991.96},{x: new Date(1764950400000), y: 9998.95},{x: new Date(1765036800000), y: 10000.97},{x: new Date(1765123200000), y: 9996.9},{x: new Date(1765209600000), y: 9969.45},{x: new Date(1765296000000), y: 9975.82},{x: new Date(1765382400000), y: 9997.77},{x: new Date(1765468800000), y: 9997.1},{x: new Date(1765555200000), y: 9995.51},{x: new Date(1765641600000), y: 10006.24},{x: new Date(1765728000000), y: 10026.09},{x: new Date(1765814400000), y: 10016.83},{x: new Date(1765900800000), y: 10024.2},{x: new Date(1765987200000), y: 10011.38},{x: new Date(1766073600000), y: 10016.94},{x: new Date(1766160000000), y: 10014.77},{x: new Date(1766246400000), y: 10015.81},{x: new Date(1766332800000), y: 9999.18},{x: new Date(1766419200000), y: 10022.07},{x: new Date(1766505600000), y: 10026.09},{x: new Date(1766592000000), y: 10012.85},{x: new Date(1766678400000), y: 10025.13},{x: new Date(1766764800000), y: 10020.92},{x: new Date(1766851200000), y: 10018.13},{x: new Date(1766937600000), y: 10019.65},{x: new Date(1767024000000), y: 10006.47},{x: new Date(1767110400000), y: 10017.07},{x: new Date(1767196800000), y: 10016.18},{x: new Date(1767283200000), y: 10002.41},{x: new Date(1767369600000), y: 9996.8},{x: new Date(1767456000000), y: 9983.19},{x: new Date(1767542400000), y: 9956.95},{x: new Date(1767628800000), y: 9960.04},{x: new Date(1767715200000), y: 9983.05},{x: new Date(1767801600000), y: 9988.61},{x: new Date(1767888000000), y: 9984.68},{x: new Date(1767974400000), y: 9989.91},{x: new Date(1768060800000), y: 9987.77},{x: new Date(1768147200000), y: 9979.85},{x: new Date(1768233600000), y: 9961.96},{x: new Date(1768320000000), y: 9928.96},{x: new Date(1768406400000), y: 9929.1},{x: new Date(1768492800000), y: 9950.62},{x: new Date(1768579200000), y: 9940.81},{x: new Date(1768665600000), y: 9945.38},{x: new Date(1768752000000), y: 9965.89},{x: new Date(1768838400000), y: 9989.71},{x: new Date(1768924800000), y: 9993.72},{x: new Date(1769011200000), y: 10006.49},{x: new Date(1769097600000), y: 9998.98},{x: new Date(1769184000000), y: 10003.72},{x: new Date(1769270400000), y: 10011.96},{x: new Date(1769356800000), y: 10020.09},{x: new Date(1769443200000), y: 10016.13},{x: new Date(1769529600000), y: 10001.71},{x: new Date(1769616000000), y: 10047.01},{x: new Date(1769702400000), y: 10067.66},{x: new Date(1769788800000), y: 10083.5},{x: new Date(1769875200000), y: 10120.51},{x: new Date(1769961600000), y: 10108.0},{x: new Date(1770048000000), y: 10115.18},{x: new Date(1770134400000), y: 10155.12},{x: new Date(1770220800000), y: 10221.69},{x: new Date(1770307200000), y: 10210.23},{x: new Date(1770393600000), y: 10204.92},{x: new Date(1770480000000), y: 10184.7},{x: new Date(1770566400000), y: 10200.85},{x: new Date(1770652800000), y: 10203.64},{x: new Date(1770739200000), y: 10231.3},{x: new Date(1770825600000), y: 10225.21},{x: new Date(1770912000000), y: 10209.48},{x: new Date(1770998400000), y: 10198.58},{x: new Date(1771084800000), y: 10205.57},{x: new Date(1771171200000), y: 10221.13},{x: new Date(1771257600000), y: 10222.54},{x: new Date(1771344000000), y: 10219.56},{x: new Date(1771430400000), y: 10232.43},{x: new Date(1771516800000), y: 10220.73},{x: new Date(1771603200000), y: 10210.37},{x: new Date(1771689600000), y: 10219.6},{x: new Date(1771776000000), y: 10239.92},{x: new Date(1771862400000), y: 10256.79},{x: new Date(1771948800000), y: 10222.49},{x: new Date(1772035200000), y: 10222.72},{x: new Date(1772121600000), y: 10235.51},{x: new Date(1772208000000), y: 10248.15},{x: new Date(1772294400000), y: 10228.1},{x: new Date(1772380800000), y: 10205.35},{x: new Date(1772467200000), y: 10219.27},{x: new Date(1772553600000), y: 10162.6},{x: new Date(1772640000000), y: 10180.05},{x: new Date(1772726400000), y: 10211.6},{x: new Date(1772812800000), y: 10217.71},{x: new Date(1772899200000), y: 10224.43},{x: new Date(1772985600000), y: 10207.86},{x: new Date(1773072000000), y: 10183.08},{x: new Date(1773158400000), y: 10194.16},{x: new Date(1773244800000), y: 10193.25},{x: new Date(1773331200000), y: 10178.2},{x: new Date(1773417600000), y: 10190.73},{x: new Date(1773504000000), y: 10181.74},{x: new Date(1773590400000), y: 10163.83},{x: new Date(1773676800000), y: 10157.34},{x: new Date(1773763200000), y: 10181.84},{x: new Date(1773849600000), y: 10202.42},{x: new Date(1773936000000), y: 10197.81},{x: new Date(1774022400000), y: 10190.22},{x: new Date(1774108800000), y: 10208.08},{x: new Date(1774195200000), y: 10195.19},{x: new Date(1774281600000), y: 10197.82},{x: new Date(1774368000000), y: 10188.2},{x: new Date(1774454400000), y: 10205.62},{x: new Date(1774540800000), y: 10235.5},{x: new Date(1774627200000), y: 10226.32},{x: new Date(1774713600000), y: 10231.26},{x: new Date(1774800000000), y: 10220.28},{x: new Date(1774886400000), y: 10229.19},{x: new Date(1774972800000), y: 10207.34},{x: new Date(1775059200000), y: 10227.99},{x: new Date(1775145600000), y: 10228.2},{x: new Date(1775232000000), y: 10222.72},{x: new Date(1775318400000), y: 10223.47},{x: new Date(1775404800000), y: 10196.87},{x: new Date(1775491200000), y: 10214.84},{x: new Date(1775577600000), y: 10183.44},{x: new Date(1775664000000), y: 10175.07},{x: new Date(1775750400000), y: 10171.96},{x: new Date(1775836800000), y: 10167.89},{x: new Date(1775923200000), y: 10187.65},{x: new Date(1776009600000), y: 10177.84},{x: new Date(1776096000000), y: 10143.24},{x: new Date(1776182400000), y: 10158.08},{x: new Date(1776268800000), y: 10149.5},{x: new Date(1776355200000), y: 10118.7},{x: new Date(1776441600000), y: 10134.8},{x: new Date(1776528000000), y: 10138.01},{x: new Date(1776614400000), y: 10139.41},{x: new Date(1776700800000), y: 10138.12},{x: new Date(1776787200000), y: 10116.05}],
+    borderColor: '#795548',
+    backgroundColor: '#79554822',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  ]
+};
+
+new Chart(document.getElementById('equityChart'), {
+  type: 'line',
+  data: equityData,
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { type: 'time', time: { tooltipFormat: 'yyyy-MM-dd HH:mm' }, title: { display: true, text: 'Date' } },
+      y: { title: { display: true, text: 'Equity (USDT)' } }
+    },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2) } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

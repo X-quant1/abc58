@@ -1,0 +1,3390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>BTC 高频回测报告 - 优化版</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { text-align: center; color: #f7931a; margin-bottom: 5px; font-size: 26px; }
+  .subtitle { text-align: center; color: #8b949e; margin-bottom: 8px; font-size: 13px; }
+  .config { text-align: center; color: #58a6ff; margin-bottom: 25px; font-size: 12px; font-family: monospace; }
+  .summary { background: #161b22; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #30363d; }
+  .summary h2 { color: #f7931a; margin-bottom: 12px; font-size: 16px; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .summary-table th { background: #21262d; color: #f7931a; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 1px solid #30363d; }
+  .summary-table td { padding: 6px; text-align: center; border-bottom: 1px solid #21262d; }
+  .summary-table tr:hover { background: #1c2128; }
+  .positive { color: #ef5350; font-weight: 600; }
+  .negative { color: #26a69a; font-weight: 600; }
+  .strategy-card { background: #161b22; border-radius: 12px; margin-bottom: 16px; border: 1px solid #30363d; overflow: hidden; }
+  .strategy-header { background: linear-gradient(135deg, #f7931a, #ff9f43); color: #fff; padding: 12px 16px; }
+  .strategy-header h3 { font-size: 15px; }
+  .strategy-header .stats { font-size: 12px; opacity: 0.95; margin-top: 4px; }
+  .strategy-body { padding: 0; max-height: 500px; overflow-y: auto; }
+  .trade-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .trade-table th { background: #21262d; padding: 7px 5px; text-align: left; font-weight: 600; color: #8b949e; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 1; }
+  .trade-table td { padding: 5px; border-bottom: 1px solid #21262d; }
+  .trade-table tr:hover { background: #1c2128; }
+  .trade-table .open-long { color: #ef5350; font-weight: 600; }
+  .trade-table .open-short { color: #26a69a; font-weight: 600; }
+  .trade-table .close-long { color: #26a69a; }
+  .trade-table .close-short { color: #ef5350; }
+  .badge { display: inline-block; padding: 1px 5px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+  .badge-long { background: #3d1f1f; color: #ef5350; }
+  .badge-short { background: #1f3d2d; color: #26a69a; }
+  .badge-tp { background: #1f3d1f; color: #4caf50; }
+  .badge-sl { background: #3d1f2d; color: #e91e63; }
+  .badge-signal { background: #1f2d3d; color: #1976d2; }
+  .badge-trailing { background: #3d2d1f; color: #ff9800; }
+  .badge-end { background: #2d1f3d; color: #9c27b0; }
+  .pair-row { background: #1c2128; }
+  .top3 { background: #2d2000 !important; }
+  .note { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #8b949e; }
+  .note strong { color: #f7931a; }
+</style>
+</head>
+<body>
+<h1>BTC 高频回测报告 - 优化版</h1>
+<p class="subtitle">BTC-USDT-SWAP | 2h | 2026-04-10 ~ 2026-04-22 (12 天) | 杠杆: 100x</p>
+<p class="config">每个策略使用参数扫描得出的最优止盈/止损/移动止盈组合</p>
+
+<div class="note">
+  <strong>说明：</strong> 每个策略使用参数扫描（10种组合）得出的最优止盈止损配置。<br>
+  信号周期已缩短（如 MA 3/7, RSI 6, MACD 6/13/5），以在1小时级别产生更多信号。
+</div>
+
+<div class="summary">
+<h2>策略对比（每策略最优止盈止损）</h2>
+<table class="summary-table">
+<thead>
+<tr>
+  <th>#</th><th>策略</th><th>止盈止损配置</th><th>收益率</th><th>最大回撤</th><th>夏普</th><th>胜率</th><th>盈亏比</th><th>交易数</th><th>信号/天</th><th>手续费</th><th>最终权益</th>
+</tr>
+</thead>
+<tbody>
+<tr class="top3">
+  <td>1</td>
+  <td><strong>均线多空排列</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.8%</td>
+  <td>0.2%</td>
+  <td>2.76</td>
+  <td>100.0%</td>
+  <td>20.75</td>
+  <td>4</td>
+  <td>0.3</td>
+  <td>$3.05</td>
+  <td>$10081.46</td>
+</tr>
+<tr class="top3">
+  <td>2</td>
+  <td><strong>EMA 量能确认</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈0.8/止损0.4/T:0.5%>0.1%</td>
+  <td class="positive">0.2%</td>
+  <td>0.1%</td>
+  <td>2.04</td>
+  <td>83.3%</td>
+  <td>0.87</td>
+  <td>6</td>
+  <td>0.5</td>
+  <td>$4.52</td>
+  <td>$10019.59</td>
+</tr>
+<tr class="top3">
+  <td>3</td>
+  <td><strong>KDJ 金叉死叉</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.2%</td>
+  <td>0.3%</td>
+  <td>0.65</td>
+  <td>37.5%</td>
+  <td>2.41</td>
+  <td>8</td>
+  <td>0.7</td>
+  <td>$6.08</td>
+  <td>$10018.56</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><strong>SuperTrend 趋势</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.1%</td>
+  <td>0.4%</td>
+  <td>0.59</td>
+  <td>50.0%</td>
+  <td>1.41</td>
+  <td>8</td>
+  <td>0.7</td>
+  <td>$6.05</td>
+  <td>$10014.35</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><strong>布林带突破</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="positive">0.1%</td>
+  <td>0.5%</td>
+  <td>0.26</td>
+  <td>37.5%</td>
+  <td>2.05</td>
+  <td>8</td>
+  <td>0.7</td>
+  <td>$6.03</td>
+  <td>$10008.05</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><strong>RSI 超卖超买</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.5/止损0.5/无移动</td>
+  <td class="positive">0.1%</td>
+  <td>0.3%</td>
+  <td>0.30</td>
+  <td>40.0%</td>
+  <td>1.83</td>
+  <td>15</td>
+  <td>1.2</td>
+  <td>$11.31</td>
+  <td>$10008.47</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><strong>双时间框架EMA</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈3.0/止损1.0/T:2.0%>0.5%</td>
+  <td class="negative">-0.0%</td>
+  <td>0.3%</td>
+  <td>-0.17</td>
+  <td>25.0%</td>
+  <td>2.80</td>
+  <td>4</td>
+  <td>0.3</td>
+  <td>$3.03</td>
+  <td>$9996.38</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><strong>CCI 趋势反转</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.0/止损0.5/无移动</td>
+  <td class="negative">-0.1%</td>
+  <td>0.5%</td>
+  <td>-0.18</td>
+  <td>43.8%</td>
+  <td>1.30</td>
+  <td>16</td>
+  <td>1.3</td>
+  <td>$12.09</td>
+  <td>$9994.79</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><strong>均线交叉</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈0.5/止损0.3/T:0.3%>0.06%</td>
+  <td class="negative">-0.1%</td>
+  <td>0.5%</td>
+  <td>-0.27</td>
+  <td>54.2%</td>
+  <td>0.90</td>
+  <td>24</td>
+  <td>2.0</td>
+  <td>$18.02</td>
+  <td>$9994.58</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><strong>MACD 趋势动能</strong></td>
+  <td style="font-size:10px;font-family:monospace;">止盈1.0/止损0.5/无移动</td>
+  <td class="negative">-0.3%</td>
+  <td>0.7%</td>
+  <td>-1.26</td>
+  <td>31.6%</td>
+  <td>1.57</td>
+  <td>19</td>
+  <td>1.6</td>
+  <td>$14.27</td>
+  <td>$9969.29</td>
+</tr>
+</tbody></table></div>
+<h2 style="text-align:center; color:#f7931a; margin-bottom:16px;">逐笔交易明细</h2>
+
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#1 均线多空排列</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.8%</strong> |
+    信号/天: 0.3 | 胜率: 100.0% | 交易数: 4
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 13:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,251.11</td>
+  <td>1</td>
+  <td>$7.42</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-17 21:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,302.63</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$30.13</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-18 16:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,700.53</td>
+  <td>1</td>
+  <td>$7.67</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-20 06:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,081.92</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$25.82</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-20 20:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,326.14</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-22 10:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,566.40</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$22.01</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-22 12:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,565.16</td>
+  <td>1</td>
+  <td>$7.75</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 17:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$78,106.33</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.02</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#2 EMA 量能确认</h3>
+  <div class="stats">
+    止盈=0.8% | 止损=0.4% | 移动止盈: 0.5%激活, 0.1%回调 | 收益: <strong class="positive">0.2%</strong> |
+    信号/天: 0.5 | 胜率: 83.3% | 交易数: 6
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-17 14:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,969.27</td>
+  <td>1</td>
+  <td>$7.49</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-17 16:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,741.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.34</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-18 16:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,700.53</td>
+  <td>1</td>
+  <td>$7.67</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-18 19:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,088.02</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.74</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-19 21:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,968.37</td>
+  <td>1</td>
+  <td>$7.59</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-20 00:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,354.20</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.52</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-20 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-20 06:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,081.92</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$6.35</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-20 16:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,761.66</td>
+  <td>1</td>
+  <td>$7.47</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-20 19:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,157.20</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$3.58</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-21 22:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,636.36</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-22 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,063.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.35</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#3 KDJ 金叉死叉</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.2%</strong> |
+    信号/天: 0.7 | 胜率: 37.5% | 交易数: 8
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 15:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,515.52</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-14 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.83</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-15 07:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,185.87</td>
+  <td>1</td>
+  <td>$7.41</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-17 21:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,302.63</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$30.78</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-18 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,477.14</td>
+  <td>1</td>
+  <td>$7.75</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-19 17:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,059.11</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$23.80</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-19 18:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,261.91</td>
+  <td>1</td>
+  <td>$7.52</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-20 05:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,387.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.12</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-20 08:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,314.94</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-21 05:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,914.22</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.61</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-21 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,914.22</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-21 18:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,787.67</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.12</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-21 20:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,980.49</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-22 10:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,644.00</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-17.02</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-22 15:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,971.09</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-22 17:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,184.47</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-2.52</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#4 SuperTrend 趋势</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.1%</strong> |
+    信号/天: 0.7 | 胜率: 50.0% | 交易数: 8
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-15 02:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,057.15</td>
+  <td>1</td>
+  <td>$7.41</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-16 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,043.70</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.24</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-16 03:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,043.70</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-16 21:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$73,754.80</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-13.26</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-16 21:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,754.80</td>
+  <td>1</td>
+  <td>$7.38</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-16 23:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,738.95</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.22</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-17 16:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,817.19</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-18 01:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,477.14</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$16.21</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-18 17:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,564.00</td>
+  <td>1</td>
+  <td>$7.66</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-20 06:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,081.92</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$24.45</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-20 15:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,868.52</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-21 19:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,412.57</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.06</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-22 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,518.52</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-22 07:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,367.86</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.88</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-22 10:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,644.00</td>
+  <td>1</td>
+  <td>$7.76</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-22 17:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$78,106.33</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$4.23</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#5 布林带突破</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="positive">0.1%</strong> |
+    信号/天: 0.7 | 胜率: 37.5% | 交易数: 8
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 16:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,789.58</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-15 06:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$73,986.89</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.40</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-15 14:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,855.55</td>
+  <td>1</td>
+  <td>$7.39</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-16 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,043.70</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-12.26</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-16 13:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,083.82</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-16 18:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,278.44</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.43</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-16 18:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,278.44</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-17 02:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,070.52</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.30</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-17 02:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,070.52</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-17 21:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,302.63</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$21.93</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-18 11:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,971.40</td>
+  <td>1</td>
+  <td>$7.70</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-20 00:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,429.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$15.04</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-20 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-20 23:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,748.76</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.33</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-20 23:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,748.76</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-22 14:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,965.00</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$21.77</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#6 RSI 超卖超买</h3>
+  <div class="stats">
+    止盈=1.5% | 止损=0.5% | 无移动止盈 | 收益: <strong class="positive">0.1%</strong> |
+    信号/天: 1.2 | 胜率: 40.0% | 交易数: 15
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 13:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,176.89</td>
+  <td>1</td>
+  <td>$7.42</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-14 15:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,590.08</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.50</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-14 17:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,470.35</td>
+  <td>1</td>
+  <td>$7.45</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-14 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-11.28</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-14 22:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,977.89</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-15 15:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,779.67</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$11.61</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-15 16:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,157.26</td>
+  <td>1</td>
+  <td>$7.41</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-17 03:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,309.33</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$11.14</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-17 04:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,185.49</td>
+  <td>1</td>
+  <td>$7.52</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-17 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,817.19</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.70</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-17 18:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,243.16</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-17 20:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,275.42</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.70</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-18 02:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,116.12</td>
+  <td>1</td>
+  <td>$7.72</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-19 00:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,982.77</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$10.95</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-19 05:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,854.41</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-19 14:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,359.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.32</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>04-19 18:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,261.91</td>
+  <td>1</td>
+  <td>$7.52</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>9</td>
+  <td>04-20 01:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.45</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>04-20 03:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,003.38</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>10</td>
+  <td>04-20 05:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,387.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.53</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>04-20 08:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,314.94</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>11</td>
+  <td>04-20 23:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,673.04</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$13.20</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>04-21 00:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,310.53</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>12</td>
+  <td>04-21 01:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,941.45</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.69</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>04-21 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,914.22</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>13</td>
+  <td>04-21 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,544.05</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.68</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>04-21 19:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,412.57</td>
+  <td>1</td>
+  <td>$7.65</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>14</td>
+  <td>04-22 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,063.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$13.12</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>04-22 04:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,732.55</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>15</td>
+  <td>04-22 10:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,566.40</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$17.95</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#7 双时间框架EMA</h3>
+  <div class="stats">
+    止盈=3.0% | 止损=1.0% | 移动止盈: 2.0%激活, 0.5%回调 | 收益: <strong class="negative">-0.0%</strong> |
+    信号/天: 0.3 | 胜率: 25.0% | 交易数: 4
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-15 20:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,309.94</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-17 21:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,302.63</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$29.54</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-18 10:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,327.94</td>
+  <td>1</td>
+  <td>$7.73</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-18 18:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,160.70</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-12.05</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-20 13:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,237.66</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-20 17:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,093.83</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-8.94</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-21 14:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,016.99</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-22 03:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,988.39</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.66</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#8 CCI 趋势反转</h3>
+  <div class="stats">
+    止盈=1.0% | 止损=0.5% | 无移动止盈 | 收益: <strong class="negative">-0.1%</strong> |
+    信号/天: 1.3 | 胜率: 43.8% | 交易数: 16
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 18:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,311.33</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-14 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-12.87</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-15 00:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,607.88</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-15 15:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,779.67</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.91</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-15 16:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,157.26</td>
+  <td>1</td>
+  <td>$7.41</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-16 03:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,968.70</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.74</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-16 07:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,775.09</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-16 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,828.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$9.10</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-16 23:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,738.95</td>
+  <td>1</td>
+  <td>$7.47</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-17 00:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,140.51</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.36</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-17 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,898.23</td>
+  <td>1</td>
+  <td>$7.49</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-17 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,817.19</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.57</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-17 18:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,243.16</td>
+  <td>1</td>
+  <td>$7.53</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-17 20:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,275.42</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-10.70</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-18 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,477.14</td>
+  <td>1</td>
+  <td>$7.75</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-18 17:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,640.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.98</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>04-18 22:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,301.83</td>
+  <td>1</td>
+  <td>$7.63</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>9</td>
+  <td>04-19 01:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,790.99</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.49</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>04-19 05:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,854.41</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>10</td>
+  <td>04-19 14:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,359.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.32</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>04-19 19:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,638.90</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>11</td>
+  <td>04-20 01:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.22</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>04-20 09:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,630.70</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>12</td>
+  <td>04-20 23:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,673.04</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$10.05</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>04-21 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,914.22</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>13</td>
+  <td>04-21 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,544.05</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.68</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>04-21 20:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,980.49</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>14</td>
+  <td>04-22 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,063.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$8.80</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>04-22 04:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,732.55</td>
+  <td>1</td>
+  <td>$7.57</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>15</td>
+  <td>04-22 10:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,566.40</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$17.95</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>04-22 16:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,975.89</td>
+  <td>1</td>
+  <td>$7.80</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>16</td>
+  <td>04-22 17:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$78,184.47</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-2.48</td>
+  <td class="negative"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-end">回测结束</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#9 均线交叉</h3>
+  <div class="stats">
+    止盈=0.5% | 止损=0.3% | 移动止盈: 0.3%激活, 0.06%回调 | 收益: <strong class="negative">-0.1%</strong> |
+    信号/天: 2.0 | 胜率: 54.2% | 交易数: 24
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 12:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,359.70</td>
+  <td>1</td>
+  <td>$7.44</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-14 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,789.58</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.67</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-14 19:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,340.51</td>
+  <td>1</td>
+  <td>$7.44</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-14 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-12.58</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-14 21:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td>$7.55</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-14 22:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,977.89</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.20</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-15 02:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,057.15</td>
+  <td>1</td>
+  <td>$7.41</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-15 08:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,607.18</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.87</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-15 08:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,607.18</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-15 10:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,289.64</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.55</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-15 13:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,988.59</td>
+  <td>1</td>
+  <td>$7.40</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-15 20:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,309.94</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.58</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-15 23:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,806.88</td>
+  <td>1</td>
+  <td>$7.38</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-16 01:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,171.97</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.02</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-16 02:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,428.40</td>
+  <td>1</td>
+  <td>$7.44</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-16 03:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,968.70</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.03</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>04-16 09:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,609.88</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>9</td>
+  <td>04-16 10:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,916.94</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.45</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>04-16 12:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,975.47</td>
+  <td>1</td>
+  <td>$7.49</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>10</td>
+  <td>04-16 15:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,663.85</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.49</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>04-16 16:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,636.36</td>
+  <td>1</td>
+  <td>$7.47</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>11</td>
+  <td>04-16 21:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,828.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.71</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>04-17 01:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,376.57</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>12</td>
+  <td>04-17 02:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,995.48</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.81</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>04-17 08:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,902.93</td>
+  <td>1</td>
+  <td>$7.49</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>13</td>
+  <td>04-17 11:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,655.11</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$2.10</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>04-17 14:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,969.27</td>
+  <td>1</td>
+  <td>$7.49</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>14</td>
+  <td>04-17 16:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,741.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.34</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>04-18 03:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,358.80</td>
+  <td>1</td>
+  <td>$7.74</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>15</td>
+  <td>04-18 07:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,112.14</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$2.08</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>04-19 06:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,850.81</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>16</td>
+  <td>04-19 09:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,583.69</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.05</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>17</td>
+  <td>04-19 09:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,583.69</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>17</td>
+  <td>04-19 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,291.53</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$2.55</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>18</td>
+  <td>04-19 20:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,610.29</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>18</td>
+  <td>04-19 22:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,990.29</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$3.42</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>04-20 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>19</td>
+  <td>04-20 06:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,081.92</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$6.35</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>20</td>
+  <td>04-20 10:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,445.20</td>
+  <td>1</td>
+  <td>$7.44</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>20</td>
+  <td>04-20 15:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,793.68</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$3.11</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>21</td>
+  <td>04-21 07:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,802.48</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>21</td>
+  <td>04-21 08:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,135.05</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-3.71</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>22</td>
+  <td>04-21 14:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,016.99</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>22</td>
+  <td>04-21 16:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,467.55</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$4.12</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>23</td>
+  <td>04-21 21:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,866.95</td>
+  <td>1</td>
+  <td>$7.59</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>23</td>
+  <td>04-22 01:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,594.08</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$2.35</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-trailing">移动止盈</span></td>
+</tr>
+<tr>
+  <td>24</td>
+  <td>04-22 06:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,676.42</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>24</td>
+  <td>04-22 07:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$76,291.54</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$5.77</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+</tbody></table></div></div>
+<div class="strategy-card">
+<div class="strategy-header">
+  <h3>#10 MACD 趋势动能</h3>
+  <div class="stats">
+    止盈=1.0% | 止损=0.5% | 无移动止盈 | 收益: <strong class="negative">-0.3%</strong> |
+    信号/天: 1.6 | 胜率: 31.6% | 交易数: 19
+  </div>
+</div>
+<div class="strategy-body">
+<table class="trade-table">
+<thead>
+<tr><th>#</th><th>时间</th><th>操作</th><th>方向</th><th>价格</th><th>张数</th><th>保证金</th><th>盈亏</th><th>盈亏%</th><th>手续费</th><th>原因</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>04-14 10:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,294.53</td>
+  <td>1</td>
+  <td>$7.43</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>1</td>
+  <td>04-14 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,789.58</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.32</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>04-14 21:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,560.66</td>
+  <td>1</td>
+  <td>$7.55</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>2</td>
+  <td>04-14 22:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,977.89</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.20</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>04-15 00:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,607.88</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>3</td>
+  <td>04-15 15:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,779.67</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$7.91</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>04-15 19:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,237.10</td>
+  <td>1</td>
+  <td>$7.42</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>4</td>
+  <td>04-15 23:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$73,806.88</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.67</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>04-15 23:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,806.88</td>
+  <td>1</td>
+  <td>$7.38</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>5</td>
+  <td>04-16 02:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,428.40</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.59</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>04-16 09:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,609.88</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>6</td>
+  <td>04-16 13:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,083.82</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.11</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>04-16 13:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,083.82</td>
+  <td>1</td>
+  <td>$7.50</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>7</td>
+  <td>04-16 15:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,663.85</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.57</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>04-16 23:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,738.95</td>
+  <td>1</td>
+  <td>$7.47</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>8</td>
+  <td>04-17 00:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,140.51</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.36</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>04-17 00:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,140.51</td>
+  <td>1</td>
+  <td>$7.42</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>9</td>
+  <td>04-17 02:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,070.52</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.68</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>04-17 09:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,707.63</td>
+  <td>1</td>
+  <td>$7.47</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>10</td>
+  <td>04-17 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,817.19</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-11.47</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>04-18 02:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$77,116.12</td>
+  <td>1</td>
+  <td>$7.72</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.39</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>11</td>
+  <td>04-18 18:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,236.90</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$8.41</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>04-19 05:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,854.41</td>
+  <td>1</td>
+  <td>$7.58</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>12</td>
+  <td>04-19 14:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,359.60</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-5.32</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>04-19 15:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,197.38</td>
+  <td>1</td>
+  <td>$7.52</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>13</td>
+  <td>04-19 19:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,638.90</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-4.79</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>04-19 19:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,638.90</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>14</td>
+  <td>04-20 01:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-9.22</td>
+  <td class="negative"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>04-20 01:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$74,754.10</td>
+  <td>1</td>
+  <td>$7.48</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>15</td>
+  <td>04-20 07:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$73,843.00</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$8.74</td>
+  <td class="positive"></td>
+  <td>$0.37</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>04-20 09:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$74,630.70</td>
+  <td>1</td>
+  <td>$7.46</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.37</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>16</td>
+  <td>04-20 23:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,673.04</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$10.05</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>17</td>
+  <td>04-21 05:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,914.22</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>17</td>
+  <td>04-21 16:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$76,544.05</td>
+  <td>1</td>
+  <td></td>
+  <td class="negative">$-6.68</td>
+  <td class="negative"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-sl">止损</span></td>
+</tr>
+<tr>
+  <td>18</td>
+  <td>04-21 20:00</td>
+  <td class="open-short">开仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,980.49</td>
+  <td>1</td>
+  <td>$7.60</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>18</td>
+  <td>04-22 03:00</td>
+  <td class="close-short">平仓</td>
+  <td><span class="badge badge-short">空</span></td>
+  <td>$75,063.41</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$8.80</td>
+  <td class="positive"></td>
+  <td>$0.38</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>04-22 06:00</td>
+  <td class="open-long">开仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$75,676.42</td>
+  <td>1</td>
+  <td>$7.56</td>
+  <td class=""></td>
+  <td class=""></td>
+  <td>$0.38</td>
+  <td><span class="badge "></span></td>
+</tr>
+<tr class="pair-row">
+  <td>19</td>
+  <td>04-22 10:00</td>
+  <td class="close-long">平仓</td>
+  <td><span class="badge badge-long">多</span></td>
+  <td>$77,566.40</td>
+  <td>1</td>
+  <td></td>
+  <td class="positive">$18.51</td>
+  <td class="positive"></td>
+  <td>$0.39</td>
+  <td><span class="badge badge-tp">止盈</span></td>
+</tr>
+</tbody></table></div></div>
+<h2 style="text-align:center; color:#f7931a; margin:25px 0 16px;">权益曲线</h2>
+<div class="strategy-card" style="padding:16px;">
+<canvas id="equityChart" height="350"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script>
+const equityData = {
+  datasets: [
+  {
+    label: '均线多空排列',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 9999.26},{x: new Date(1776146400000), y: 10002.39},{x: new Date(1776150000000), y: 10002.65},{x: new Date(1776153600000), y: 10004.64},{x: new Date(1776157200000), y: 10002.19},{x: new Date(1776160800000), y: 10000.6},{x: new Date(1776164400000), y: 10000.89},{x: new Date(1776168000000), y: 10001.74},{x: new Date(1776171600000), y: 10012.35},{x: new Date(1776175200000), y: 10007.27},{x: new Date(1776178800000), y: 10010.4},{x: new Date(1776182400000), y: 10003.57},{x: new Date(1776186000000), y: 10004.54},{x: new Date(1776189600000), y: 9998.06},{x: new Date(1776193200000), y: 9999.31},{x: new Date(1776196800000), y: 9998.12},{x: new Date(1776200400000), y: 9999.87},{x: new Date(1776204000000), y: 9997.36},{x: new Date(1776207600000), y: 9998.61},{x: new Date(1776211200000), y: 10002.82},{x: new Date(1776214800000), y: 10003.23},{x: new Date(1776218400000), y: 10000.39},{x: new Date(1776222000000), y: 10000.58},{x: new Date(1776225600000), y: 10000.56},{x: new Date(1776229200000), y: 9997.37},{x: new Date(1776232800000), y: 9996.04},{x: new Date(1776236400000), y: 9994.55},{x: new Date(1776240000000), y: 9998.32},{x: new Date(1776243600000), y: 9997.25},{x: new Date(1776247200000), y: 9995.75},{x: new Date(1776250800000), y: 9999.12},{x: new Date(1776254400000), y: 9999.85},{x: new Date(1776258000000), y: 9997.7},{x: new Date(1776261600000), y: 9998.58},{x: new Date(1776265200000), y: 9995.56},{x: new Date(1776268800000), y: 9996.59},{x: new Date(1776272400000), y: 9998.47},{x: new Date(1776276000000), y: 10001.03},{x: new Date(1776279600000), y: 10007.18},{x: new Date(1776283200000), y: 10005.51},{x: new Date(1776286800000), y: 10004.54},{x: new Date(1776290400000), y: 10006.73},{x: new Date(1776294000000), y: 10005.24},{x: new Date(1776297600000), y: 10005.16},{x: new Date(1776301200000), y: 10003.59},{x: new Date(1776304800000), y: 10005.91},{x: new Date(1776308400000), y: 10005.98},{x: new Date(1776312000000), y: 10006.5},{x: new Date(1776315600000), y: 10007.58},{x: new Date(1776319200000), y: 10007.4},{x: new Date(1776322800000), y: 10004.13},{x: new Date(1776326400000), y: 10003.85},{x: new Date(1776330000000), y: 10003.1},{x: new Date(1776333600000), y: 10000.27},{x: new Date(1776337200000), y: 10002.92},{x: new Date(1776340800000), y: 10003.4},{x: new Date(1776344400000), y: 9995.03},{x: new Date(1776348000000), y: 9996.9},{x: new Date(1776351600000), y: 10004.13},{x: new Date(1776355200000), y: 9998.89},{x: new Date(1776358800000), y: 10000.51},{x: new Date(1776362400000), y: 10007.45},{x: new Date(1776366000000), y: 10010.59},{x: new Date(1776369600000), y: 10009.35},{x: new Date(1776373200000), y: 10006.47},{x: new Date(1776376800000), y: 10005.88},{x: new Date(1776380400000), y: 10008.59},{x: new Date(1776384000000), y: 10006.52},{x: new Date(1776387600000), y: 10004.57},{x: new Date(1776391200000), y: 10004.12},{x: new Date(1776394800000), y: 10003.3},{x: new Date(1776398400000), y: 10004.92},{x: new Date(1776402000000), y: 10003.47},{x: new Date(1776405600000), y: 10006.44},{x: new Date(1776409200000), y: 10007.85},{x: new Date(1776412800000), y: 10014.91},{x: new Date(1776416400000), y: 10014.9},{x: new Date(1776420000000), y: 10009.93},{x: new Date(1776423600000), y: 10013.0},{x: new Date(1776427200000), y: 10019.49},{x: new Date(1776430800000), y: 10029.76},{x: new Date(1776434400000), y: 10029.76},{x: new Date(1776438000000), y: 10029.76},{x: new Date(1776441600000), y: 10029.76},{x: new Date(1776445200000), y: 10029.76},{x: new Date(1776448800000), y: 10029.76},{x: new Date(1776452400000), y: 10029.76},{x: new Date(1776456000000), y: 10029.76},{x: new Date(1776459600000), y: 10029.76},{x: new Date(1776463200000), y: 10029.76},{x: new Date(1776466800000), y: 10029.76},{x: new Date(1776470400000), y: 10029.76},{x: new Date(1776474000000), y: 10029.76},{x: new Date(1776477600000), y: 10029.76},{x: new Date(1776481200000), y: 10029.76},{x: new Date(1776484800000), y: 10029.76},{x: new Date(1776488400000), y: 10029.76},{x: new Date(1776492000000), y: 10029.76},{x: new Date(1776495600000), y: 10029.76},{x: new Date(1776499200000), y: 10028.99},{x: new Date(1776502800000), y: 10030.36},{x: new Date(1776506400000), y: 10034.39},{x: new Date(1776510000000), y: 10035.88},{x: new Date(1776513600000), y: 10034.19},{x: new Date(1776517200000), y: 10035.13},{x: new Date(1776520800000), y: 10033.74},{x: new Date(1776524400000), y: 10034.66},{x: new Date(1776528000000), y: 10036.93},{x: new Date(1776531600000), y: 10038.09},{x: new Date(1776535200000), y: 10039.85},{x: new Date(1776538800000), y: 10039.88},{x: new Date(1776542400000), y: 10038.88},{x: new Date(1776546000000), y: 10038.21},{x: new Date(1776549600000), y: 10038.25},{x: new Date(1776553200000), y: 10039.39},{x: new Date(1776556800000), y: 10039.64},{x: new Date(1776560400000), y: 10040.16},{x: new Date(1776564000000), y: 10041.38},{x: new Date(1776567600000), y: 10041.21},{x: new Date(1776571200000), y: 10039.68},{x: new Date(1776574800000), y: 10040.9},{x: new Date(1776578400000), y: 10042.41},{x: new Date(1776582000000), y: 10044.03},{x: new Date(1776585600000), y: 10043.84},{x: new Date(1776589200000), y: 10046.16},{x: new Date(1776592800000), y: 10044.14},{x: new Date(1776596400000), y: 10040.37},{x: new Date(1776600000000), y: 10040.65},{x: new Date(1776603600000), y: 10037.08},{x: new Date(1776607200000), y: 10036.1},{x: new Date(1776610800000), y: 10037.87},{x: new Date(1776614400000), y: 10042.46},{x: new Date(1776618000000), y: 10048.46},{x: new Date(1776621600000), y: 10048.58},{x: new Date(1776625200000), y: 10046.72},{x: new Date(1776628800000), y: 10050.04},{x: new Date(1776632400000), y: 10052.13},{x: new Date(1776636000000), y: 10055.19},{x: new Date(1776639600000), y: 10055.19},{x: new Date(1776643200000), y: 10055.19},{x: new Date(1776646800000), y: 10055.19},{x: new Date(1776650400000), y: 10055.19},{x: new Date(1776654000000), y: 10055.19},{x: new Date(1776657600000), y: 10055.19},{x: new Date(1776661200000), y: 10055.19},{x: new Date(1776664800000), y: 10055.19},{x: new Date(1776668400000), y: 10055.19},{x: new Date(1776672000000), y: 10055.19},{x: new Date(1776675600000), y: 10055.19},{x: new Date(1776679200000), y: 10055.19},{x: new Date(1776682800000), y: 10055.19},{x: new Date(1776686400000), y: 10054.44},{x: new Date(1776690000000), y: 10054.19},{x: new Date(1776693600000), y: 10051.96},{x: new Date(1776697200000), y: 10058.66},{x: new Date(1776700800000), y: 10055.03},{x: new Date(1776704400000), y: 10060.59},{x: new Date(1776708000000), y: 10065.81},{x: new Date(1776711600000), y: 10064.43},{x: new Date(1776715200000), y: 10064.25},{x: new Date(1776718800000), y: 10061.07},{x: new Date(1776722400000), y: 10061.27},{x: new Date(1776726000000), y: 10059.96},{x: new Date(1776729600000), y: 10062.52},{x: new Date(1776733200000), y: 10060.79},{x: new Date(1776736800000), y: 10057.46},{x: new Date(1776740400000), y: 10058.67},{x: new Date(1776744000000), y: 10059.77},{x: new Date(1776747600000), y: 10059.71},{x: new Date(1776751200000), y: 10061.34},{x: new Date(1776754800000), y: 10062.35},{x: new Date(1776758400000), y: 10066.61},{x: new Date(1776762000000), y: 10065.18},{x: new Date(1776765600000), y: 10069.04},{x: new Date(1776769200000), y: 10066.06},{x: new Date(1776772800000), y: 10061.74},{x: new Date(1776776400000), y: 10060.6},{x: new Date(1776780000000), y: 10058.29},{x: new Date(1776783600000), y: 10059.95},{x: new Date(1776787200000), y: 10059.3},{x: new Date(1776790800000), y: 10057.11},{x: new Date(1776794400000), y: 10057.69},{x: new Date(1776798000000), y: 10051.81},{x: new Date(1776801600000), y: 10058.5},{x: new Date(1776805200000), y: 10056.97},{x: new Date(1776808800000), y: 10057.94},{x: new Date(1776812400000), y: 10064.85},{x: new Date(1776816000000), y: 10065.25},{x: new Date(1776819600000), y: 10064.56},{x: new Date(1776823200000), y: 10076.83},{x: new Date(1776826800000), y: 10076.83},{x: new Date(1776830400000), y: 10076.05},{x: new Date(1776834000000), y: 10080.67},{x: new Date(1776837600000), y: 10080.83},{x: new Date(1776841200000), y: 10080.89},{x: new Date(1776844800000), y: 10080.94},{x: new Date(1776848400000), y: 10082.24}],
+    borderColor: '#f7931a',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'EMA 量能确认',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 10000},{x: new Date(1776153600000), y: 10000},{x: new Date(1776157200000), y: 10000},{x: new Date(1776160800000), y: 10000},{x: new Date(1776164400000), y: 10000},{x: new Date(1776168000000), y: 10000},{x: new Date(1776171600000), y: 10000},{x: new Date(1776175200000), y: 10000},{x: new Date(1776178800000), y: 10000},{x: new Date(1776182400000), y: 10000},{x: new Date(1776186000000), y: 10000},{x: new Date(1776189600000), y: 10000},{x: new Date(1776193200000), y: 10000},{x: new Date(1776196800000), y: 10000},{x: new Date(1776200400000), y: 10000},{x: new Date(1776204000000), y: 10000},{x: new Date(1776207600000), y: 10000},{x: new Date(1776211200000), y: 10000},{x: new Date(1776214800000), y: 10000},{x: new Date(1776218400000), y: 10000},{x: new Date(1776222000000), y: 10000},{x: new Date(1776225600000), y: 10000},{x: new Date(1776229200000), y: 10000},{x: new Date(1776232800000), y: 10000},{x: new Date(1776236400000), y: 10000},{x: new Date(1776240000000), y: 10000},{x: new Date(1776243600000), y: 10000},{x: new Date(1776247200000), y: 10000},{x: new Date(1776250800000), y: 10000},{x: new Date(1776254400000), y: 10000},{x: new Date(1776258000000), y: 10000},{x: new Date(1776261600000), y: 10000},{x: new Date(1776265200000), y: 10000},{x: new Date(1776268800000), y: 10000},{x: new Date(1776272400000), y: 10000},{x: new Date(1776276000000), y: 10000},{x: new Date(1776279600000), y: 10000},{x: new Date(1776283200000), y: 10000},{x: new Date(1776286800000), y: 10000},{x: new Date(1776290400000), y: 10000},{x: new Date(1776294000000), y: 10000},{x: new Date(1776297600000), y: 10000},{x: new Date(1776301200000), y: 10000},{x: new Date(1776304800000), y: 10000},{x: new Date(1776308400000), y: 10000},{x: new Date(1776312000000), y: 10000},{x: new Date(1776315600000), y: 10000},{x: new Date(1776319200000), y: 10000},{x: new Date(1776322800000), y: 10000},{x: new Date(1776326400000), y: 10000},{x: new Date(1776330000000), y: 10000},{x: new Date(1776333600000), y: 10000},{x: new Date(1776337200000), y: 10000},{x: new Date(1776340800000), y: 10000},{x: new Date(1776344400000), y: 10000},{x: new Date(1776348000000), y: 10000},{x: new Date(1776351600000), y: 10000},{x: new Date(1776355200000), y: 10000},{x: new Date(1776358800000), y: 10000},{x: new Date(1776362400000), y: 10000},{x: new Date(1776366000000), y: 10000},{x: new Date(1776369600000), y: 10000},{x: new Date(1776373200000), y: 10000},{x: new Date(1776376800000), y: 10000},{x: new Date(1776380400000), y: 10000},{x: new Date(1776384000000), y: 10000},{x: new Date(1776387600000), y: 10000},{x: new Date(1776391200000), y: 10000},{x: new Date(1776394800000), y: 10000},{x: new Date(1776398400000), y: 10000},{x: new Date(1776402000000), y: 10000},{x: new Date(1776405600000), y: 9999.25},{x: new Date(1776409200000), y: 10000.66},{x: new Date(1776412800000), y: 10006.97},{x: new Date(1776416400000), y: 10006.97},{x: new Date(1776420000000), y: 10006.97},{x: new Date(1776423600000), y: 10006.97},{x: new Date(1776427200000), y: 10006.97},{x: new Date(1776430800000), y: 10006.97},{x: new Date(1776434400000), y: 10006.97},{x: new Date(1776438000000), y: 10006.97},{x: new Date(1776441600000), y: 10006.97},{x: new Date(1776445200000), y: 10006.97},{x: new Date(1776448800000), y: 10006.97},{x: new Date(1776452400000), y: 10006.97},{x: new Date(1776456000000), y: 10006.97},{x: new Date(1776459600000), y: 10006.97},{x: new Date(1776463200000), y: 10006.97},{x: new Date(1776466800000), y: 10006.97},{x: new Date(1776470400000), y: 10006.97},{x: new Date(1776474000000), y: 10006.97},{x: new Date(1776477600000), y: 10006.97},{x: new Date(1776481200000), y: 10006.97},{x: new Date(1776484800000), y: 10006.97},{x: new Date(1776488400000), y: 10006.97},{x: new Date(1776492000000), y: 10006.97},{x: new Date(1776495600000), y: 10006.97},{x: new Date(1776499200000), y: 10006.2},{x: new Date(1776502800000), y: 10007.57},{x: new Date(1776506400000), y: 10011.6},{x: new Date(1776510000000), y: 10012.33},{x: new Date(1776513600000), y: 10012.33},{x: new Date(1776517200000), y: 10012.33},{x: new Date(1776520800000), y: 10012.33},{x: new Date(1776524400000), y: 10012.33},{x: new Date(1776528000000), y: 10012.33},{x: new Date(1776531600000), y: 10012.33},{x: new Date(1776535200000), y: 10012.33},{x: new Date(1776538800000), y: 10012.33},{x: new Date(1776542400000), y: 10012.33},{x: new Date(1776546000000), y: 10012.33},{x: new Date(1776549600000), y: 10012.33},{x: new Date(1776553200000), y: 10012.33},{x: new Date(1776556800000), y: 10012.33},{x: new Date(1776560400000), y: 10012.33},{x: new Date(1776564000000), y: 10012.33},{x: new Date(1776567600000), y: 10012.33},{x: new Date(1776571200000), y: 10012.33},{x: new Date(1776574800000), y: 10012.33},{x: new Date(1776578400000), y: 10012.33},{x: new Date(1776582000000), y: 10012.33},{x: new Date(1776585600000), y: 10012.33},{x: new Date(1776589200000), y: 10012.33},{x: new Date(1776592800000), y: 10012.33},{x: new Date(1776596400000), y: 10012.33},{x: new Date(1776600000000), y: 10012.33},{x: new Date(1776603600000), y: 10011.57},{x: new Date(1776607200000), y: 10012.55},{x: new Date(1776610800000), y: 10010.78},{x: new Date(1776614400000), y: 10005.43},{x: new Date(1776618000000), y: 10004.68},{x: new Date(1776621600000), y: 10004.8},{x: new Date(1776625200000), y: 10002.94},{x: new Date(1776628800000), y: 10006.25},{x: new Date(1776632400000), y: 10008.35},{x: new Date(1776636000000), y: 10011.41},{x: new Date(1776639600000), y: 10011.41},{x: new Date(1776643200000), y: 10011.41},{x: new Date(1776646800000), y: 10011.41},{x: new Date(1776650400000), y: 10011.41},{x: new Date(1776654000000), y: 10011.41},{x: new Date(1776657600000), y: 10011.41},{x: new Date(1776661200000), y: 10011.41},{x: new Date(1776664800000), y: 10011.41},{x: new Date(1776668400000), y: 10011.41},{x: new Date(1776672000000), y: 10010.66},{x: new Date(1776675600000), y: 10013.98},{x: new Date(1776679200000), y: 10013.68},{x: new Date(1776682800000), y: 10014.61},{x: new Date(1776686400000), y: 10014.61},{x: new Date(1776690000000), y: 10014.61},{x: new Date(1776693600000), y: 10014.61},{x: new Date(1776697200000), y: 10014.61},{x: new Date(1776700800000), y: 10014.61},{x: new Date(1776704400000), y: 10014.61},{x: new Date(1776708000000), y: 10014.61},{x: new Date(1776711600000), y: 10014.61},{x: new Date(1776715200000), y: 10014.61},{x: new Date(1776718800000), y: 10014.61},{x: new Date(1776722400000), y: 10014.61},{x: new Date(1776726000000), y: 10014.61},{x: new Date(1776729600000), y: 10014.61},{x: new Date(1776733200000), y: 10014.61},{x: new Date(1776736800000), y: 10014.61},{x: new Date(1776740400000), y: 10014.61},{x: new Date(1776744000000), y: 10014.61},{x: new Date(1776747600000), y: 10014.61},{x: new Date(1776751200000), y: 10014.61},{x: new Date(1776754800000), y: 10014.61},{x: new Date(1776758400000), y: 10014.61},{x: new Date(1776762000000), y: 10014.61},{x: new Date(1776765600000), y: 10014.61},{x: new Date(1776769200000), y: 10014.61},{x: new Date(1776772800000), y: 10014.61},{x: new Date(1776776400000), y: 10014.61},{x: new Date(1776780000000), y: 10013.86},{x: new Date(1776783600000), y: 10012.21},{x: new Date(1776787200000), y: 10012.85},{x: new Date(1776790800000), y: 10015.04},{x: new Date(1776794400000), y: 10014.46},{x: new Date(1776798000000), y: 10019.59},{x: new Date(1776801600000), y: 10019.59},{x: new Date(1776805200000), y: 10019.59},{x: new Date(1776808800000), y: 10019.59},{x: new Date(1776812400000), y: 10019.59},{x: new Date(1776816000000), y: 10019.59},{x: new Date(1776819600000), y: 10019.59},{x: new Date(1776823200000), y: 10019.59},{x: new Date(1776826800000), y: 10019.59},{x: new Date(1776830400000), y: 10019.59},{x: new Date(1776834000000), y: 10019.59},{x: new Date(1776837600000), y: 10019.59},{x: new Date(1776841200000), y: 10019.59},{x: new Date(1776844800000), y: 10019.59},{x: new Date(1776848400000), y: 10019.59}],
+    borderColor: '#ef5350',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'KDJ 金叉死叉',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 9999.25},{x: new Date(1776153600000), y: 9997.26},{x: new Date(1776157200000), y: 9999.71},{x: new Date(1776160800000), y: 10001.3},{x: new Date(1776164400000), y: 10001.01},{x: new Date(1776168000000), y: 10000.16},{x: new Date(1776171600000), y: 9988.8},{x: new Date(1776175200000), y: 9988.8},{x: new Date(1776178800000), y: 9988.8},{x: new Date(1776182400000), y: 9988.8},{x: new Date(1776186000000), y: 9988.8},{x: new Date(1776189600000), y: 9988.8},{x: new Date(1776193200000), y: 9988.8},{x: new Date(1776196800000), y: 9988.8},{x: new Date(1776200400000), y: 9988.8},{x: new Date(1776204000000), y: 9988.8},{x: new Date(1776207600000), y: 9988.06},{x: new Date(1776211200000), y: 9992.27},{x: new Date(1776214800000), y: 9992.68},{x: new Date(1776218400000), y: 9989.84},{x: new Date(1776222000000), y: 9990.03},{x: new Date(1776225600000), y: 9990.01},{x: new Date(1776229200000), y: 9986.82},{x: new Date(1776232800000), y: 9985.49},{x: new Date(1776236400000), y: 9984.0},{x: new Date(1776240000000), y: 9987.77},{x: new Date(1776243600000), y: 9986.7},{x: new Date(1776247200000), y: 9985.2},{x: new Date(1776250800000), y: 9988.57},{x: new Date(1776254400000), y: 9989.3},{x: new Date(1776258000000), y: 9987.15},{x: new Date(1776261600000), y: 9988.03},{x: new Date(1776265200000), y: 9985.01},{x: new Date(1776268800000), y: 9986.04},{x: new Date(1776272400000), y: 9987.92},{x: new Date(1776276000000), y: 9990.48},{x: new Date(1776279600000), y: 9996.63},{x: new Date(1776283200000), y: 9994.96},{x: new Date(1776286800000), y: 9993.99},{x: new Date(1776290400000), y: 9996.18},{x: new Date(1776294000000), y: 9994.69},{x: new Date(1776297600000), y: 9994.61},{x: new Date(1776301200000), y: 9993.04},{x: new Date(1776304800000), y: 9995.36},{x: new Date(1776308400000), y: 9995.43},{x: new Date(1776312000000), y: 9995.95},{x: new Date(1776315600000), y: 9997.03},{x: new Date(1776319200000), y: 9996.85},{x: new Date(1776322800000), y: 9993.58},{x: new Date(1776326400000), y: 9993.31},{x: new Date(1776330000000), y: 9992.55},{x: new Date(1776333600000), y: 9989.72},{x: new Date(1776337200000), y: 9992.38},{x: new Date(1776340800000), y: 9992.85},{x: new Date(1776344400000), y: 9984.49},{x: new Date(1776348000000), y: 9986.35},{x: new Date(1776351600000), y: 9993.58},{x: new Date(1776355200000), y: 9988.34},{x: new Date(1776358800000), y: 9989.96},{x: new Date(1776362400000), y: 9996.9},{x: new Date(1776366000000), y: 10000.04},{x: new Date(1776369600000), y: 9998.8},{x: new Date(1776373200000), y: 9995.93},{x: new Date(1776376800000), y: 9995.33},{x: new Date(1776380400000), y: 9998.04},{x: new Date(1776384000000), y: 9995.97},{x: new Date(1776387600000), y: 9994.02},{x: new Date(1776391200000), y: 9993.57},{x: new Date(1776394800000), y: 9992.75},{x: new Date(1776398400000), y: 9994.37},{x: new Date(1776402000000), y: 9992.92},{x: new Date(1776405600000), y: 9995.89},{x: new Date(1776409200000), y: 9997.3},{x: new Date(1776412800000), y: 10004.36},{x: new Date(1776416400000), y: 10004.35},{x: new Date(1776420000000), y: 9999.38},{x: new Date(1776423600000), y: 10002.45},{x: new Date(1776427200000), y: 10008.94},{x: new Date(1776430800000), y: 10019.21},{x: new Date(1776434400000), y: 10019.21},{x: new Date(1776438000000), y: 10019.21},{x: new Date(1776441600000), y: 10019.21},{x: new Date(1776445200000), y: 10018.43},{x: new Date(1776448800000), y: 10022.05},{x: new Date(1776452400000), y: 10019.62},{x: new Date(1776456000000), y: 10020.25},{x: new Date(1776459600000), y: 10019.18},{x: new Date(1776463200000), y: 10020.6},{x: new Date(1776466800000), y: 10022.86},{x: new Date(1776470400000), y: 10021.94},{x: new Date(1776474000000), y: 10021.44},{x: new Date(1776477600000), y: 10020.7},{x: new Date(1776481200000), y: 10023.49},{x: new Date(1776484800000), y: 10022.5},{x: new Date(1776488400000), y: 10022.24},{x: new Date(1776492000000), y: 10022.34},{x: new Date(1776495600000), y: 10023.73},{x: new Date(1776499200000), y: 10026.2},{x: new Date(1776502800000), y: 10027.57},{x: new Date(1776506400000), y: 10031.6},{x: new Date(1776510000000), y: 10033.09},{x: new Date(1776513600000), y: 10031.4},{x: new Date(1776517200000), y: 10032.34},{x: new Date(1776520800000), y: 10030.96},{x: new Date(1776524400000), y: 10031.88},{x: new Date(1776528000000), y: 10034.14},{x: new Date(1776531600000), y: 10035.3},{x: new Date(1776535200000), y: 10037.06},{x: new Date(1776538800000), y: 10037.1},{x: new Date(1776542400000), y: 10036.09},{x: new Date(1776546000000), y: 10035.43},{x: new Date(1776549600000), y: 10035.46},{x: new Date(1776553200000), y: 10036.6},{x: new Date(1776556800000), y: 10036.85},{x: new Date(1776560400000), y: 10037.38},{x: new Date(1776564000000), y: 10038.59},{x: new Date(1776567600000), y: 10038.43},{x: new Date(1776571200000), y: 10036.89},{x: new Date(1776574800000), y: 10038.11},{x: new Date(1776578400000), y: 10039.62},{x: new Date(1776582000000), y: 10041.24},{x: new Date(1776585600000), y: 10041.05},{x: new Date(1776589200000), y: 10042.63},{x: new Date(1776592800000), y: 10041.87},{x: new Date(1776596400000), y: 10045.64},{x: new Date(1776600000000), y: 10045.36},{x: new Date(1776603600000), y: 10048.93},{x: new Date(1776607200000), y: 10049.91},{x: new Date(1776610800000), y: 10048.14},{x: new Date(1776614400000), y: 10043.55},{x: new Date(1776618000000), y: 10037.55},{x: new Date(1776621600000), y: 10037.43},{x: new Date(1776625200000), y: 10039.29},{x: new Date(1776628800000), y: 10035.97},{x: new Date(1776632400000), y: 10033.13},{x: new Date(1776636000000), y: 10033.13},{x: new Date(1776639600000), y: 10033.13},{x: new Date(1776643200000), y: 10032.39},{x: new Date(1776646800000), y: 10035.54},{x: new Date(1776650400000), y: 10033.69},{x: new Date(1776654000000), y: 10035.92},{x: new Date(1776657600000), y: 10035.27},{x: new Date(1776661200000), y: 10032.36},{x: new Date(1776664800000), y: 10037.48},{x: new Date(1776668400000), y: 10037.92},{x: new Date(1776672000000), y: 10036.85},{x: new Date(1776675600000), y: 10040.17},{x: new Date(1776679200000), y: 10039.87},{x: new Date(1776682800000), y: 10041.56},{x: new Date(1776686400000), y: 10042.5},{x: new Date(1776690000000), y: 10042.25},{x: new Date(1776693600000), y: 10040.02},{x: new Date(1776697200000), y: 10046.72},{x: new Date(1776700800000), y: 10043.09},{x: new Date(1776704400000), y: 10048.65},{x: new Date(1776708000000), y: 10053.86},{x: new Date(1776711600000), y: 10052.49},{x: new Date(1776715200000), y: 10052.31},{x: new Date(1776718800000), y: 10047.61},{x: new Date(1776722400000), y: 10047.42},{x: new Date(1776726000000), y: 10048.73},{x: new Date(1776729600000), y: 10046.17},{x: new Date(1776733200000), y: 10047.89},{x: new Date(1776736800000), y: 10051.23},{x: new Date(1776740400000), y: 10050.01},{x: new Date(1776744000000), y: 10048.92},{x: new Date(1776747600000), y: 10048.97},{x: new Date(1776751200000), y: 10047.35},{x: new Date(1776754800000), y: 10046.34},{x: new Date(1776758400000), y: 10042.08},{x: new Date(1776762000000), y: 10043.51},{x: new Date(1776765600000), y: 10038.88},{x: new Date(1776769200000), y: 10038.88},{x: new Date(1776772800000), y: 10038.12},{x: new Date(1776776400000), y: 10039.25},{x: new Date(1776780000000), y: 10041.56},{x: new Date(1776783600000), y: 10039.91},{x: new Date(1776787200000), y: 10040.55},{x: new Date(1776790800000), y: 10042.74},{x: new Date(1776794400000), y: 10042.16},{x: new Date(1776798000000), y: 10048.04},{x: new Date(1776801600000), y: 10041.35},{x: new Date(1776805200000), y: 10042.88},{x: new Date(1776808800000), y: 10041.91},{x: new Date(1776812400000), y: 10035.0},{x: new Date(1776816000000), y: 10034.6},{x: new Date(1776819600000), y: 10035.29},{x: new Date(1776823200000), y: 10021.47},{x: new Date(1776826800000), y: 10021.47},{x: new Date(1776830400000), y: 10021.47},{x: new Date(1776834000000), y: 10021.47},{x: new Date(1776837600000), y: 10021.47},{x: new Date(1776841200000), y: 10020.69},{x: new Date(1776844800000), y: 10020.64},{x: new Date(1776848400000), y: 10019.34}],
+    borderColor: '#26a69a',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'SuperTrend 趋势',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 10000},{x: new Date(1776153600000), y: 10000},{x: new Date(1776157200000), y: 10000},{x: new Date(1776160800000), y: 10000},{x: new Date(1776164400000), y: 10000},{x: new Date(1776168000000), y: 10000},{x: new Date(1776171600000), y: 10000},{x: new Date(1776175200000), y: 10000},{x: new Date(1776178800000), y: 10000},{x: new Date(1776182400000), y: 10000},{x: new Date(1776186000000), y: 10000},{x: new Date(1776189600000), y: 9999.26},{x: new Date(1776193200000), y: 9998.01},{x: new Date(1776196800000), y: 9999.2},{x: new Date(1776200400000), y: 9997.45},{x: new Date(1776204000000), y: 9999.96},{x: new Date(1776207600000), y: 9998.71},{x: new Date(1776211200000), y: 9994.5},{x: new Date(1776214800000), y: 9994.09},{x: new Date(1776218400000), y: 9996.93},{x: new Date(1776222000000), y: 9996.74},{x: new Date(1776225600000), y: 9996.76},{x: new Date(1776229200000), y: 9999.95},{x: new Date(1776232800000), y: 10001.28},{x: new Date(1776236400000), y: 10002.77},{x: new Date(1776240000000), y: 9999.0},{x: new Date(1776243600000), y: 10000.07},{x: new Date(1776247200000), y: 10001.57},{x: new Date(1776250800000), y: 9998.2},{x: new Date(1776254400000), y: 9997.47},{x: new Date(1776258000000), y: 9999.62},{x: new Date(1776261600000), y: 9998.74},{x: new Date(1776265200000), y: 10001.76},{x: new Date(1776268800000), y: 10000.73},{x: new Date(1776272400000), y: 9998.85},{x: new Date(1776276000000), y: 9996.29},{x: new Date(1776279600000), y: 9988.64},{x: new Date(1776283200000), y: 9986.97},{x: new Date(1776286800000), y: 9986.0},{x: new Date(1776290400000), y: 9988.19},{x: new Date(1776294000000), y: 9986.7},{x: new Date(1776297600000), y: 9986.62},{x: new Date(1776301200000), y: 9985.05},{x: new Date(1776304800000), y: 9987.37},{x: new Date(1776308400000), y: 9987.44},{x: new Date(1776312000000), y: 9987.96},{x: new Date(1776315600000), y: 9989.04},{x: new Date(1776319200000), y: 9988.86},{x: new Date(1776322800000), y: 9985.59},{x: new Date(1776326400000), y: 9985.31},{x: new Date(1776330000000), y: 9984.55},{x: new Date(1776333600000), y: 9981.73},{x: new Date(1776337200000), y: 9984.38},{x: new Date(1776340800000), y: 9984.86},{x: new Date(1776344400000), y: 9975.02},{x: new Date(1776348000000), y: 9973.16},{x: new Date(1776351600000), y: 9965.17},{x: new Date(1776355200000), y: 9965.17},{x: new Date(1776358800000), y: 9965.17},{x: new Date(1776362400000), y: 9965.17},{x: new Date(1776366000000), y: 9965.17},{x: new Date(1776369600000), y: 9965.17},{x: new Date(1776373200000), y: 9965.17},{x: new Date(1776376800000), y: 9965.17},{x: new Date(1776380400000), y: 9965.17},{x: new Date(1776384000000), y: 9965.17},{x: new Date(1776387600000), y: 9965.17},{x: new Date(1776391200000), y: 9965.17},{x: new Date(1776394800000), y: 9965.17},{x: new Date(1776398400000), y: 9965.17},{x: new Date(1776402000000), y: 9965.17},{x: new Date(1776405600000), y: 9965.17},{x: new Date(1776409200000), y: 9965.17},{x: new Date(1776412800000), y: 9964.41},{x: new Date(1776416400000), y: 9964.41},{x: new Date(1776420000000), y: 9959.43},{x: new Date(1776423600000), y: 9962.5},{x: new Date(1776427200000), y: 9968.99},{x: new Date(1776430800000), y: 9980.03},{x: new Date(1776434400000), y: 9985.49},{x: new Date(1776438000000), y: 9984.43},{x: new Date(1776441600000), y: 9985.18},{x: new Date(1776445200000), y: 9981.01},{x: new Date(1776448800000), y: 9981.01},{x: new Date(1776452400000), y: 9981.01},{x: new Date(1776456000000), y: 9981.01},{x: new Date(1776459600000), y: 9981.01},{x: new Date(1776463200000), y: 9981.01},{x: new Date(1776466800000), y: 9981.01},{x: new Date(1776470400000), y: 9981.01},{x: new Date(1776474000000), y: 9981.01},{x: new Date(1776477600000), y: 9981.01},{x: new Date(1776481200000), y: 9981.01},{x: new Date(1776484800000), y: 9981.01},{x: new Date(1776488400000), y: 9981.01},{x: new Date(1776492000000), y: 9981.01},{x: new Date(1776495600000), y: 9981.01},{x: new Date(1776499200000), y: 9981.01},{x: new Date(1776502800000), y: 9980.24},{x: new Date(1776506400000), y: 9984.27},{x: new Date(1776510000000), y: 9985.76},{x: new Date(1776513600000), y: 9984.07},{x: new Date(1776517200000), y: 9985.01},{x: new Date(1776520800000), y: 9983.63},{x: new Date(1776524400000), y: 9984.55},{x: new Date(1776528000000), y: 9986.81},{x: new Date(1776531600000), y: 9987.97},{x: new Date(1776535200000), y: 9989.73},{x: new Date(1776538800000), y: 9989.77},{x: new Date(1776542400000), y: 9988.76},{x: new Date(1776546000000), y: 9988.1},{x: new Date(1776549600000), y: 9988.13},{x: new Date(1776553200000), y: 9989.27},{x: new Date(1776556800000), y: 9989.52},{x: new Date(1776560400000), y: 9990.05},{x: new Date(1776564000000), y: 9991.26},{x: new Date(1776567600000), y: 9991.1},{x: new Date(1776571200000), y: 9989.56},{x: new Date(1776574800000), y: 9990.78},{x: new Date(1776578400000), y: 9992.29},{x: new Date(1776582000000), y: 9993.91},{x: new Date(1776585600000), y: 9993.72},{x: new Date(1776589200000), y: 9996.05},{x: new Date(1776592800000), y: 9994.02},{x: new Date(1776596400000), y: 9990.25},{x: new Date(1776600000000), y: 9990.54},{x: new Date(1776603600000), y: 9986.96},{x: new Date(1776607200000), y: 9985.98},{x: new Date(1776610800000), y: 9987.75},{x: new Date(1776614400000), y: 9992.34},{x: new Date(1776618000000), y: 9998.35},{x: new Date(1776621600000), y: 9998.46},{x: new Date(1776625200000), y: 9996.6},{x: new Date(1776628800000), y: 9999.92},{x: new Date(1776632400000), y: 10002.02},{x: new Date(1776636000000), y: 10005.07},{x: new Date(1776639600000), y: 10005.07},{x: new Date(1776643200000), y: 10005.07},{x: new Date(1776646800000), y: 10005.07},{x: new Date(1776650400000), y: 10005.07},{x: new Date(1776654000000), y: 10005.07},{x: new Date(1776657600000), y: 10005.07},{x: new Date(1776661200000), y: 10005.07},{x: new Date(1776664800000), y: 10005.07},{x: new Date(1776668400000), y: 10004.32},{x: new Date(1776672000000), y: 10003.26},{x: new Date(1776675600000), y: 10006.58},{x: new Date(1776679200000), y: 10006.28},{x: new Date(1776682800000), y: 10007.96},{x: new Date(1776686400000), y: 10008.9},{x: new Date(1776690000000), y: 10008.66},{x: new Date(1776693600000), y: 10006.43},{x: new Date(1776697200000), y: 10013.12},{x: new Date(1776700800000), y: 10009.5},{x: new Date(1776704400000), y: 10015.05},{x: new Date(1776708000000), y: 10020.27},{x: new Date(1776711600000), y: 10018.89},{x: new Date(1776715200000), y: 10018.71},{x: new Date(1776718800000), y: 10015.54},{x: new Date(1776722400000), y: 10015.73},{x: new Date(1776726000000), y: 10014.42},{x: new Date(1776729600000), y: 10016.98},{x: new Date(1776733200000), y: 10015.25},{x: new Date(1776736800000), y: 10011.92},{x: new Date(1776740400000), y: 10013.14},{x: new Date(1776744000000), y: 10014.23},{x: new Date(1776747600000), y: 10014.18},{x: new Date(1776751200000), y: 10015.8},{x: new Date(1776754800000), y: 10016.81},{x: new Date(1776758400000), y: 10021.07},{x: new Date(1776762000000), y: 10019.64},{x: new Date(1776765600000), y: 10023.51},{x: new Date(1776769200000), y: 10019.76},{x: new Date(1776772800000), y: 10019.76},{x: new Date(1776776400000), y: 10019.76},{x: new Date(1776780000000), y: 10019.76},{x: new Date(1776783600000), y: 10019.76},{x: new Date(1776787200000), y: 10019.76},{x: new Date(1776790800000), y: 10019.0},{x: new Date(1776794400000), y: 10018.43},{x: new Date(1776798000000), y: 10024.31},{x: new Date(1776801600000), y: 10017.62},{x: new Date(1776805200000), y: 10019.14},{x: new Date(1776808800000), y: 10018.18},{x: new Date(1776812400000), y: 10010.5},{x: new Date(1776816000000), y: 10010.5},{x: new Date(1776819600000), y: 10010.5},{x: new Date(1776823200000), y: 10009.73},{x: new Date(1776826800000), y: 10008.94},{x: new Date(1776830400000), y: 10008.94},{x: new Date(1776834000000), y: 10013.55},{x: new Date(1776837600000), y: 10013.72},{x: new Date(1776841200000), y: 10013.78},{x: new Date(1776844800000), y: 10013.82},{x: new Date(1776848400000), y: 10015.13}],
+    borderColor: '#58a6ff',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '布林带突破',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 10000},{x: new Date(1776153600000), y: 9999.25},{x: new Date(1776157200000), y: 9996.81},{x: new Date(1776160800000), y: 9995.22},{x: new Date(1776164400000), y: 9995.51},{x: new Date(1776168000000), y: 9996.36},{x: new Date(1776171600000), y: 10006.96},{x: new Date(1776175200000), y: 10001.88},{x: new Date(1776178800000), y: 10005.01},{x: new Date(1776182400000), y: 9998.18},{x: new Date(1776186000000), y: 9999.15},{x: new Date(1776189600000), y: 9992.67},{x: new Date(1776193200000), y: 9993.92},{x: new Date(1776196800000), y: 9992.74},{x: new Date(1776200400000), y: 9994.48},{x: new Date(1776204000000), y: 9991.23},{x: new Date(1776207600000), y: 9991.23},{x: new Date(1776211200000), y: 9991.23},{x: new Date(1776214800000), y: 9991.23},{x: new Date(1776218400000), y: 9991.23},{x: new Date(1776222000000), y: 9991.23},{x: new Date(1776225600000), y: 9991.23},{x: new Date(1776229200000), y: 9991.23},{x: new Date(1776232800000), y: 9990.49},{x: new Date(1776236400000), y: 9991.99},{x: new Date(1776240000000), y: 9988.21},{x: new Date(1776243600000), y: 9989.28},{x: new Date(1776247200000), y: 9990.79},{x: new Date(1776250800000), y: 9987.42},{x: new Date(1776254400000), y: 9986.69},{x: new Date(1776258000000), y: 9988.83},{x: new Date(1776261600000), y: 9987.95},{x: new Date(1776265200000), y: 9990.98},{x: new Date(1776268800000), y: 9989.94},{x: new Date(1776272400000), y: 9988.07},{x: new Date(1776276000000), y: 9985.5},{x: new Date(1776279600000), y: 9978.6},{x: new Date(1776283200000), y: 9978.6},{x: new Date(1776286800000), y: 9978.6},{x: new Date(1776290400000), y: 9978.6},{x: new Date(1776294000000), y: 9978.6},{x: new Date(1776297600000), y: 9978.6},{x: new Date(1776301200000), y: 9978.6},{x: new Date(1776304800000), y: 9978.6},{x: new Date(1776308400000), y: 9978.6},{x: new Date(1776312000000), y: 9978.6},{x: new Date(1776315600000), y: 9977.85},{x: new Date(1776319200000), y: 9977.68},{x: new Date(1776322800000), y: 9974.4},{x: new Date(1776326400000), y: 9974.13},{x: new Date(1776330000000), y: 9973.37},{x: new Date(1776333600000), y: 9969.06},{x: new Date(1776337200000), y: 9966.41},{x: new Date(1776340800000), y: 9965.94},{x: new Date(1776344400000), y: 9974.3},{x: new Date(1776348000000), y: 9972.44},{x: new Date(1776351600000), y: 9965.2},{x: new Date(1776355200000), y: 9970.44},{x: new Date(1776358800000), y: 9968.82},{x: new Date(1776362400000), y: 9960.38},{x: new Date(1776366000000), y: 9963.52},{x: new Date(1776369600000), y: 9962.29},{x: new Date(1776373200000), y: 9959.41},{x: new Date(1776376800000), y: 9958.81},{x: new Date(1776380400000), y: 9961.52},{x: new Date(1776384000000), y: 9959.46},{x: new Date(1776387600000), y: 9957.5},{x: new Date(1776391200000), y: 9957.05},{x: new Date(1776394800000), y: 9956.23},{x: new Date(1776398400000), y: 9957.85},{x: new Date(1776402000000), y: 9956.41},{x: new Date(1776405600000), y: 9959.37},{x: new Date(1776409200000), y: 9960.78},{x: new Date(1776412800000), y: 9967.85},{x: new Date(1776416400000), y: 9967.84},{x: new Date(1776420000000), y: 9962.86},{x: new Date(1776423600000), y: 9965.94},{x: new Date(1776427200000), y: 9972.43},{x: new Date(1776430800000), y: 9982.69},{x: new Date(1776434400000), y: 9982.69},{x: new Date(1776438000000), y: 9982.69},{x: new Date(1776441600000), y: 9982.69},{x: new Date(1776445200000), y: 9982.69},{x: new Date(1776448800000), y: 9982.69},{x: new Date(1776452400000), y: 9982.69},{x: new Date(1776456000000), y: 9982.69},{x: new Date(1776459600000), y: 9982.69},{x: new Date(1776463200000), y: 9982.69},{x: new Date(1776466800000), y: 9982.69},{x: new Date(1776470400000), y: 9982.69},{x: new Date(1776474000000), y: 9982.69},{x: new Date(1776477600000), y: 9982.69},{x: new Date(1776481200000), y: 9981.92},{x: new Date(1776484800000), y: 9980.93},{x: new Date(1776488400000), y: 9980.67},{x: new Date(1776492000000), y: 9980.77},{x: new Date(1776495600000), y: 9982.16},{x: new Date(1776499200000), y: 9984.63},{x: new Date(1776502800000), y: 9986.0},{x: new Date(1776506400000), y: 9990.04},{x: new Date(1776510000000), y: 9991.52},{x: new Date(1776513600000), y: 9989.84},{x: new Date(1776517200000), y: 9990.77},{x: new Date(1776520800000), y: 9989.39},{x: new Date(1776524400000), y: 9990.31},{x: new Date(1776528000000), y: 9992.58},{x: new Date(1776531600000), y: 9993.73},{x: new Date(1776535200000), y: 9995.49},{x: new Date(1776538800000), y: 9995.53},{x: new Date(1776542400000), y: 9994.52},{x: new Date(1776546000000), y: 9993.86},{x: new Date(1776549600000), y: 9993.89},{x: new Date(1776553200000), y: 9995.03},{x: new Date(1776556800000), y: 9995.29},{x: new Date(1776560400000), y: 9995.81},{x: new Date(1776564000000), y: 9997.02},{x: new Date(1776567600000), y: 9996.86},{x: new Date(1776571200000), y: 9995.32},{x: new Date(1776574800000), y: 9996.54},{x: new Date(1776578400000), y: 9998.05},{x: new Date(1776582000000), y: 9999.67},{x: new Date(1776585600000), y: 9999.48},{x: new Date(1776589200000), y: 10001.81},{x: new Date(1776592800000), y: 9999.78},{x: new Date(1776596400000), y: 9996.01},{x: new Date(1776600000000), y: 9996.3},{x: new Date(1776603600000), y: 9992.72},{x: new Date(1776607200000), y: 9991.74},{x: new Date(1776610800000), y: 9993.51},{x: new Date(1776614400000), y: 9997.35},{x: new Date(1776618000000), y: 9996.6},{x: new Date(1776621600000), y: 9996.72},{x: new Date(1776625200000), y: 9994.86},{x: new Date(1776628800000), y: 9998.17},{x: new Date(1776632400000), y: 10000.27},{x: new Date(1776636000000), y: 10004.07},{x: new Date(1776639600000), y: 10006.46},{x: new Date(1776643200000), y: 10001.74},{x: new Date(1776646800000), y: 9998.58},{x: new Date(1776650400000), y: 10000.44},{x: new Date(1776654000000), y: 9998.21},{x: new Date(1776657600000), y: 9998.86},{x: new Date(1776661200000), y: 10001.77},{x: new Date(1776664800000), y: 9996.65},{x: new Date(1776668400000), y: 9996.21},{x: new Date(1776672000000), y: 9997.27},{x: new Date(1776675600000), y: 9993.95},{x: new Date(1776679200000), y: 9994.25},{x: new Date(1776682800000), y: 9992.57},{x: new Date(1776686400000), y: 9991.63},{x: new Date(1776690000000), y: 9991.88},{x: new Date(1776693600000), y: 9994.1},{x: new Date(1776697200000), y: 9985.89},{x: new Date(1776700800000), y: 9982.27},{x: new Date(1776704400000), y: 9987.82},{x: new Date(1776708000000), y: 9993.04},{x: new Date(1776711600000), y: 9991.66},{x: new Date(1776715200000), y: 9991.48},{x: new Date(1776718800000), y: 9988.31},{x: new Date(1776722400000), y: 9988.51},{x: new Date(1776726000000), y: 9987.19},{x: new Date(1776729600000), y: 9989.76},{x: new Date(1776733200000), y: 9988.03},{x: new Date(1776736800000), y: 9984.69},{x: new Date(1776740400000), y: 9985.91},{x: new Date(1776744000000), y: 9987.01},{x: new Date(1776747600000), y: 9986.95},{x: new Date(1776751200000), y: 9988.58},{x: new Date(1776754800000), y: 9989.58},{x: new Date(1776758400000), y: 9993.84},{x: new Date(1776762000000), y: 9992.41},{x: new Date(1776765600000), y: 9996.28},{x: new Date(1776769200000), y: 9993.29},{x: new Date(1776772800000), y: 9988.97},{x: new Date(1776776400000), y: 9987.83},{x: new Date(1776780000000), y: 9985.53},{x: new Date(1776783600000), y: 9987.18},{x: new Date(1776787200000), y: 9986.53},{x: new Date(1776790800000), y: 9984.35},{x: new Date(1776794400000), y: 9984.92},{x: new Date(1776798000000), y: 9979.04},{x: new Date(1776801600000), y: 9985.73},{x: new Date(1776805200000), y: 9984.21},{x: new Date(1776808800000), y: 9985.17},{x: new Date(1776812400000), y: 9992.08},{x: new Date(1776816000000), y: 9992.48},{x: new Date(1776819600000), y: 9991.8},{x: new Date(1776823200000), y: 10004.84},{x: new Date(1776826800000), y: 10004.05},{x: new Date(1776830400000), y: 10004.05},{x: new Date(1776834000000), y: 10008.66},{x: new Date(1776837600000), y: 10008.05},{x: new Date(1776841200000), y: 10008.05},{x: new Date(1776844800000), y: 10008.05},{x: new Date(1776848400000), y: 10008.05}],
+    borderColor: '#9c27b0',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'RSI 超卖超买',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 9999.26},{x: new Date(1776146400000), y: 9996.12},{x: new Date(1776150000000), y: 9995.12},{x: new Date(1776153600000), y: 9995.12},{x: new Date(1776157200000), y: 9994.38},{x: new Date(1776160800000), y: 9995.97},{x: new Date(1776164400000), y: 9995.68},{x: new Date(1776168000000), y: 9994.83},{x: new Date(1776171600000), y: 9983.47},{x: new Date(1776175200000), y: 9982.72},{x: new Date(1776178800000), y: 9979.59},{x: new Date(1776182400000), y: 9986.42},{x: new Date(1776186000000), y: 9985.45},{x: new Date(1776189600000), y: 9991.93},{x: new Date(1776193200000), y: 9990.68},{x: new Date(1776196800000), y: 9991.87},{x: new Date(1776200400000), y: 9990.13},{x: new Date(1776204000000), y: 9992.64},{x: new Date(1776207600000), y: 9991.39},{x: new Date(1776211200000), y: 9987.18},{x: new Date(1776214800000), y: 9986.77},{x: new Date(1776218400000), y: 9989.61},{x: new Date(1776222000000), y: 9989.41},{x: new Date(1776225600000), y: 9989.43},{x: new Date(1776229200000), y: 9992.62},{x: new Date(1776232800000), y: 9993.95},{x: new Date(1776236400000), y: 9994.71},{x: new Date(1776240000000), y: 9993.97},{x: new Date(1776243600000), y: 9992.9},{x: new Date(1776247200000), y: 9991.39},{x: new Date(1776250800000), y: 9994.77},{x: new Date(1776254400000), y: 9995.49},{x: new Date(1776258000000), y: 9993.35},{x: new Date(1776261600000), y: 9994.23},{x: new Date(1776265200000), y: 9991.2},{x: new Date(1776268800000), y: 9992.24},{x: new Date(1776272400000), y: 9994.12},{x: new Date(1776276000000), y: 9996.68},{x: new Date(1776279600000), y: 10002.83},{x: new Date(1776283200000), y: 10001.16},{x: new Date(1776286800000), y: 10000.19},{x: new Date(1776290400000), y: 10002.38},{x: new Date(1776294000000), y: 10000.89},{x: new Date(1776297600000), y: 10000.81},{x: new Date(1776301200000), y: 9999.24},{x: new Date(1776304800000), y: 10001.56},{x: new Date(1776308400000), y: 10001.63},{x: new Date(1776312000000), y: 10002.15},{x: new Date(1776315600000), y: 10003.23},{x: new Date(1776319200000), y: 10003.05},{x: new Date(1776322800000), y: 9999.78},{x: new Date(1776326400000), y: 9999.5},{x: new Date(1776330000000), y: 9998.74},{x: new Date(1776333600000), y: 9995.92},{x: new Date(1776337200000), y: 9998.57},{x: new Date(1776340800000), y: 9999.05},{x: new Date(1776344400000), y: 9990.68},{x: new Date(1776348000000), y: 9992.55},{x: new Date(1776351600000), y: 9999.78},{x: new Date(1776355200000), y: 9994.54},{x: new Date(1776358800000), y: 9996.16},{x: new Date(1776362400000), y: 10003.1},{x: new Date(1776366000000), y: 10005.48},{x: new Date(1776369600000), y: 10004.73},{x: new Date(1776373200000), y: 10007.6},{x: new Date(1776376800000), y: 10008.2},{x: new Date(1776380400000), y: 10005.49},{x: new Date(1776384000000), y: 10007.56},{x: new Date(1776387600000), y: 10009.51},{x: new Date(1776391200000), y: 10009.96},{x: new Date(1776394800000), y: 10010.78},{x: new Date(1776398400000), y: 10009.16},{x: new Date(1776402000000), y: 10010.61},{x: new Date(1776405600000), y: 10007.64},{x: new Date(1776409200000), y: 10006.23},{x: new Date(1776412800000), y: 9998.41},{x: new Date(1776416400000), y: 9998.41},{x: new Date(1776420000000), y: 9997.66},{x: new Date(1776423600000), y: 9994.58},{x: new Date(1776427200000), y: 9987.33},{x: new Date(1776430800000), y: 9987.33},{x: new Date(1776434400000), y: 9987.33},{x: new Date(1776438000000), y: 9987.33},{x: new Date(1776441600000), y: 9987.33},{x: new Date(1776445200000), y: 9987.33},{x: new Date(1776448800000), y: 9986.56},{x: new Date(1776452400000), y: 9984.13},{x: new Date(1776456000000), y: 9984.76},{x: new Date(1776459600000), y: 9983.69},{x: new Date(1776463200000), y: 9985.11},{x: new Date(1776466800000), y: 9987.37},{x: new Date(1776470400000), y: 9986.45},{x: new Date(1776474000000), y: 9985.95},{x: new Date(1776477600000), y: 9985.21},{x: new Date(1776481200000), y: 9988.01},{x: new Date(1776484800000), y: 9987.02},{x: new Date(1776488400000), y: 9986.75},{x: new Date(1776492000000), y: 9986.86},{x: new Date(1776495600000), y: 9988.24},{x: new Date(1776499200000), y: 9990.72},{x: new Date(1776502800000), y: 9992.08},{x: new Date(1776506400000), y: 9996.12},{x: new Date(1776510000000), y: 9997.61},{x: new Date(1776513600000), y: 9995.92},{x: new Date(1776517200000), y: 9996.85},{x: new Date(1776520800000), y: 9995.47},{x: new Date(1776524400000), y: 9996.39},{x: new Date(1776528000000), y: 9997.9},{x: new Date(1776531600000), y: 9997.9},{x: new Date(1776535200000), y: 9997.9},{x: new Date(1776538800000), y: 9997.9},{x: new Date(1776542400000), y: 9997.9},{x: new Date(1776546000000), y: 9997.14},{x: new Date(1776549600000), y: 9997.1},{x: new Date(1776553200000), y: 9995.97},{x: new Date(1776556800000), y: 9995.71},{x: new Date(1776560400000), y: 9995.19},{x: new Date(1776564000000), y: 9993.98},{x: new Date(1776567600000), y: 9994.14},{x: new Date(1776571200000), y: 9995.68},{x: new Date(1776574800000), y: 9994.45},{x: new Date(1776578400000), y: 9992.19},{x: new Date(1776582000000), y: 9992.19},{x: new Date(1776585600000), y: 9992.19},{x: new Date(1776589200000), y: 9992.19},{x: new Date(1776592800000), y: 9991.44},{x: new Date(1776596400000), y: 9995.21},{x: new Date(1776600000000), y: 9994.92},{x: new Date(1776603600000), y: 9998.5},{x: new Date(1776607200000), y: 9999.48},{x: new Date(1776610800000), y: 9997.71},{x: new Date(1776614400000), y: 9993.12},{x: new Date(1776618000000), y: 9986.37},{x: new Date(1776621600000), y: 9986.37},{x: new Date(1776625200000), y: 9985.62},{x: new Date(1776628800000), y: 9982.3},{x: new Date(1776632400000), y: 9979.46},{x: new Date(1776636000000), y: 9979.46},{x: new Date(1776639600000), y: 9979.46},{x: new Date(1776643200000), y: 9978.72},{x: new Date(1776646800000), y: 9981.87},{x: new Date(1776650400000), y: 9980.02},{x: new Date(1776654000000), y: 9982.24},{x: new Date(1776657600000), y: 9981.6},{x: new Date(1776661200000), y: 9978.69},{x: new Date(1776664800000), y: 9983.8},{x: new Date(1776668400000), y: 9984.25},{x: new Date(1776672000000), y: 9983.18},{x: new Date(1776675600000), y: 9986.5},{x: new Date(1776679200000), y: 9986.2},{x: new Date(1776682800000), y: 9987.89},{x: new Date(1776686400000), y: 9988.82},{x: new Date(1776690000000), y: 9988.58},{x: new Date(1776693600000), y: 9986.35},{x: new Date(1776697200000), y: 9992.29},{x: new Date(1776700800000), y: 9991.54},{x: new Date(1776704400000), y: 9985.22},{x: new Date(1776708000000), y: 9985.22},{x: new Date(1776711600000), y: 9985.22},{x: new Date(1776715200000), y: 9985.22},{x: new Date(1776718800000), y: 9984.46},{x: new Date(1776722400000), y: 9984.27},{x: new Date(1776726000000), y: 9985.58},{x: new Date(1776729600000), y: 9983.02},{x: new Date(1776733200000), y: 9984.75},{x: new Date(1776736800000), y: 9988.08},{x: new Date(1776740400000), y: 9986.86},{x: new Date(1776744000000), y: 9985.77},{x: new Date(1776747600000), y: 9985.82},{x: new Date(1776751200000), y: 9984.2},{x: new Date(1776754800000), y: 9983.19},{x: new Date(1776758400000), y: 9978.16},{x: new Date(1776762000000), y: 9978.16},{x: new Date(1776765600000), y: 9978.16},{x: new Date(1776769200000), y: 9977.4},{x: new Date(1776772800000), y: 9981.72},{x: new Date(1776776400000), y: 9982.86},{x: new Date(1776780000000), y: 9985.17},{x: new Date(1776783600000), y: 9983.51},{x: new Date(1776787200000), y: 9984.16},{x: new Date(1776790800000), y: 9986.34},{x: new Date(1776794400000), y: 9985.77},{x: new Date(1776798000000), y: 9990.9},{x: new Date(1776801600000), y: 9990.14},{x: new Date(1776805200000), y: 9988.62},{x: new Date(1776808800000), y: 9989.58},{x: new Date(1776812400000), y: 9996.49},{x: new Date(1776816000000), y: 9996.89},{x: new Date(1776819600000), y: 9996.2},{x: new Date(1776823200000), y: 10008.47},{x: new Date(1776826800000), y: 10008.47},{x: new Date(1776830400000), y: 10008.47},{x: new Date(1776834000000), y: 10008.47},{x: new Date(1776837600000), y: 10008.47},{x: new Date(1776841200000), y: 10008.47},{x: new Date(1776844800000), y: 10008.47},{x: new Date(1776848400000), y: 10008.47}],
+    borderColor: '#ff9800',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '双时间框架EMA',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 10000},{x: new Date(1776153600000), y: 10000},{x: new Date(1776157200000), y: 10000},{x: new Date(1776160800000), y: 10000},{x: new Date(1776164400000), y: 10000},{x: new Date(1776168000000), y: 10000},{x: new Date(1776171600000), y: 10000},{x: new Date(1776175200000), y: 10000},{x: new Date(1776178800000), y: 10000},{x: new Date(1776182400000), y: 10000},{x: new Date(1776186000000), y: 10000},{x: new Date(1776189600000), y: 10000},{x: new Date(1776193200000), y: 10000},{x: new Date(1776196800000), y: 10000},{x: new Date(1776200400000), y: 10000},{x: new Date(1776204000000), y: 10000},{x: new Date(1776207600000), y: 10000},{x: new Date(1776211200000), y: 10000},{x: new Date(1776214800000), y: 10000},{x: new Date(1776218400000), y: 10000},{x: new Date(1776222000000), y: 10000},{x: new Date(1776225600000), y: 10000},{x: new Date(1776229200000), y: 10000},{x: new Date(1776232800000), y: 10000},{x: new Date(1776236400000), y: 10000},{x: new Date(1776240000000), y: 10000},{x: new Date(1776243600000), y: 10000},{x: new Date(1776247200000), y: 10000},{x: new Date(1776250800000), y: 10000},{x: new Date(1776254400000), y: 9999.26},{x: new Date(1776258000000), y: 9997.12},{x: new Date(1776261600000), y: 9997.99},{x: new Date(1776265200000), y: 9994.97},{x: new Date(1776268800000), y: 9996.0},{x: new Date(1776272400000), y: 9997.88},{x: new Date(1776276000000), y: 10000.44},{x: new Date(1776279600000), y: 10006.59},{x: new Date(1776283200000), y: 10004.92},{x: new Date(1776286800000), y: 10003.95},{x: new Date(1776290400000), y: 10006.14},{x: new Date(1776294000000), y: 10004.65},{x: new Date(1776297600000), y: 10004.57},{x: new Date(1776301200000), y: 10003.0},{x: new Date(1776304800000), y: 10005.32},{x: new Date(1776308400000), y: 10005.39},{x: new Date(1776312000000), y: 10005.91},{x: new Date(1776315600000), y: 10006.99},{x: new Date(1776319200000), y: 10006.82},{x: new Date(1776322800000), y: 10003.54},{x: new Date(1776326400000), y: 10003.27},{x: new Date(1776330000000), y: 10002.51},{x: new Date(1776333600000), y: 9999.69},{x: new Date(1776337200000), y: 10002.34},{x: new Date(1776340800000), y: 10002.81},{x: new Date(1776344400000), y: 9994.45},{x: new Date(1776348000000), y: 9996.31},{x: new Date(1776351600000), y: 10003.55},{x: new Date(1776355200000), y: 9998.31},{x: new Date(1776358800000), y: 9999.92},{x: new Date(1776362400000), y: 10006.86},{x: new Date(1776366000000), y: 10010.0},{x: new Date(1776369600000), y: 10008.76},{x: new Date(1776373200000), y: 10005.89},{x: new Date(1776376800000), y: 10005.29},{x: new Date(1776380400000), y: 10008.0},{x: new Date(1776384000000), y: 10005.93},{x: new Date(1776387600000), y: 10003.98},{x: new Date(1776391200000), y: 10003.53},{x: new Date(1776394800000), y: 10002.71},{x: new Date(1776398400000), y: 10004.33},{x: new Date(1776402000000), y: 10002.89},{x: new Date(1776405600000), y: 10005.85},{x: new Date(1776409200000), y: 10007.26},{x: new Date(1776412800000), y: 10014.32},{x: new Date(1776416400000), y: 10014.31},{x: new Date(1776420000000), y: 10009.34},{x: new Date(1776423600000), y: 10012.41},{x: new Date(1776427200000), y: 10018.9},{x: new Date(1776430800000), y: 10029.17},{x: new Date(1776434400000), y: 10029.17},{x: new Date(1776438000000), y: 10029.17},{x: new Date(1776441600000), y: 10029.17},{x: new Date(1776445200000), y: 10029.17},{x: new Date(1776448800000), y: 10029.17},{x: new Date(1776452400000), y: 10029.17},{x: new Date(1776456000000), y: 10029.17},{x: new Date(1776459600000), y: 10029.17},{x: new Date(1776463200000), y: 10029.17},{x: new Date(1776466800000), y: 10029.17},{x: new Date(1776470400000), y: 10029.17},{x: new Date(1776474000000), y: 10029.17},{x: new Date(1776477600000), y: 10028.4},{x: new Date(1776481200000), y: 10025.6},{x: new Date(1776484800000), y: 10026.59},{x: new Date(1776488400000), y: 10026.85},{x: new Date(1776492000000), y: 10026.75},{x: new Date(1776495600000), y: 10025.37},{x: new Date(1776499200000), y: 10022.89},{x: new Date(1776502800000), y: 10021.53},{x: new Date(1776506400000), y: 10016.73},{x: new Date(1776510000000), y: 10016.73},{x: new Date(1776513600000), y: 10016.73},{x: new Date(1776517200000), y: 10016.73},{x: new Date(1776520800000), y: 10016.73},{x: new Date(1776524400000), y: 10016.73},{x: new Date(1776528000000), y: 10016.73},{x: new Date(1776531600000), y: 10016.73},{x: new Date(1776535200000), y: 10016.73},{x: new Date(1776538800000), y: 10016.73},{x: new Date(1776542400000), y: 10016.73},{x: new Date(1776546000000), y: 10016.73},{x: new Date(1776549600000), y: 10016.73},{x: new Date(1776553200000), y: 10016.73},{x: new Date(1776556800000), y: 10016.73},{x: new Date(1776560400000), y: 10016.73},{x: new Date(1776564000000), y: 10016.73},{x: new Date(1776567600000), y: 10016.73},{x: new Date(1776571200000), y: 10016.73},{x: new Date(1776574800000), y: 10016.73},{x: new Date(1776578400000), y: 10016.73},{x: new Date(1776582000000), y: 10016.73},{x: new Date(1776585600000), y: 10016.73},{x: new Date(1776589200000), y: 10016.73},{x: new Date(1776592800000), y: 10016.73},{x: new Date(1776596400000), y: 10016.73},{x: new Date(1776600000000), y: 10016.73},{x: new Date(1776603600000), y: 10016.73},{x: new Date(1776607200000), y: 10016.73},{x: new Date(1776610800000), y: 10016.73},{x: new Date(1776614400000), y: 10016.73},{x: new Date(1776618000000), y: 10016.73},{x: new Date(1776621600000), y: 10016.73},{x: new Date(1776625200000), y: 10016.73},{x: new Date(1776628800000), y: 10016.73},{x: new Date(1776632400000), y: 10016.73},{x: new Date(1776636000000), y: 10016.73},{x: new Date(1776639600000), y: 10016.73},{x: new Date(1776643200000), y: 10016.73},{x: new Date(1776646800000), y: 10016.73},{x: new Date(1776650400000), y: 10016.73},{x: new Date(1776654000000), y: 10016.73},{x: new Date(1776657600000), y: 10016.73},{x: new Date(1776661200000), y: 10015.99},{x: new Date(1776664800000), y: 10010.87},{x: new Date(1776668400000), y: 10010.42},{x: new Date(1776672000000), y: 10011.49},{x: new Date(1776675600000), y: 10007.42},{x: new Date(1776679200000), y: 10007.42},{x: new Date(1776682800000), y: 10007.42},{x: new Date(1776686400000), y: 10007.42},{x: new Date(1776690000000), y: 10007.42},{x: new Date(1776693600000), y: 10007.42},{x: new Date(1776697200000), y: 10007.42},{x: new Date(1776700800000), y: 10007.42},{x: new Date(1776704400000), y: 10007.42},{x: new Date(1776708000000), y: 10007.42},{x: new Date(1776711600000), y: 10007.42},{x: new Date(1776715200000), y: 10007.42},{x: new Date(1776718800000), y: 10007.42},{x: new Date(1776722400000), y: 10007.42},{x: new Date(1776726000000), y: 10007.42},{x: new Date(1776729600000), y: 10007.42},{x: new Date(1776733200000), y: 10007.42},{x: new Date(1776736800000), y: 10007.42},{x: new Date(1776740400000), y: 10007.42},{x: new Date(1776744000000), y: 10007.42},{x: new Date(1776747600000), y: 10007.42},{x: new Date(1776751200000), y: 10006.66},{x: new Date(1776754800000), y: 10007.67},{x: new Date(1776758400000), y: 10011.93},{x: new Date(1776762000000), y: 10010.5},{x: new Date(1776765600000), y: 10014.36},{x: new Date(1776769200000), y: 10011.38},{x: new Date(1776772800000), y: 10007.06},{x: new Date(1776776400000), y: 10005.92},{x: new Date(1776780000000), y: 10003.61},{x: new Date(1776783600000), y: 10005.26},{x: new Date(1776787200000), y: 10004.62},{x: new Date(1776790800000), y: 10002.43},{x: new Date(1776794400000), y: 10003.01},{x: new Date(1776798000000), y: 9996.38},{x: new Date(1776801600000), y: 9996.38},{x: new Date(1776805200000), y: 9996.38},{x: new Date(1776808800000), y: 9996.38},{x: new Date(1776812400000), y: 9996.38},{x: new Date(1776816000000), y: 9996.38},{x: new Date(1776819600000), y: 9996.38},{x: new Date(1776823200000), y: 9996.38},{x: new Date(1776826800000), y: 9996.38},{x: new Date(1776830400000), y: 9996.38},{x: new Date(1776834000000), y: 9996.38},{x: new Date(1776837600000), y: 9996.38},{x: new Date(1776841200000), y: 9996.38},{x: new Date(1776844800000), y: 9996.38},{x: new Date(1776848400000), y: 9996.38}],
+    borderColor: '#4caf50',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'CCI 趋势反转',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 10000},{x: new Date(1776142800000), y: 10000},{x: new Date(1776146400000), y: 10000},{x: new Date(1776150000000), y: 10000},{x: new Date(1776153600000), y: 10000},{x: new Date(1776157200000), y: 10000},{x: new Date(1776160800000), y: 9999.26},{x: new Date(1776164400000), y: 9998.96},{x: new Date(1776168000000), y: 9998.12},{x: new Date(1776171600000), y: 9986.76},{x: new Date(1776175200000), y: 9986.76},{x: new Date(1776178800000), y: 9986.76},{x: new Date(1776182400000), y: 9986.01},{x: new Date(1776186000000), y: 9985.04},{x: new Date(1776189600000), y: 9991.52},{x: new Date(1776193200000), y: 9990.27},{x: new Date(1776196800000), y: 9991.46},{x: new Date(1776200400000), y: 9989.72},{x: new Date(1776204000000), y: 9992.22},{x: new Date(1776207600000), y: 9990.98},{x: new Date(1776211200000), y: 9986.76},{x: new Date(1776214800000), y: 9986.35},{x: new Date(1776218400000), y: 9989.2},{x: new Date(1776222000000), y: 9989.0},{x: new Date(1776225600000), y: 9989.02},{x: new Date(1776229200000), y: 9992.21},{x: new Date(1776232800000), y: 9993.54},{x: new Date(1776236400000), y: 9994.3},{x: new Date(1776240000000), y: 9993.56},{x: new Date(1776243600000), y: 9992.49},{x: new Date(1776247200000), y: 9990.98},{x: new Date(1776250800000), y: 9994.35},{x: new Date(1776254400000), y: 9995.08},{x: new Date(1776258000000), y: 9992.94},{x: new Date(1776261600000), y: 9993.82},{x: new Date(1776265200000), y: 9990.79},{x: new Date(1776268800000), y: 9991.83},{x: new Date(1776272400000), y: 9993.7},{x: new Date(1776276000000), y: 9996.27},{x: new Date(1776279600000), y: 10001.67},{x: new Date(1776283200000), y: 10001.67},{x: new Date(1776286800000), y: 10001.67},{x: new Date(1776290400000), y: 10001.67},{x: new Date(1776294000000), y: 10000.92},{x: new Date(1776297600000), y: 10001.0},{x: new Date(1776301200000), y: 10002.57},{x: new Date(1776304800000), y: 10000.25},{x: new Date(1776308400000), y: 10000.18},{x: new Date(1776312000000), y: 9999.66},{x: new Date(1776315600000), y: 9998.58},{x: new Date(1776319200000), y: 9998.76},{x: new Date(1776322800000), y: 10002.03},{x: new Date(1776326400000), y: 10002.31},{x: new Date(1776330000000), y: 10003.07},{x: new Date(1776333600000), y: 10005.89},{x: new Date(1776337200000), y: 10003.24},{x: new Date(1776340800000), y: 10002.76},{x: new Date(1776344400000), y: 10010.39},{x: new Date(1776348000000), y: 10010.39},{x: new Date(1776351600000), y: 10009.64},{x: new Date(1776355200000), y: 10003.66},{x: new Date(1776358800000), y: 10003.66},{x: new Date(1776362400000), y: 10003.66},{x: new Date(1776366000000), y: 10003.66},{x: new Date(1776369600000), y: 10003.66},{x: new Date(1776373200000), y: 10002.91},{x: new Date(1776376800000), y: 10003.51},{x: new Date(1776380400000), y: 10000.8},{x: new Date(1776384000000), y: 10002.86},{x: new Date(1776387600000), y: 10004.82},{x: new Date(1776391200000), y: 10005.27},{x: new Date(1776394800000), y: 10006.09},{x: new Date(1776398400000), y: 10004.47},{x: new Date(1776402000000), y: 10005.91},{x: new Date(1776405600000), y: 10002.95},{x: new Date(1776409200000), y: 10001.54},{x: new Date(1776412800000), y: 9993.72},{x: new Date(1776416400000), y: 9993.72},{x: new Date(1776420000000), y: 9992.96},{x: new Date(1776423600000), y: 9989.89},{x: new Date(1776427200000), y: 9982.64},{x: new Date(1776430800000), y: 9982.64},{x: new Date(1776434400000), y: 9982.64},{x: new Date(1776438000000), y: 9982.64},{x: new Date(1776441600000), y: 9982.64},{x: new Date(1776445200000), y: 9981.86},{x: new Date(1776448800000), y: 9985.47},{x: new Date(1776452400000), y: 9983.05},{x: new Date(1776456000000), y: 9983.68},{x: new Date(1776459600000), y: 9982.61},{x: new Date(1776463200000), y: 9984.03},{x: new Date(1776466800000), y: 9986.28},{x: new Date(1776470400000), y: 9985.37},{x: new Date(1776474000000), y: 9984.87},{x: new Date(1776477600000), y: 9984.13},{x: new Date(1776481200000), y: 9986.92},{x: new Date(1776484800000), y: 9985.93},{x: new Date(1776488400000), y: 9985.67},{x: new Date(1776492000000), y: 9985.77},{x: new Date(1776495600000), y: 9987.15},{x: new Date(1776499200000), y: 9989.63},{x: new Date(1776502800000), y: 9990.23},{x: new Date(1776506400000), y: 9990.23},{x: new Date(1776510000000), y: 9990.23},{x: new Date(1776513600000), y: 9990.23},{x: new Date(1776517200000), y: 9990.23},{x: new Date(1776520800000), y: 9989.47},{x: new Date(1776524400000), y: 9988.55},{x: new Date(1776528000000), y: 9986.28},{x: new Date(1776531600000), y: 9984.36},{x: new Date(1776535200000), y: 9984.36},{x: new Date(1776538800000), y: 9984.36},{x: new Date(1776542400000), y: 9984.36},{x: new Date(1776546000000), y: 9983.6},{x: new Date(1776549600000), y: 9983.57},{x: new Date(1776553200000), y: 9982.43},{x: new Date(1776556800000), y: 9982.18},{x: new Date(1776560400000), y: 9981.65},{x: new Date(1776564000000), y: 9980.44},{x: new Date(1776567600000), y: 9980.6},{x: new Date(1776571200000), y: 9982.14},{x: new Date(1776574800000), y: 9980.92},{x: new Date(1776578400000), y: 9978.66},{x: new Date(1776582000000), y: 9978.66},{x: new Date(1776585600000), y: 9978.66},{x: new Date(1776589200000), y: 9978.66},{x: new Date(1776592800000), y: 9978.66},{x: new Date(1776596400000), y: 9977.9},{x: new Date(1776600000000), y: 9977.62},{x: new Date(1776603600000), y: 9981.19},{x: new Date(1776607200000), y: 9982.17},{x: new Date(1776610800000), y: 9980.4},{x: new Date(1776614400000), y: 9975.81},{x: new Date(1776618000000), y: 9969.06},{x: new Date(1776621600000), y: 9969.06},{x: new Date(1776625200000), y: 9969.06},{x: new Date(1776628800000), y: 9969.06},{x: new Date(1776632400000), y: 9969.06},{x: new Date(1776636000000), y: 9969.06},{x: new Date(1776639600000), y: 9969.06},{x: new Date(1776643200000), y: 9969.06},{x: new Date(1776646800000), y: 9968.31},{x: new Date(1776650400000), y: 9966.46},{x: new Date(1776654000000), y: 9968.68},{x: new Date(1776657600000), y: 9968.04},{x: new Date(1776661200000), y: 9965.13},{x: new Date(1776664800000), y: 9970.24},{x: new Date(1776668400000), y: 9970.69},{x: new Date(1776672000000), y: 9969.62},{x: new Date(1776675600000), y: 9972.94},{x: new Date(1776679200000), y: 9972.64},{x: new Date(1776682800000), y: 9974.33},{x: new Date(1776686400000), y: 9975.26},{x: new Date(1776690000000), y: 9975.02},{x: new Date(1776693600000), y: 9972.79},{x: new Date(1776697200000), y: 9978.73},{x: new Date(1776700800000), y: 9978.73},{x: new Date(1776704400000), y: 9978.73},{x: new Date(1776708000000), y: 9978.73},{x: new Date(1776711600000), y: 9978.73},{x: new Date(1776715200000), y: 9978.73},{x: new Date(1776718800000), y: 9977.97},{x: new Date(1776722400000), y: 9977.77},{x: new Date(1776726000000), y: 9979.09},{x: new Date(1776729600000), y: 9976.52},{x: new Date(1776733200000), y: 9978.25},{x: new Date(1776736800000), y: 9981.59},{x: new Date(1776740400000), y: 9980.37},{x: new Date(1776744000000), y: 9979.27},{x: new Date(1776747600000), y: 9979.33},{x: new Date(1776751200000), y: 9977.7},{x: new Date(1776754800000), y: 9976.69},{x: new Date(1776758400000), y: 9971.67},{x: new Date(1776762000000), y: 9971.67},{x: new Date(1776765600000), y: 9971.67},{x: new Date(1776769200000), y: 9971.67},{x: new Date(1776772800000), y: 9970.91},{x: new Date(1776776400000), y: 9972.05},{x: new Date(1776780000000), y: 9974.35},{x: new Date(1776783600000), y: 9972.7},{x: new Date(1776787200000), y: 9973.35},{x: new Date(1776790800000), y: 9975.53},{x: new Date(1776794400000), y: 9974.96},{x: new Date(1776798000000), y: 9980.08},{x: new Date(1776801600000), y: 9979.33},{x: new Date(1776805200000), y: 9977.8},{x: new Date(1776808800000), y: 9978.77},{x: new Date(1776812400000), y: 9985.68},{x: new Date(1776816000000), y: 9986.08},{x: new Date(1776819600000), y: 9985.39},{x: new Date(1776823200000), y: 9997.66},{x: new Date(1776826800000), y: 9997.66},{x: new Date(1776830400000), y: 9997.66},{x: new Date(1776834000000), y: 9997.66},{x: new Date(1776837600000), y: 9997.66},{x: new Date(1776841200000), y: 9997.66},{x: new Date(1776844800000), y: 9996.88},{x: new Date(1776848400000), y: 9995.57}],
+    borderColor: '#e91e63',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: '均线交叉',
+    data: [{x: new Date(1776132000000), y: 10000},{x: new Date(1776135600000), y: 10000},{x: new Date(1776139200000), y: 9999.26},{x: new Date(1776142800000), y: 10001.09},{x: new Date(1776146400000), y: 9997.95},{x: new Date(1776150000000), y: 9997.7},{x: new Date(1776153600000), y: 9994.96},{x: new Date(1776157200000), y: 9994.96},{x: new Date(1776160800000), y: 9994.96},{x: new Date(1776164400000), y: 9994.21},{x: new Date(1776168000000), y: 9993.36},{x: new Date(1776171600000), y: 9981.25},{x: new Date(1776175200000), y: 9975.42},{x: new Date(1776178800000), y: 9975.42},{x: new Date(1776182400000), y: 9975.42},{x: new Date(1776186000000), y: 9975.42},{x: new Date(1776189600000), y: 9974.68},{x: new Date(1776193200000), y: 9973.43},{x: new Date(1776196800000), y: 9974.62},{x: new Date(1776200400000), y: 9972.88},{x: new Date(1776204000000), y: 9975.39},{x: new Date(1776207600000), y: 9974.14},{x: new Date(1776211200000), y: 9968.43},{x: new Date(1776214800000), y: 9968.84},{x: new Date(1776218400000), y: 9965.26},{x: new Date(1776222000000), y: 9965.26},{x: new Date(1776225600000), y: 9965.26},{x: new Date(1776229200000), y: 9964.52},{x: new Date(1776232800000), y: 9965.85},{x: new Date(1776236400000), y: 9967.35},{x: new Date(1776240000000), y: 9963.57},{x: new Date(1776243600000), y: 9964.64},{x: new Date(1776247200000), y: 9966.15},{x: new Date(1776250800000), y: 9962.78},{x: new Date(1776254400000), y: 9961.31},{x: new Date(1776258000000), y: 9961.31},{x: new Date(1776261600000), y: 9961.31},{x: new Date(1776265200000), y: 9960.57},{x: new Date(1776268800000), y: 9959.53},{x: new Date(1776272400000), y: 9956.91},{x: new Date(1776276000000), y: 9956.17},{x: new Date(1776279600000), y: 9961.57},{x: new Date(1776283200000), y: 9961.57},{x: new Date(1776286800000), y: 9961.57},{x: new Date(1776290400000), y: 9961.57},{x: new Date(1776294000000), y: 9961.57},{x: new Date(1776297600000), y: 9961.57},{x: new Date(1776301200000), y: 9960.82},{x: new Date(1776304800000), y: 9957.75},{x: new Date(1776308400000), y: 9957.75},{x: new Date(1776312000000), y: 9957.0},{x: new Date(1776315600000), y: 9958.09},{x: new Date(1776319200000), y: 9957.91},{x: new Date(1776322800000), y: 9953.89},{x: new Date(1776326400000), y: 9953.14},{x: new Date(1776330000000), y: 9953.9},{x: new Date(1776333600000), y: 9956.72},{x: new Date(1776337200000), y: 9954.07},{x: new Date(1776340800000), y: 9953.6},{x: new Date(1776344400000), y: 9961.22},{x: new Date(1776348000000), y: 9961.22},{x: new Date(1776351600000), y: 9961.22},{x: new Date(1776355200000), y: 9961.22},{x: new Date(1776358800000), y: 9960.48},{x: new Date(1776362400000), y: 9966.67},{x: new Date(1776366000000), y: 9966.67},{x: new Date(1776369600000), y: 9966.67},{x: new Date(1776373200000), y: 9966.67},{x: new Date(1776376800000), y: 9966.67},{x: new Date(1776380400000), y: 9966.67},{x: new Date(1776384000000), y: 9965.92},{x: new Date(1776387600000), y: 9967.87},{x: new Date(1776391200000), y: 9968.32},{x: new Date(1776394800000), y: 9968.4},{x: new Date(1776398400000), y: 9968.4},{x: new Date(1776402000000), y: 9968.4},{x: new Date(1776405600000), y: 9967.65},{x: new Date(1776409200000), y: 9969.06},{x: new Date(1776412800000), y: 9975.36},{x: new Date(1776416400000), y: 9975.36},{x: new Date(1776420000000), y: 9975.36},{x: new Date(1776423600000), y: 9975.36},{x: new Date(1776427200000), y: 9975.36},{x: new Date(1776430800000), y: 9975.36},{x: new Date(1776434400000), y: 9975.36},{x: new Date(1776438000000), y: 9975.36},{x: new Date(1776441600000), y: 9975.36},{x: new Date(1776445200000), y: 9975.36},{x: new Date(1776448800000), y: 9975.36},{x: new Date(1776452400000), y: 9974.59},{x: new Date(1776456000000), y: 9975.22},{x: new Date(1776459600000), y: 9974.15},{x: new Date(1776463200000), y: 9975.57},{x: new Date(1776466800000), y: 9977.06},{x: new Date(1776470400000), y: 9977.06},{x: new Date(1776474000000), y: 9977.06},{x: new Date(1776477600000), y: 9977.06},{x: new Date(1776481200000), y: 9977.06},{x: new Date(1776484800000), y: 9977.06},{x: new Date(1776488400000), y: 9977.06},{x: new Date(1776492000000), y: 9977.06},{x: new Date(1776495600000), y: 9977.06},{x: new Date(1776499200000), y: 9977.06},{x: new Date(1776502800000), y: 9977.06},{x: new Date(1776506400000), y: 9977.06},{x: new Date(1776510000000), y: 9977.06},{x: new Date(1776513600000), y: 9977.06},{x: new Date(1776517200000), y: 9977.06},{x: new Date(1776520800000), y: 9977.06},{x: new Date(1776524400000), y: 9977.06},{x: new Date(1776528000000), y: 9977.06},{x: new Date(1776531600000), y: 9977.06},{x: new Date(1776535200000), y: 9977.06},{x: new Date(1776538800000), y: 9977.06},{x: new Date(1776542400000), y: 9977.06},{x: new Date(1776546000000), y: 9977.06},{x: new Date(1776549600000), y: 9976.3},{x: new Date(1776553200000), y: 9975.16},{x: new Date(1776556800000), y: 9974.91},{x: new Date(1776560400000), y: 9972.87},{x: new Date(1776564000000), y: 9974.09},{x: new Date(1776567600000), y: 9973.92},{x: new Date(1776571200000), y: 9972.39},{x: new Date(1776574800000), y: 9973.61},{x: new Date(1776578400000), y: 9975.12},{x: new Date(1776582000000), y: 9976.74},{x: new Date(1776585600000), y: 9975.8},{x: new Date(1776589200000), y: 9975.8},{x: new Date(1776592800000), y: 9975.8},{x: new Date(1776596400000), y: 9975.8},{x: new Date(1776600000000), y: 9975.04},{x: new Date(1776603600000), y: 9978.62},{x: new Date(1776607200000), y: 9978.84},{x: new Date(1776610800000), y: 9978.84},{x: new Date(1776614400000), y: 9978.84},{x: new Date(1776618000000), y: 9978.09},{x: new Date(1776621600000), y: 9978.21},{x: new Date(1776625200000), y: 9976.35},{x: new Date(1776628800000), y: 9979.66},{x: new Date(1776632400000), y: 9981.76},{x: new Date(1776636000000), y: 9984.82},{x: new Date(1776639600000), y: 9984.82},{x: new Date(1776643200000), y: 9984.82},{x: new Date(1776646800000), y: 9984.82},{x: new Date(1776650400000), y: 9984.07},{x: new Date(1776654000000), y: 9986.3},{x: new Date(1776657600000), y: 9985.65},{x: new Date(1776661200000), y: 9982.74},{x: new Date(1776664800000), y: 9987.86},{x: new Date(1776668400000), y: 9987.56},{x: new Date(1776672000000), y: 9987.56},{x: new Date(1776675600000), y: 9987.56},{x: new Date(1776679200000), y: 9987.56},{x: new Date(1776682800000), y: 9987.56},{x: new Date(1776686400000), y: 9987.56},{x: new Date(1776690000000), y: 9987.56},{x: new Date(1776693600000), y: 9987.56},{x: new Date(1776697200000), y: 9987.56},{x: new Date(1776700800000), y: 9987.56},{x: new Date(1776704400000), y: 9987.56},{x: new Date(1776708000000), y: 9987.56},{x: new Date(1776711600000), y: 9987.56},{x: new Date(1776715200000), y: 9987.56},{x: new Date(1776718800000), y: 9987.56},{x: new Date(1776722400000), y: 9987.56},{x: new Date(1776726000000), y: 9986.8},{x: new Date(1776729600000), y: 9983.47},{x: new Date(1776733200000), y: 9983.47},{x: new Date(1776736800000), y: 9983.47},{x: new Date(1776740400000), y: 9983.47},{x: new Date(1776744000000), y: 9983.47},{x: new Date(1776747600000), y: 9983.47},{x: new Date(1776751200000), y: 9982.71},{x: new Date(1776754800000), y: 9983.72},{x: new Date(1776758400000), y: 9987.21},{x: new Date(1776762000000), y: 9987.21},{x: new Date(1776765600000), y: 9987.21},{x: new Date(1776769200000), y: 9987.21},{x: new Date(1776772800000), y: 9987.21},{x: new Date(1776776400000), y: 9986.45},{x: new Date(1776780000000), y: 9988.76},{x: new Date(1776783600000), y: 9987.11},{x: new Date(1776787200000), y: 9987.75},{x: new Date(1776790800000), y: 9989.18},{x: new Date(1776794400000), y: 9989.18},{x: new Date(1776798000000), y: 9989.18},{x: new Date(1776801600000), y: 9989.18},{x: new Date(1776805200000), y: 9989.18},{x: new Date(1776808800000), y: 9988.43},{x: new Date(1776812400000), y: 9994.58},{x: new Date(1776816000000), y: 9994.58},{x: new Date(1776819600000), y: 9994.58},{x: new Date(1776823200000), y: 9994.58},{x: new Date(1776826800000), y: 9994.58},{x: new Date(1776830400000), y: 9994.58},{x: new Date(1776834000000), y: 9994.58},{x: new Date(1776837600000), y: 9994.58},{x: new Date(1776841200000), y: 9994.58},{x: new Date(1776844800000), y: 9994.58},{x: new Date(1776848400000), y: 9994.58}],
+    borderColor: '#00bcd4',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  {
+    label: 'MACD 趋势动能',
+    data: [{x: new Date(1776132000000), y: 9999.26},{x: new Date(1776135600000), y: 9998.16},{x: new Date(1776139200000), y: 9998.6},{x: new Date(1776142800000), y: 10000.43},{x: new Date(1776146400000), y: 9997.3},{x: new Date(1776150000000), y: 9997.05},{x: new Date(1776153600000), y: 9994.3},{x: new Date(1776157200000), y: 9994.3},{x: new Date(1776160800000), y: 9994.3},{x: new Date(1776164400000), y: 9994.3},{x: new Date(1776168000000), y: 9994.3},{x: new Date(1776171600000), y: 9993.55},{x: new Date(1776175200000), y: 9987.72},{x: new Date(1776178800000), y: 9987.72},{x: new Date(1776182400000), y: 9986.98},{x: new Date(1776186000000), y: 9986.01},{x: new Date(1776189600000), y: 9992.49},{x: new Date(1776193200000), y: 9991.24},{x: new Date(1776196800000), y: 9992.42},{x: new Date(1776200400000), y: 9990.68},{x: new Date(1776204000000), y: 9993.19},{x: new Date(1776207600000), y: 9991.94},{x: new Date(1776211200000), y: 9987.73},{x: new Date(1776214800000), y: 9987.32},{x: new Date(1776218400000), y: 9990.16},{x: new Date(1776222000000), y: 9989.96},{x: new Date(1776225600000), y: 9989.99},{x: new Date(1776229200000), y: 9993.17},{x: new Date(1776232800000), y: 9994.5},{x: new Date(1776236400000), y: 9995.26},{x: new Date(1776240000000), y: 9995.26},{x: new Date(1776243600000), y: 9995.26},{x: new Date(1776247200000), y: 9995.26},{x: new Date(1776250800000), y: 9994.52},{x: new Date(1776254400000), y: 9995.25},{x: new Date(1776258000000), y: 9993.11},{x: new Date(1776261600000), y: 9993.99},{x: new Date(1776265200000), y: 9989.48},{x: new Date(1776268800000), y: 9988.45},{x: new Date(1776272400000), y: 9986.57},{x: new Date(1776276000000), y: 9983.27},{x: new Date(1776279600000), y: 9983.27},{x: new Date(1776283200000), y: 9983.27},{x: new Date(1776286800000), y: 9983.27},{x: new Date(1776290400000), y: 9983.27},{x: new Date(1776294000000), y: 9983.27},{x: new Date(1776297600000), y: 9983.27},{x: new Date(1776301200000), y: 9982.52},{x: new Date(1776304800000), y: 9980.2},{x: new Date(1776308400000), y: 9980.13},{x: new Date(1776312000000), y: 9979.61},{x: new Date(1776315600000), y: 9977.03},{x: new Date(1776319200000), y: 9976.85},{x: new Date(1776322800000), y: 9972.83},{x: new Date(1776326400000), y: 9972.83},{x: new Date(1776330000000), y: 9972.83},{x: new Date(1776333600000), y: 9972.83},{x: new Date(1776337200000), y: 9972.83},{x: new Date(1776340800000), y: 9972.83},{x: new Date(1776344400000), y: 9972.83},{x: new Date(1776348000000), y: 9972.83},{x: new Date(1776351600000), y: 9972.08},{x: new Date(1776355200000), y: 9965.36},{x: new Date(1776358800000), y: 9963.74},{x: new Date(1776362400000), y: 9956.05},{x: new Date(1776366000000), y: 9956.05},{x: new Date(1776369600000), y: 9956.05},{x: new Date(1776373200000), y: 9956.05},{x: new Date(1776376800000), y: 9956.05},{x: new Date(1776380400000), y: 9956.05},{x: new Date(1776384000000), y: 9956.05},{x: new Date(1776387600000), y: 9955.31},{x: new Date(1776391200000), y: 9955.76},{x: new Date(1776394800000), y: 9956.58},{x: new Date(1776398400000), y: 9954.96},{x: new Date(1776402000000), y: 9956.4},{x: new Date(1776405600000), y: 9953.44},{x: new Date(1776409200000), y: 9952.03},{x: new Date(1776412800000), y: 9944.21},{x: new Date(1776416400000), y: 9944.21},{x: new Date(1776420000000), y: 9944.21},{x: new Date(1776423600000), y: 9944.21},{x: new Date(1776427200000), y: 9944.21},{x: new Date(1776430800000), y: 9944.21},{x: new Date(1776434400000), y: 9944.21},{x: new Date(1776438000000), y: 9944.21},{x: new Date(1776441600000), y: 9944.21},{x: new Date(1776445200000), y: 9944.21},{x: new Date(1776448800000), y: 9943.43},{x: new Date(1776452400000), y: 9941.01},{x: new Date(1776456000000), y: 9941.64},{x: new Date(1776459600000), y: 9940.57},{x: new Date(1776463200000), y: 9941.99},{x: new Date(1776466800000), y: 9944.25},{x: new Date(1776470400000), y: 9943.33},{x: new Date(1776474000000), y: 9942.83},{x: new Date(1776477600000), y: 9942.09},{x: new Date(1776481200000), y: 9944.88},{x: new Date(1776484800000), y: 9943.89},{x: new Date(1776488400000), y: 9943.63},{x: new Date(1776492000000), y: 9943.73},{x: new Date(1776495600000), y: 9945.11},{x: new Date(1776499200000), y: 9947.59},{x: new Date(1776502800000), y: 9948.96},{x: new Date(1776506400000), y: 9952.23},{x: new Date(1776510000000), y: 9952.23},{x: new Date(1776513600000), y: 9952.23},{x: new Date(1776517200000), y: 9952.23},{x: new Date(1776520800000), y: 9952.23},{x: new Date(1776524400000), y: 9952.23},{x: new Date(1776528000000), y: 9952.23},{x: new Date(1776531600000), y: 9952.23},{x: new Date(1776535200000), y: 9952.23},{x: new Date(1776538800000), y: 9952.23},{x: new Date(1776542400000), y: 9952.23},{x: new Date(1776546000000), y: 9951.47},{x: new Date(1776549600000), y: 9951.44},{x: new Date(1776553200000), y: 9950.3},{x: new Date(1776556800000), y: 9950.05},{x: new Date(1776560400000), y: 9949.52},{x: new Date(1776564000000), y: 9948.31},{x: new Date(1776567600000), y: 9948.47},{x: new Date(1776571200000), y: 9950.01},{x: new Date(1776574800000), y: 9948.79},{x: new Date(1776578400000), y: 9946.53},{x: new Date(1776582000000), y: 9945.77},{x: new Date(1776585600000), y: 9945.59},{x: new Date(1776589200000), y: 9947.91},{x: new Date(1776592800000), y: 9945.88},{x: new Date(1776596400000), y: 9940.6},{x: new Date(1776600000000), y: 9940.32},{x: new Date(1776603600000), y: 9943.89},{x: new Date(1776607200000), y: 9944.87},{x: new Date(1776610800000), y: 9943.1},{x: new Date(1776614400000), y: 9938.51},{x: new Date(1776618000000), y: 9931.01},{x: new Date(1776621600000), y: 9931.13},{x: new Date(1776625200000), y: 9929.27},{x: new Date(1776628800000), y: 9932.58},{x: new Date(1776632400000), y: 9934.68},{x: new Date(1776636000000), y: 9938.48},{x: new Date(1776639600000), y: 9940.13},{x: new Date(1776643200000), y: 9940.13},{x: new Date(1776646800000), y: 9939.38},{x: new Date(1776650400000), y: 9937.53},{x: new Date(1776654000000), y: 9939.75},{x: new Date(1776657600000), y: 9939.11},{x: new Date(1776661200000), y: 9936.19},{x: new Date(1776664800000), y: 9941.31},{x: new Date(1776668400000), y: 9941.76},{x: new Date(1776672000000), y: 9940.69},{x: new Date(1776675600000), y: 9944.01},{x: new Date(1776679200000), y: 9943.71},{x: new Date(1776682800000), y: 9945.39},{x: new Date(1776686400000), y: 9946.33},{x: new Date(1776690000000), y: 9946.09},{x: new Date(1776693600000), y: 9943.86},{x: new Date(1776697200000), y: 9949.8},{x: new Date(1776700800000), y: 9949.8},{x: new Date(1776704400000), y: 9949.8},{x: new Date(1776708000000), y: 9949.8},{x: new Date(1776711600000), y: 9949.8},{x: new Date(1776715200000), y: 9949.8},{x: new Date(1776718800000), y: 9949.04},{x: new Date(1776722400000), y: 9948.84},{x: new Date(1776726000000), y: 9950.16},{x: new Date(1776729600000), y: 9947.59},{x: new Date(1776733200000), y: 9949.32},{x: new Date(1776736800000), y: 9952.65},{x: new Date(1776740400000), y: 9951.44},{x: new Date(1776744000000), y: 9950.34},{x: new Date(1776747600000), y: 9950.4},{x: new Date(1776751200000), y: 9948.77},{x: new Date(1776754800000), y: 9947.76},{x: new Date(1776758400000), y: 9942.74},{x: new Date(1776762000000), y: 9942.74},{x: new Date(1776765600000), y: 9942.74},{x: new Date(1776769200000), y: 9942.74},{x: new Date(1776772800000), y: 9941.98},{x: new Date(1776776400000), y: 9943.11},{x: new Date(1776780000000), y: 9945.42},{x: new Date(1776783600000), y: 9943.77},{x: new Date(1776787200000), y: 9944.41},{x: new Date(1776790800000), y: 9946.6},{x: new Date(1776794400000), y: 9946.02},{x: new Date(1776798000000), y: 9951.15},{x: new Date(1776801600000), y: 9951.15},{x: new Date(1776805200000), y: 9951.15},{x: new Date(1776808800000), y: 9950.4},{x: new Date(1776812400000), y: 9957.31},{x: new Date(1776816000000), y: 9957.71},{x: new Date(1776819600000), y: 9957.02},{x: new Date(1776823200000), y: 9969.29},{x: new Date(1776826800000), y: 9969.29},{x: new Date(1776830400000), y: 9969.29},{x: new Date(1776834000000), y: 9969.29},{x: new Date(1776837600000), y: 9969.29},{x: new Date(1776841200000), y: 9969.29},{x: new Date(1776844800000), y: 9969.29},{x: new Date(1776848400000), y: 9969.29}],
+    borderColor: '#795548',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  },
+  ]
+};
+new Chart(document.getElementById('equityChart'), {
+  type: 'line',
+  data: equityData,
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { type: 'time', time: { tooltipFormat: 'MM-dd HH:mm' }, title: { display: true, text: '日期', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+      y: { title: { display: true, text: '权益 (USDT)', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+    },
+    plugins: {
+      legend: { position: 'top', labels: { color: '#c9d1d9' } },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2) } }
+    }
+  }
+});
+</script>
+</body>
+</html>

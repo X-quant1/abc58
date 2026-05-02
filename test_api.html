@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test</title>
+</head>
+<body>
+  <h1>API Test</h1>
+  <pre id="result"></pre>
+  <script>
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:8000/api/settings/api', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      console.log('API response:', data);
+      console.log('okx_register_url:', data.okx_register_url);
+      console.log('bitget_register_url:', data.bitget_register_url);
+    })
+    .catch(e => {
+      document.getElementById('result').textContent = 'Error: ' + e.message;
+    });
+  </script>
+</body>
+</html>

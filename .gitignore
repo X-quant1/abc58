@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Build outputs
+frontend/dist/
+backend/dist/
+*.egg-info/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+api_config.json
+
+# Database (should not be committed)
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
+
+# Logs & temp files
+*.log
+*.txt
+!requirements.txt
+!README.txt
+
+# IDE & editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# WorkBuddy internal
+.workbuddy/
+
+# Temporary test scripts
+check_*.py
+cancel_*.py
+add_*.py
+auto_*.py
+auto_*.js

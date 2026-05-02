@@ -1,0 +1,16 @@
+{
+  "--strategy-bg": "#f8fafc",
+  "--strategy-bg-rgb": "248,250,252",
+  "--strategy-border": "rgba(0, 0, 0, 0.1)",
+  "--strategy-card-bg": "#ffffff",
+  "--strategy-hover-bg": "rgba(0, 0, 0, 0.05)",
+  "--strategy-input-bg": "#ffffff",
+  "--strategy-input-border": "rgba(0, 0, 0, 0.15)",
+  "--strategy-modal-bg": "rgba(255, 255, 255, 0.98)",
+  "--strategy-primary": "#3b82f6",
+  "--strategy-shadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+  "--strategy-sidebar-bg": "#ffffff",
+  "--strategy-text": "#1e293b",
+  "--strategy-text-muted": "#94a3b8",
+  "--strategy-text-secondary": "#475569"
+}

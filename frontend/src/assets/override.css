@@ -1,0 +1,8 @@
+/* 全局样式覆盖 - 加载在 Element Plus 之后 */
+.app-container .el-dialog .profile-nickname-input .el-input__wrapper {
+  background-color: #fff !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+.app-container .el-dialog .profile-nickname-input .el-input__inner {
+  color: #333 !important;
+}
