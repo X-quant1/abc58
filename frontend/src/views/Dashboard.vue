@@ -507,23 +507,9 @@
           </el-button>
 
           <!-- 分析结果简要展示 -->
-          <div class="ai-quick-result" v-if="aiQuickResult" :class="{ 'result-streaming': aiAnalyzing }">
-            <!-- 分析师观点摘要 -->
-            <div class="quick-analysts" v-if="aiQuickResult.opinions && Object.keys(aiQuickResult.opinions).length > 0">
-              <div class="quick-analyst-item" v-for="(text, key) in aiQuickResult.opinions" :key="key">
-                <span class="qa-emoji">{{ getAnalystEmoji(key) }}</span>
-                <span class="qa-name">{{ getAnalystShortName(key) }}</span>
-                <span class="qa-text">{{ text.length > 60 ? text.slice(0, 60) + '...' : text }}<span v-if="aiAnalyzing && key === aiStreamingAnalyst" class="qa-cursor">|</span></span>
-              </div>
-            </div>
-            <!-- 裁决结果 -->
-            <div class="quick-judge" v-if="aiQuickResult.judge">
-              <div class="qj-header">
-                <span class="qj-icon">⚖️</span>
-                <span class="qj-label">综合裁决</span>
-              </div>
-              <div class="qj-content">{{ aiQuickResult.judge.length > 120 ? aiQuickResult.judge.slice(0, 120) + '...' : aiQuickResult.judge }}<span v-if="aiAnalyzing && !aiQuickResult.judgeDone" class="qa-cursor">|</span></div>
-            </div>
+          <div class="ai-quick-result" v-if="aiQuickText" :class="{ 'result-streaming': aiAnalyzing }">
+            <div class="quick-text" v-html="formatContent(aiQuickText)"></div>
+            <span v-if="aiAnalyzing" class="qa-cursor">|</span>
           </div>
         </div>
 
@@ -673,26 +659,27 @@ function formatContent(text) {
 
 function goToAIWarRoom() { router.push('/strategy/ai-war-room') }
 
-// ─── AI快捷分析(右列按钮) ───
+// ─── AI快捷分析(右列按钮，单分析师) ───
 const aiAnalyzing = ref(false)
-const aiQuickResult = ref(null) // { opinions: {aggressive: '', ...}, judge: '', judgeDone: false }
-const aiStreamingAnalyst = ref('')
+const aiQuickText = ref('')
+const aiQuickAnalyst = ref('')
 
 async function triggerAiAnalysis() {
   if (aiAnalyzing.value) return
   aiAnalyzing.value = true
-  aiQuickResult.value = { opinions: {}, judge: '', judgeDone: false }
-  aiStreamingAnalyst.value = ''
+  aiQuickText.value = ''
+  aiQuickAnalyst.value = ''
 
   try {
     const token = localStorage.getItem('token')
-    const resp = await fetch('/api/dashboard/ai_team_analysis', {
+    const resp = await fetch('/api/dashboard/ai_quick_analysis', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
 
     if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}`)
+      const err = await resp.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${resp.status}`)
     }
 
     const reader = resp.body.getReader()
@@ -711,37 +698,27 @@ async function triggerAiAnalysis() {
         if (!line.startsWith('data: ')) continue
         try {
           const data = JSON.parse(line.slice(6))
-          if (data.type === 'analyst') {
-            aiStreamingAnalyst.value = data.analyst
-            if (!aiQuickResult.value.opinions[data.analyst]) {
-              aiQuickResult.value.opinions[data.analyst] = ''
-            }
-            if (data.content) {
-              aiQuickResult.value.opinions[data.analyst] += data.content
-            }
-          } else if (data.type === 'judge_start') {
-            aiStreamingAnalyst.value = 'judge'
-          } else if (data.type === 'judge') {
-            if (data.content) {
-              aiQuickResult.value.judge += data.content
-            }
-          } else if (data.type === 'done') {
-            aiQuickResult.value.judgeDone = true
+          if (data.content) {
+            aiQuickText.value += data.content
+          }
+          if (data.done) {
+            // 分析完成
+          }
+          if (data.error) {
+            aiQuickText.value += `\n⚠️ ${data.error}`
           }
         } catch (e) {
-          // skip malformed JSON
+          // skip
         }
       }
     }
   } catch (e) {
-    console.error('AI analysis error:', e)
-    if (aiQuickResult.value && !Object.keys(aiQuickResult.value.opinions).length) {
-      aiQuickResult.value = null
+    console.error('AI quick analysis error:', e)
+    if (!aiQuickText.value) {
+      aiQuickText.value = '分析失败: ' + e.message
     }
   } finally {
     aiAnalyzing.value = false
-    aiStreamingAnalyst.value = ''
-    // 分析完成后刷新判断追踪
     loadJudgeRecords()
   }
 }
@@ -2212,12 +2189,13 @@ onBeforeUnmount(() => {
 
 /* AI快捷分析结果 */
 .ai-quick-result {
-  margin-top: 12px;
+  margin-top: 10px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px;
   animation: fadeSlideUp 0.3s ease;
+  position: relative;
 }
 
 .ai-quick-result.result-streaming {
@@ -2225,45 +2203,19 @@ onBeforeUnmount(() => {
 }
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.quick-analysts {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.quick-analyst-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
+.quick-text {
   font-size: 12px;
-  line-height: 1.5;
-}
-
-.qa-emoji {
-  flex-shrink: 0;
-  font-size: 14px;
-  margin-top: 1px;
-}
-
-.qa-name {
-  flex-shrink: 0;
-  font-weight: 600;
-  color: var(--text-primary);
-  min-width: 32px;
-}
-
-.qa-text {
   color: var(--text-secondary);
+  line-height: 1.7;
   word-break: break-all;
 }
 
 .qa-cursor {
-  animation: blink 0.8s step-end infinite;
+  animation: blink 0.7s step-end infinite;
   color: #6366f1;
   font-weight: 700;
 }
@@ -2271,36 +2223,6 @@ onBeforeUnmount(() => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-}
-
-.quick-judge {
-  border-top: 1px solid var(--border-primary);
-  padding-top: 10px;
-}
-
-.qj-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-
-.qj-icon {
-  font-size: 13px;
-}
-
-.qj-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #8b5cf6;
-  letter-spacing: 0.5px;
-}
-
-.qj-content {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  word-break: break-all;
 }
 
 /* AI判断追踪 */

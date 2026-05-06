@@ -1,13 +1,15 @@
 """Dashboard 路由 - 总览数据"""
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from datetime import datetime, date
 import json
 import random
 import os
+import asyncio
 
 from app.services.cache import get_cached_market_service
 from app import config
-from app.models import Strategy, Trade, User
+from app.models import Strategy, Trade, User, AiChatHistory, AiJudgeRecord
 from app.database import SessionLocal
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
@@ -253,5 +255,652 @@ async def get_platform_stats():
             "win_rate": 68.5,
             "running_strategies": 0,
         }
+    finally:
+        db.close()
+
+
+@router.get("/market_regime")
+async def get_market_regime():
+    """获取市场状态仪表盘数据"""
+    import asyncio
+
+    def _fetch():
+        result = {
+            "regime": "ranging",
+            "score": 0,
+            "details": {},
+            "btc_price": 0,
+            "btc_change_24h": 0,
+            "funding_rate": 0,
+        }
+        try:
+            # 1. 获取BTC 1h K线（需要至少100根用于分析）
+            klines = _ms().get_klines("BTC-USDT-SWAP", "1H", 100)
+            if klines and len(klines) > 60:
+                from app.services.market_regime import market_regime_detector
+                regime_data = market_regime_detector.detect_with_score(klines)
+                result["regime"] = regime_data["regime"]
+                result["score"] = regime_data["score"]
+                result["details"] = regime_data.get("details", {})
+
+                # 判断趋势方向
+                if len(klines) >= 2:
+                    last_close = klines[-1]["close"]
+                    prev_close = klines[-25]["close"] if len(klines) > 25 else klines[0]["close"]
+                    result["trend_direction"] = "up" if last_close > prev_close else "down"
+        except Exception as e:
+            print(f"[Dashboard] Market regime error: {e}")
+
+        try:
+            # 2. BTC价格和涨跌幅（直接获取单个ticker，更快）
+            btc_ticker = _ms().get_ticker("BTC-USDT-SWAP")
+            if btc_ticker:
+                result["btc_price"] = btc_ticker.get("price", 0)
+                result["btc_change_24h"] = btc_ticker.get("change_24h", 0) or 0
+        except Exception:
+            pass
+
+        try:
+            # 3. 资金费率（直接用 MarketService，缓存层无此方法）
+            from app.services.market import MarketService
+            ms = MarketService()
+            rates = ms.get_funding_rate("BTC-USDT-SWAP")
+            if rates and isinstance(rates, list) and len(rates) > 0:
+                result["funding_rate"] = float(rates[0].get("fundingRate", 0))
+        except Exception as e:
+            print(f"[Dashboard] Funding rate error: {e}")
+
+        try:
+            # 4. 恐惧贪婪指数
+            btc_change = result.get("btc_change_24h", 0)
+            if btc_change > 5: result["fear_greed"] = 75
+            elif btc_change > 2: result["fear_greed"] = 65
+            elif btc_change > 0: result["fear_greed"] = 55
+            elif btc_change > -2: result["fear_greed"] = 45
+            elif btc_change > -5: result["fear_greed"] = 35
+            else: result["fear_greed"] = 25
+        except Exception:
+            result["fear_greed"] = 50
+
+        return result
+
+    try:
+        data = await asyncio.wait_for(asyncio.to_thread(_fetch), timeout=10.0)
+    except asyncio.TimeoutError:
+        data = {"regime": "ranging", "score": 0, "details": {}, "btc_price": 0, "btc_change_24h": 0, "funding_rate": 0, "fear_greed": 50}
+
+    # 市场状态中文映射
+    regime_labels = {
+        "strong_trend": "强趋势",
+        "trending": "趋势",
+        "weak_trend": "弱趋势",
+        "ranging": "震荡",
+        "volatile": "高波动",
+    }
+    data["regime_label"] = regime_labels.get(data["regime"], "震荡")
+    return data
+
+
+@router.post("/ai_analysis")
+async def ai_market_analysis():
+    """AI市场分析 - SSE流式返回（单模型）"""
+    from app.services.ai_analysis import (
+        get_configured_analysts, call_analyst, build_market_prompt,
+    )
+
+    configured = get_configured_analysts()
+    if not configured:
+        return {"error": "AI 未配置，请联系管理员在后台设置 API Key"}
+
+    # 复用市场状态数据
+    regime_data = await get_market_regime()
+    market_prompt = build_market_prompt(regime_data)
+
+    # 使用第一个已配置的分析师
+    analyst_key = configured[0]
+
+    async def _stream():
+        import queue as q
+        buf = q.Queue()
+
+        def _worker():
+            try:
+                for chunk in call_analyst(analyst_key, market_prompt, timeout=25.0):
+                    buf.put(("chunk", chunk))
+                buf.put(("done", None))
+            except Exception as e:
+                buf.put(("error", str(e)))
+
+        import threading
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+
+        while True:
+            try:
+                msg_type, msg_data = buf.get(timeout=30)
+                if msg_type == "chunk":
+                    yield f"data: {json.dumps({'content': msg_data}, ensure_ascii=False)}\n\n"
+                elif msg_type == "done":
+                    yield f"data: {json.dumps({'done': True})}\n\n"
+                    break
+                elif msg_type == "error":
+                    yield f"data: {json.dumps({'error': msg_data}, ensure_ascii=False)}\n\n"
+                    break
+            except Exception:
+                yield f"data: {json.dumps({'error': '响应超时'})}\n\n"
+                break
+
+    return StreamingResponse(
+        _stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/ai_team_analysis")
+async def ai_team_analysis():
+    """AI团队协作分析 - 多模型并行分析 + 裁决"""
+    from app.services.ai_analysis import (
+        get_configured_analysts, call_analyst, call_judge, build_market_prompt,
+    )
+
+    configured = get_configured_analysts()
+    if not configured:
+        return {"error": "未配置任何分析师，请先在管理后台配置"}
+
+    # 复用市场状态数据
+    regime_data = await get_market_regime()
+    market_prompt = build_market_prompt(regime_data)
+
+    # 用于存储结果以便保存
+    result_holder = {"opinions": {}, "judge": "", "market_data": regime_data, "period": ""}
+
+    # 确定周期（基于当前时间的半小时）
+    now = datetime.now()
+    if now.minute < 30:
+        period = f"{now.hour:02d}00-{now.hour:02d}30"
+    else:
+        period = f"{now.hour:02d}30-{(now.hour + 1) % 24:02d}00"
+    result_holder["period"] = period
+
+    async def _stream():
+        import queue as q
+        import threading
+
+        # 存储各分析师完整观点
+        opinions = {}
+
+        # 并行调用所有已配置的分析师
+        for analyst_key in configured:
+            buf = q.Queue()
+            opinions[analyst_key] = ""
+
+            def _worker(key):
+                try:
+                    for chunk in call_analyst(key, market_prompt, timeout=25.0):
+                        buf.put(("chunk", key, chunk))
+                    buf.put(("done", key))
+                except Exception as e:
+                    buf.put(("error", key, str(e)))
+
+            t = threading.Thread(target=_worker, args=(analyst_key,), daemon=True)
+            t.start()
+
+            # 为每个分析师启动异步读取任务
+            async def _read_analyst(key, buffer):
+                while True:
+                    try:
+                        msg = buffer.get(timeout=30)
+                        if msg[0] == "chunk":
+                            _, k, chunk = msg
+                            opinions[k] = opinions.get(k, "") + chunk
+                            yield f"data: {json.dumps({'type': 'analyst', 'analyst': k, 'content': chunk}, ensure_ascii=False)}\n\n"
+                        elif msg[0] == "done":
+                            break
+                        elif msg[0] == "error":
+                            yield f"data: {json.dumps({'type': 'analyst', 'analyst': key, 'error': msg[2]}, ensure_ascii=False)}\n\n"
+                            break
+                    except Exception:
+                        break
+
+            async for item in _read_analyst(analyst_key, buf):
+                yield item
+
+        # 所有分析师完成后，调用裁决者
+        yield f"data: {json.dumps({'type': 'judge_start'}, ensure_ascii=False)}\n\n"
+
+        judge_buf = q.Queue()
+        def _judge_worker():
+            try:
+                for chunk in call_judge(opinions, market_prompt, timeout=30.0):
+                    judge_buf.put(("chunk", chunk))
+                judge_buf.put(("done", None))
+            except Exception as e:
+                judge_buf.put(("error", str(e)))
+
+        threading.Thread(target=_judge_worker, daemon=True).start()
+
+        judge_content = ""
+        while True:
+            try:
+                msg = judge_buf.get(timeout=35)
+                if msg[0] == "chunk":
+                    judge_content += msg[1]
+                    yield f"data: {json.dumps({'type': 'judge', 'content': msg[1]}, ensure_ascii=False)}\n\n"
+                elif msg[0] == "done":
+                    # 保存结果到 holder
+                    result_holder["opinions"] = opinions.copy()
+                    result_holder["judge"] = judge_content
+                    
+                    # 解析判断并保存到 AiJudgeRecord
+                    try:
+                        _parse_and_save_judge(result_holder)
+                    except Exception as e:
+                        print(f"[Dashboard] Save judge record error: {e}")
+                    
+                    break
+                elif msg[0] == "error":
+                    yield f"data: {json.dumps({'type': 'judge', 'error': msg[1]}, ensure_ascii=False)}\n\n"
+                    break
+            except Exception:
+                yield f"data: {json.dumps({'type': 'judge', 'error': '响应超时'}, ensure_ascii=False)}\n\n"
+                break
+
+        yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        _stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/ai_quick_analysis")
+async def ai_quick_analysis():
+    """单分析师快速分析 - 根据当前市场行情给出简要判断"""
+    from app.services.ai_analysis import (
+        get_configured_analysts, call_analyst, build_market_prompt,
+    )
+
+    configured = get_configured_analysts()
+    if not configured:
+        return {"error": "未配置分析师，请先在管理后台配置"}
+
+    # 取第一个已配置的分析师
+    analyst_key = configured[0]
+
+    # 获取市场数据
+    regime_data = await get_market_regime()
+
+    # 构建精简市场prompt
+    market_data = regime_data.copy()
+    market_data.pop("details", None)
+    details = regime_data.get("details", {}) or {}
+
+    def _num(val, default=0):
+        if isinstance(val, dict):
+            return val.get("value", default) or default
+        return val if val is not None else default
+
+    btc_price = _num(regime_data.get("btc_price"), 0)
+    btc_change = _num(regime_data.get("btc_change_24h"), 0)
+    funding = _num(regime_data.get("funding_rate"), 0)
+    fear_greed = regime_data.get("fear_greed", 50) or 50
+    direction = regime_data.get("trend_direction", "")
+    regime_label = regime_data.get("regime_label", "震荡")
+    score = regime_data.get("score", 0) or 0
+    adx = _num(details.get("adx"), 0)
+    vol_ratio = _num(details.get("vol_ratio"), 0)
+
+    support = btc_price * 0.98 if direction == "up" else btc_price * 0.97
+    resistance = btc_price * 1.02 if direction == "up" else btc_price * 1.03
+
+    quick_prompt = f"""【快速行情分析】
+BTC ${btc_price:,.0f}（24h {btc_change:+.2f}%），状态：{regime_label}（评分{round(score*100)}）
+ADX {adx:.1f}，波动率比 {vol_ratio:.2f}，资金费率 {funding*100:.4f}%，恐惧贪婪 {fear_greed}
+支撑 ${support:,.0f} / 压力 ${resistance:,.0f}
+
+请用简洁的语言给出：
+1. 当前行情一句话判断（做多/做空/观望）
+2. 核心理由（1-2句话）
+3. 建议操作和关键价位
+
+保持简短，不要超过80字。"""
+
+    result_holder = {"content": "", "analyst": analyst_key}
+
+    async def _stream():
+        import queue as q
+        import threading
+
+        buf = q.Queue()
+
+        def _worker():
+            try:
+                for chunk in call_analyst(analyst_key, quick_prompt, timeout=20.0):
+                    buf.put(("chunk", chunk))
+                buf.put(("done", None))
+            except Exception as e:
+                buf.put(("error", str(e)))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+        while True:
+            try:
+                msg = buf.get(timeout=25)
+                if msg[0] == "chunk":
+                    result_holder["content"] += msg[1]
+                    yield f"data: {json.dumps({'content': msg[1]}, ensure_ascii=False)}\n\n"
+                elif msg[0] == "done":
+                    # 解析判断并保存
+                    try:
+                        _parse_and_save_quick_judge(result_holder)
+                    except Exception as e:
+                        print(f"[Dashboard] Quick judge save error: {e}")
+                    yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+                    break
+                elif msg[0] == "error":
+                    yield f"data: {json.dumps({'error': msg[1]}, ensure_ascii=False)}\n\n"
+                    break
+            except Exception:
+                yield f"data: {json.dumps({'error': '响应超时'}, ensure_ascii=False)}\n\n"
+                break
+
+    return StreamingResponse(
+        _stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+def _parse_and_save_quick_judge(result_holder: dict):
+    """解析快速分析结果，提取判断并保存"""
+    import re
+    from datetime import timedelta
+
+    content = result_holder.get("content", "")
+    if not content:
+        return
+
+    direction = "hold"
+    if re.search(r'做多|买入|开多|long|buy', content, re.I):
+        direction = "long"
+    elif re.search(r'做空|卖出|开空|short|sell', content, re.I):
+        direction = "short"
+
+    if direction == "hold":
+        return
+
+    entry_price = None
+    stop_loss = None
+    price_patterns = [
+        r'入场[价位价]*[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'建议入场\s*([\d,]+(?:\.\d+)?)',
+        r'价格[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'\$(\d{2,3},?\d{3}(?:\.\d+)?)',
+    ]
+    for pattern in price_patterns:
+        match = re.search(pattern, content)
+        if match:
+            try:
+                entry_price = float(match.group(1).replace(',', ''))
+                break
+            except:
+                pass
+
+    sl_patterns = [
+        r'止损[价位价]*[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'SL[：:]\s*([\d,]+(?:\.\d+)?)',
+    ]
+    for pattern in sl_patterns:
+        match = re.search(pattern, content)
+        if match:
+            try:
+                stop_loss = float(match.group(1).replace(',', ''))
+                break
+            except:
+                pass
+
+    reason = content[:200] if len(content) > 200 else content
+
+    db = SessionLocal()
+    try:
+        record = AiJudgeRecord(
+            period="quick",
+            direction=direction,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            reason=reason,
+            verify_after=datetime.now() + timedelta(hours=3),
+            verified=False,
+            result="pending"
+        )
+        db.add(record)
+        db.commit()
+        print(f"[Dashboard] Quick analysis saved: {direction} @ {entry_price}, SL: {stop_loss}")
+    except Exception as e:
+        db.rollback()
+        print(f"[Dashboard] Quick analysis save error: {e}")
+    finally:
+        db.close()
+
+
+def _parse_and_save_judge(result_holder: dict):
+    """解析裁决内容，提取判断并保存到数据库"""
+    import re
+    from datetime import timedelta
+    
+    judge_content = result_holder.get("judge", "")
+    if not judge_content:
+        return
+    
+    # 解析判断方向
+    direction = "hold"
+    if re.search(r'做多|买入|long|buy', judge_content, re.I):
+        direction = "long"
+    elif re.search(r'做空|卖出|short|sell', judge_content, re.I):
+        direction = "short"
+    
+    # 解析入场价
+    entry_price = None
+    # 匹配 "入场价: 95000" "入场：95000" "建议入场 95000" 等
+    price_patterns = [
+        r'入场价[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'入场[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'建议入场\s*([\d,]+(?:\.\d+)?)',
+        r'入场价位[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'价格[：:]\s*([\d,]+(?:\.\d+)?)',
+    ]
+    for pattern in price_patterns:
+        match = re.search(pattern, judge_content)
+        if match:
+            try:
+                entry_price = float(match.group(1).replace(',', ''))
+                break
+            except:
+                pass
+    
+    # 解析止损位
+    stop_loss = None
+    sl_patterns = [
+        r'止损[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'止损位[：:]\s*([\d,]+(?:\.\d+)?)',
+        r'止损价[：:]\s*([\d,]+(?:\.\d+)?)',
+    ]
+    for pattern in sl_patterns:
+        match = re.search(pattern, judge_content)
+        if match:
+            try:
+                stop_loss = float(match.group(1).replace(',', ''))
+                break
+            except:
+                pass
+    
+    # 如果是观望，不保存记录
+    if direction == "hold":
+        return
+    
+    # 提取判断理由（取裁决内容的前200字）
+    reason = judge_content[:200] if len(judge_content) > 200 else judge_content
+    
+    # 保存到数据库
+    db = SessionLocal()
+    try:
+        record = AiJudgeRecord(
+            period=result_holder.get("period", ""),
+            direction=direction,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            reason=reason,
+            verify_after=datetime.now() + timedelta(hours=3),
+            verified=False,
+            result="pending"
+        )
+        db.add(record)
+        db.commit()
+        print(f"[Dashboard] Saved judge record: {direction} @ {entry_price}, SL: {stop_loss}")
+    except Exception as e:
+        db.rollback()
+        print(f"[Dashboard] Save judge record error: {e}")
+    finally:
+        db.close()
+
+
+@router.get("/ai_chat_history")
+async def get_ai_chat_history(limit: int = 20):
+    """获取AI聊天历史记录（最近N条）"""
+    db = SessionLocal()
+    try:
+        records = db.query(AiChatHistory)\
+            .order_by(AiChatHistory.created_at.desc())\
+            .limit(limit)\
+            .all()
+        
+        results = []
+        for r in records:
+            # 解析JSON字段
+            try:
+                opinions_data = json.loads(r.opinions) if r.opinions else {}
+            except:
+                opinions_data = {}
+            
+            try:
+                market_data = json.loads(r.market_data) if r.market_data else {}
+            except:
+                market_data = {}
+            
+            results.append({
+                "id": r.id,
+                "period": r.period,
+                "opinions": opinions_data,
+                "judge": r.judge or "",
+                "market_data": market_data,
+                "created_at": r.created_at.strftime("%Y-%m-%dT%H:%M:%S") + "Z" if r.created_at else None,
+            })
+        
+        return {"history": results}
+    except Exception as e:
+        return {"history": [], "error": str(e)}
+    finally:
+        db.close()
+
+
+@router.get("/ai_judge_records")
+async def get_ai_judge_records(limit: int = 10):
+    """获取AI判断追踪记录（最近N条）"""
+    db = SessionLocal()
+    try:
+        records = db.query(AiJudgeRecord)\
+            .order_by(AiJudgeRecord.created_at.desc())\
+            .limit(limit)\
+            .all()
+        
+        results = []
+        for r in records:
+            results.append({
+                "id": r.id,
+                "period": r.period,
+                "direction": r.direction,
+                "entry_price": r.entry_price,
+                "stop_loss": r.stop_loss,
+                "reason": r.reason,
+                "verify_after": r.verify_after.strftime("%Y-%m-%dT%H:%M:%S") + "Z" if r.verify_after else None,
+                "verified": r.verified,
+                "price_at_verify": r.price_at_verify,
+                "result": r.result,
+                "created_at": r.created_at.strftime("%Y-%m-%dT%H:%M:%S") + "Z" if r.created_at else None,
+            })
+        
+        return {"records": results}
+    except Exception as e:
+        return {"records": [], "error": str(e)}
+    finally:
+        db.close()
+
+
+@router.post("/verify_judge_records")
+async def verify_judge_records():
+    """验证超过3小时的判断记录"""
+    db = SessionLocal()
+    try:
+        from app.services.cache import get_cached_market_service
+        
+        # 查找需要验证的记录
+        now = datetime.now()
+        records = db.query(AiJudgeRecord)\
+            .filter(AiJudgeRecord.verified == False)\
+            .filter(AiJudgeRecord.verify_after <= now)\
+            .all()
+        
+        verified_count = 0
+        for record in records:
+            try:
+                # 获取当前BTC价格
+                ticker = get_cached_market_service().get_ticker("BTC-USDT-SWAP")
+                if not ticker:
+                    continue
+                
+                current_price = ticker.get("price", 0)
+                record.price_at_verify = current_price
+                
+                # 判断结果
+                if record.direction == "long":
+                    # 做多：价格上涨为正确
+                    if current_price > record.entry_price:
+                        record.result = "correct"
+                    else:
+                        record.result = "wrong"
+                elif record.direction == "short":
+                    # 做空：价格下跌为正确
+                    if current_price < record.entry_price:
+                        record.result = "correct"
+                    else:
+                        record.result = "wrong"
+                else:
+                    record.result = "pending"
+                
+                record.verified = True
+                verified_count += 1
+            except Exception as e:
+                print(f"[Dashboard] Verify record {record.id} error: {e}")
+                continue
+        
+        db.commit()
+        return {"verified_count": verified_count}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
     finally:
         db.close()
