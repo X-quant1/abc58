@@ -403,61 +403,65 @@
 
         <!-- 市场状态仪表盘 -->
         <div class="market-regime-section" v-loading="regimeLoading">
-          <div class="panel-header" style="margin-bottom: 12px;">
+          <div class="panel-header" style="margin-bottom: 10px;">
             <span class="panel-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
               </svg>
               市场状态
             </span>
-            <span class="regime-update-tag">实时</span>
+            <span class="regime-update-tag">LIVE</span>
           </div>
 
           <!-- 仪表盘主体 -->
           <div class="regime-body" :class="'regime-body--' + regimeData.regime">
-            <!-- 上半部分：仪表盘 + 状态 -->
-            <div class="regime-top">
-              <!-- 弧形仪表盘 -->
-              <div class="regime-gauge-wrap">
-                <svg viewBox="0 0 200 130" class="regime-arc">
-                  <defs>
-                    <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" :stop-color="regimeColor" stop-opacity="0.3"/>
-                      <stop offset="100%" :stop-color="regimeColor" stop-opacity="1"/>
-                    </linearGradient>
-                    <filter id="arcGlow">
-                      <feGaussianBlur stdDeviation="3" result="blur"/>
-                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                  </defs>
-                  <!-- 背景弧 -->
-                  <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none" stroke="var(--border-secondary)" stroke-width="12" stroke-linecap="round"/>
-                  <!-- 前景弧 -->
-                  <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none"
-                    stroke="url(#arcGrad)" stroke-width="12" stroke-linecap="round"
-                    :stroke-dasharray="251.3"
-                    :stroke-dashoffset="251.3 * (1 - regimeData.score)"
-                    filter="url(#arcGlow)"
-                    style="transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
-                  <!-- 分数 -->
-                  <text x="100" y="95" text-anchor="middle" fill="currentColor" font-size="36" font-weight="800" class="regime-score-text">{{ Math.round(regimeData.score * 100) }}</text>
-                  <text x="100" y="115" text-anchor="middle" fill="currentColor" font-size="11" opacity="0.5" class="regime-score-label">趋势评分</text>
+            <!-- 仪表盘 -->
+            <div class="regime-gauge-wrap">
+              <svg viewBox="0 0 200 130" class="regime-arc">
+                <defs>
+                  <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" :stop-color="regimeColor" stop-opacity="0.2"/>
+                    <stop offset="100%" :stop-color="regimeColor" stop-opacity="1"/>
+                  </linearGradient>
+                  <filter id="arcGlow">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <radialGradient id="scoreGlow" cx="50%" cy="55%" r="50%">
+                    <stop offset="0%" :stop-color="regimeColor" stop-opacity="0.08"/>
+                    <stop offset="100%" :stop-color="regimeColor" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <!-- 背景光晕 -->
+                <circle cx="100" cy="90" r="70" fill="url(#scoreGlow)"/>
+                <!-- 背景弧 -->
+                <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none" stroke="var(--border-secondary)" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+                <!-- 前景弧 -->
+                <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none"
+                  stroke="url(#arcGrad)" stroke-width="10" stroke-linecap="round"
+                  :stroke-dasharray="251.3"
+                  :stroke-dashoffset="251.3 * (1 - regimeData.score)"
+                  filter="url(#arcGlow)"
+                  style="transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
+                <!-- 分数 -->
+                <text x="100" y="92" text-anchor="middle" :fill="regimeColor" font-size="38" font-weight="800" class="regime-score-text">{{ Math.round(regimeData.score * 100) }}</text>
+                <text x="100" y="112" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.4" class="regime-score-label">趋势评分</text>
+              </svg>
+            </div>
+
+            <!-- 状态标签行 -->
+            <div class="regime-status-row">
+              <div class="regime-badge" :class="'badge--' + regimeData.regime">{{ regimeData.regime_label }}</div>
+              <div class="regime-direction" v-if="regimeData.trend_direction">
+                <svg viewBox="0 0 16 16" class="dir-arrow" :class="'dir--' + regimeData.trend_direction">
+                  <path :d="regimeData.trend_direction === 'up' ? 'M8 2 L13 9 L10 9 L10 14 L6 14 L6 9 L3 9 Z' : 'M8 14 L3 7 L6 7 L6 2 L10 2 L10 7 L13 7 Z'"/>
                 </svg>
-              </div>
-              <!-- 右侧状态信息 -->
-              <div class="regime-status">
-                <div class="regime-badge" :class="'badge--' + regimeData.regime" :style="{ '--rc': regimeColor }">
-                  {{ regimeData.regime_label }}
-                </div>
-                <div class="regime-direction" v-if="regimeData.trend_direction">
-                  <svg viewBox="0 0 16 16" class="dir-arrow" :class="'dir--' + regimeData.trend_direction">
-                    <path :d="regimeData.trend_direction === 'up' ? 'M8 2 L13 9 L10 9 L10 14 L6 14 L6 9 L3 9 Z' : 'M8 14 L3 7 L6 7 L6 2 L10 2 L10 7 L13 7 Z'"/>
-                  </svg>
-                  <span :class="'dir-text--' + regimeData.trend_direction">{{ regimeData.trend_direction === 'up' ? '偏多' : '偏空' }}</span>
-                </div>
-                <div class="regime-tip">{{ regimeHint }}</div>
+                <span :class="'dir-text--' + regimeData.trend_direction">{{ regimeData.trend_direction === 'up' ? '偏多' : '偏空' }}</span>
               </div>
             </div>
+
+            <!-- 提示 -->
+            <div class="regime-tip">{{ regimeHint }}</div>
 
             <!-- 指标条 -->
             <div class="regime-indicators">
@@ -495,12 +499,32 @@
           </div>
         </div>
 
-        <!-- AI分析按钮 -->
+        <!-- AI分析按钮 + 结果展示 -->
         <div class="ai-analyze-section">
-          <el-button type="primary" class="ai-analyze-btn" @click="goToAIWarRoom" :loading="aiTeamLoading">
-            <span class="btn-icon">🤖</span>
-            AI 分析当前行情
+          <el-button type="primary" class="ai-analyze-btn" @click="triggerAiAnalysis" :loading="aiAnalyzing" :disabled="aiAnalyzing">
+            <span class="btn-icon">{{ aiAnalyzing ? '⏳' : '🤖' }}</span>
+            {{ aiAnalyzing ? 'AI 分析中...' : 'AI 分析当前行情' }}
           </el-button>
+
+          <!-- 分析结果简要展示 -->
+          <div class="ai-quick-result" v-if="aiQuickResult" :class="{ 'result-streaming': aiAnalyzing }">
+            <!-- 分析师观点摘要 -->
+            <div class="quick-analysts" v-if="aiQuickResult.opinions && Object.keys(aiQuickResult.opinions).length > 0">
+              <div class="quick-analyst-item" v-for="(text, key) in aiQuickResult.opinions" :key="key">
+                <span class="qa-emoji">{{ getAnalystEmoji(key) }}</span>
+                <span class="qa-name">{{ getAnalystShortName(key) }}</span>
+                <span class="qa-text">{{ text.length > 60 ? text.slice(0, 60) + '...' : text }}<span v-if="aiAnalyzing && key === aiStreamingAnalyst" class="qa-cursor">|</span></span>
+              </div>
+            </div>
+            <!-- 裁决结果 -->
+            <div class="quick-judge" v-if="aiQuickResult.judge">
+              <div class="qj-header">
+                <span class="qj-icon">⚖️</span>
+                <span class="qj-label">综合裁决</span>
+              </div>
+              <div class="qj-content">{{ aiQuickResult.judge.length > 120 ? aiQuickResult.judge.slice(0, 120) + '...' : aiQuickResult.judge }}<span v-if="aiAnalyzing && !aiQuickResult.judgeDone" class="qa-cursor">|</span></div>
+            </div>
+          </div>
         </div>
 
         <!-- AI判断追踪 -->
@@ -648,6 +672,79 @@ function formatContent(text) {
 }
 
 function goToAIWarRoom() { router.push('/strategy/ai-war-room') }
+
+// ─── AI快捷分析(右列按钮) ───
+const aiAnalyzing = ref(false)
+const aiQuickResult = ref(null) // { opinions: {aggressive: '', ...}, judge: '', judgeDone: false }
+const aiStreamingAnalyst = ref('')
+
+async function triggerAiAnalysis() {
+  if (aiAnalyzing.value) return
+  aiAnalyzing.value = true
+  aiQuickResult.value = { opinions: {}, judge: '', judgeDone: false }
+  aiStreamingAnalyst.value = ''
+
+  try {
+    const token = localStorage.getItem('token')
+    const resp = await fetch('/api/dashboard/ai_team_analysis', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`)
+    }
+
+    const reader = resp.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const data = JSON.parse(line.slice(6))
+          if (data.type === 'analyst') {
+            aiStreamingAnalyst.value = data.analyst
+            if (!aiQuickResult.value.opinions[data.analyst]) {
+              aiQuickResult.value.opinions[data.analyst] = ''
+            }
+            if (data.content) {
+              aiQuickResult.value.opinions[data.analyst] += data.content
+            }
+          } else if (data.type === 'judge_start') {
+            aiStreamingAnalyst.value = 'judge'
+          } else if (data.type === 'judge') {
+            if (data.content) {
+              aiQuickResult.value.judge += data.content
+            }
+          } else if (data.type === 'done') {
+            aiQuickResult.value.judgeDone = true
+          }
+        } catch (e) {
+          // skip malformed JSON
+        }
+      }
+    }
+  } catch (e) {
+    console.error('AI analysis error:', e)
+    if (aiQuickResult.value && !Object.keys(aiQuickResult.value.opinions).length) {
+      aiQuickResult.value = null
+    }
+  } finally {
+    aiAnalyzing.value = false
+    aiStreamingAnalyst.value = ''
+    // 分析完成后刷新判断追踪
+    loadJudgeRecords()
+  }
+}
 
 // ─── AI判断追踪 ───
 function formatJudgeTime(t) {
@@ -1877,13 +1974,13 @@ onBeforeUnmount(() => {
 }
 
 .regime-update-tag {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 6px;
   background: rgba(34, 197, 94, 0.12);
   color: #22c55e;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
   animation: regimePulse 2s ease-in-out infinite;
 }
 
@@ -1893,48 +1990,44 @@ onBeforeUnmount(() => {
 }
 
 .regime-body {
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 18px 16px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
   position: relative;
   overflow: hidden;
+  transition: border-color 0.5s;
 }
 
 .regime-body::before {
   content: '';
   position: absolute;
-  top: -50%;
-  right: -30%;
-  width: 160px;
-  height: 160px;
+  top: -40%;
+  right: -25%;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
   background: var(--rc, #86909c);
-  opacity: 0.06;
+  opacity: 0.05;
   transition: background 0.6s;
   pointer-events: none;
 }
 
-.regime-body--strong_trend { --rc: #00b96b; border-color: rgba(0,185,107,0.2); }
+.regime-body--strong_trend { --rc: #00b96b; border-color: rgba(0,185,107,0.25); }
 .regime-body--trending { --rc: #00b96b; border-color: rgba(0,185,107,0.2); }
-.regime-body--weak_trend { --rc: #f5a623; border-color: rgba(245,166,35,0.2); }
-.regime-body--volatile { --rc: #ff4d4f; border-color: rgba(255,77,79,0.2); }
+.regime-body--weak_trend { --rc: #f5a623; border-color: rgba(245,166,35,0.25); }
+.regime-body--volatile { --rc: #ff4d4f; border-color: rgba(255,77,79,0.25); }
 .regime-body--ranging { --rc: #86909c; }
 
-.regime-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
 .regime-gauge-wrap {
-  flex-shrink: 0;
-  width: 140px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
 }
 
 .regime-arc {
   width: 100%;
+  max-width: 180px;
   height: auto;
   display: block;
 }
@@ -1943,25 +2036,23 @@ onBeforeUnmount(() => {
   font-variant-numeric: tabular-nums;
 }
 
-.regime-status {
-  flex: 1;
-  min-width: 0;
+.regime-status-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .regime-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
-  border-radius: 8px;
-  font-size: 16px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, var(--rc, #86909c), var(--rc, #86909c));
   width: fit-content;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   transition: all 0.4s;
 }
 
@@ -1974,37 +2065,38 @@ onBeforeUnmount(() => {
 .regime-direction {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .dir-arrow {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .dir-arrow.dir--up { fill: #22c55e; }
 .dir-arrow.dir--down { fill: #ef4444; }
 
-.dir-text--up { color: #22c55e; font-size: 13px; font-weight: 600; }
-.dir-text--down { color: #ef4444; font-size: 13px; font-weight: 600; }
+.dir-text--up { color: #22c55e; font-size: 12px; font-weight: 600; }
+.dir-text--down { color: #ef4444; font-size: 12px; font-weight: 600; }
 
 .regime-tip {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
+  margin-bottom: 12px;
 }
 
 .regime-indicators {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   margin-bottom: 14px;
 }
 
 .indicator {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .indicator-head {
@@ -2020,14 +2112,14 @@ onBeforeUnmount(() => {
 }
 
 .indicator-val {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .indicator-track {
-  height: 4px;
+  height: 3px;
   background: var(--border-primary);
   border-radius: 2px;
   overflow: hidden;
@@ -2044,7 +2136,7 @@ onBeforeUnmount(() => {
   align-items: center;
   background: var(--bg-card);
   border-radius: 10px;
-  padding: 10px 0;
+  padding: 8px 0;
   border: 1px solid var(--border-primary);
 }
 
@@ -2053,12 +2145,14 @@ onBeforeUnmount(() => {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .bar-label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .bar-price {
@@ -2069,12 +2163,12 @@ onBeforeUnmount(() => {
 }
 
 .bar-chg {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
 .bar-val {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -2082,7 +2176,7 @@ onBeforeUnmount(() => {
 
 .bar-divider {
   width: 1px;
-  height: 28px;
+  height: 24px;
   background: var(--border-primary);
   flex-shrink: 0;
 }
@@ -2094,8 +2188,8 @@ onBeforeUnmount(() => {
 
 .ai-analyze-btn {
   width: 100%;
-  height: 44px;
-  font-size: 14px;
+  height: 40px;
+  font-size: 13px;
   font-weight: 600;
   border-radius: 10px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -2103,7 +2197,9 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s;
 }
 
 .ai-analyze-btn:hover {
@@ -2111,7 +2207,100 @@ onBeforeUnmount(() => {
 }
 
 .ai-analyze-btn .btn-icon {
-  font-size: 18px;
+  font-size: 16px;
+}
+
+/* AI快捷分析结果 */
+.ai-quick-result {
+  margin-top: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 12px;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.ai-quick-result.result-streaming {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.quick-analysts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quick-analyst-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.qa-emoji {
+  flex-shrink: 0;
+  font-size: 14px;
+  margin-top: 1px;
+}
+
+.qa-name {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 32px;
+}
+
+.qa-text {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.qa-cursor {
+  animation: blink 0.8s step-end infinite;
+  color: #6366f1;
+  font-weight: 700;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.quick-judge {
+  border-top: 1px solid var(--border-primary);
+  padding-top: 10px;
+}
+
+.qj-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.qj-icon {
+  font-size: 13px;
+}
+
+.qj-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8b5cf6;
+  letter-spacing: 0.5px;
+}
+
+.qj-content {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  word-break: break-all;
 }
 
 /* AI判断追踪 */
