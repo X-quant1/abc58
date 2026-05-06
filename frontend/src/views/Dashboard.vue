@@ -332,6 +332,31 @@
             </div>
           </el-col>
         </el-row>
+
+        <!-- 第三排：最近交易 -->
+        <div class="third-row-trades">
+          <el-card shadow="hover" class="panel-card">
+            <template #header>
+              <div class="panel-header">
+                <span class="panel-title">最近交易</span>
+                <el-button text size="small" type="primary">查看全部</el-button>
+              </div>
+            </template>
+            <div class="trade-list">
+              <div class="trade-item" v-for="t in recentTrades" :key="t.id">
+                <div class="trade-left">
+                  <el-tag :type="t.side === '买入' ? 'danger' : 'success'" size="small" effect="plain" round>{{ t.side }}</el-tag>
+                  <span class="trade-symbol">{{ t.symbol }}</span>
+                </div>
+                <div class="trade-right">
+                  <span class="trade-price">{{ t.price || '--' }}</span>
+                  <span class="trade-pnl" v-if="t.pnl" :class="t.pnl >= 0 ? 'pnl-up' : 'pnl-down'">{{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl }}</span>
+                </div>
+              </div>
+              <el-empty v-if="recentTrades.length === 0" description="暂无交易记录" :image-size="40" />
+            </div>
+          </el-card>
+        </div>
       </div>
 
       <!-- 右列：热门活动 + 市场状态（跨两行） -->
@@ -501,31 +526,6 @@
         </div>
       </div>
     </div><!-- end dashboard-three-col -->
-
-    <!-- 第三排：最近交易 -->
-    <div class="third-row-trades">
-      <el-card shadow="hover" class="panel-card">
-        <template #header>
-          <div class="panel-header">
-            <span class="panel-title">最近交易</span>
-            <el-button text size="small" type="primary">查看全部</el-button>
-          </div>
-        </template>
-        <div class="trade-list">
-          <div class="trade-item" v-for="t in recentTrades" :key="t.id">
-            <div class="trade-left">
-              <el-tag :type="t.side === '买入' ? 'danger' : 'success'" size="small" effect="plain" round>{{ t.side }}</el-tag>
-              <span class="trade-symbol">{{ t.symbol }}</span>
-            </div>
-            <div class="trade-right">
-              <span class="trade-price">{{ t.price || '--' }}</span>
-              <span class="trade-pnl" v-if="t.pnl" :class="t.pnl >= 0 ? 'pnl-up' : 'pnl-down'">{{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl }}</span>
-            </div>
-          </div>
-          <el-empty v-if="recentTrades.length === 0" description="暂无交易记录" :image-size="40" />
-        </div>
-      </el-card>
-    </div>
 
     <!-- OKX 绑定对话框 -->
     <el-dialog
