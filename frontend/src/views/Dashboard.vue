@@ -16,198 +16,326 @@
       </div>
     </div>
 
-    <!-- 个人中心 / 量化机器人收益 / 热门活动 -->
-    <el-row :gutter="20">
-      <!-- 左侧：个人中心 + 量化机器人收益 + 资产曲线 -->
-      <el-col :span="18">
-    <el-row :gutter="20" class="pair-row">
-      <el-col :span="15">
-        <el-card shadow="hover" class="panel-card profit-card">
-          <template #header>
-            <div class="panel-header">
-              <span class="panel-title">个人中心</span>
-            </div>
-          </template>
-          <div class="personal-center">
-            <!-- 交易所绑定卡片 -->
-            <div class="exchange-cards" :class="{ 'single-bound': okxBound }">
-              <!-- OKX -->
-              <div class="exchange-card" :class="{ 'exchange-card--bound': okxBound }">
-                <div class="exchange-header">
-                  <div class="exchange-logo okx-logo">
-                    <img :src="okxLogo" alt="OKX" class="exchange-logo-img" />
-                  </div>
-                  <div class="exchange-info">
-                    <div class="exchange-name">OKX</div>
-                    <el-tag :type="okxBound ? 'success' : 'info'" size="small">
-                      {{ okxBound ? '已绑定' : '未绑定' }}
-                    </el-tag>
-                  </div>
+    <!-- 三栏布局：左中列 + 右列（热门活动跨两行） -->
+    <div class="dashboard-three-col">
+      <!-- 左中列容器 -->
+      <div class="left-center-col">
+        <!-- 第一排：个人中心 + 量化机器人收益 -->
+        <el-row :gutter="20" class="pair-row">
+          <el-col :span="12">
+            <el-card shadow="hover" class="panel-card profit-card">
+              <template #header>
+                <div class="panel-header">
+                  <span class="panel-title">个人中心</span>
                 </div>
-                <!-- 已绑定：统计网格 -->
-                <div v-if="okxBound" class="bound-stats">
-                  <div class="bound-stat">
-                    <div class="bound-stat-label">UID</div>
-                    <div class="bound-stat-value">{{ apiConfig.okx_uid || '--' }}</div>
-                  </div>
-                  <div class="bound-stat">
-                    <div class="bound-stat-label">账户余额</div>
-                    <div class="bound-stat-value" :class="{ 'stat-loading': accountBalance === null }">{{ accountBalance === null ? '...' : '$' + formatNum(accountBalance) }}</div>
-                  </div>
-                  <div class="bound-stat">
-                    <div class="bound-stat-label">策略</div>
-                    <div class="bound-stat-value accent" :class="{ 'stat-loading': runningStrategies === null }">{{ runningStrategies === null ? '...' : runningStrategies + ' 个' }}</div>
-                  </div>
-                  <div class="bound-stat">
-                    <div class="bound-stat-label">总盈亏</div>
-                    <div class="bound-stat-value" :class="[totalStrategyProfit === null ? '' : (totalStrategyProfit >= 0 ? 'stat-up' : 'stat-down'), { 'stat-loading': totalStrategyProfit === null }]">
-                      {{ totalStrategyProfit === null ? '...' : (totalStrategyProfit >= 0 ? '+' : '') + '$' + formatNum(totalStrategyProfit) }}
+              </template>
+              <div class="personal-center">
+                <!-- 交易所绑定卡片 -->
+                <div class="exchange-cards" :class="{ 'single-bound': okxBound }">
+                  <!-- OKX -->
+                  <div class="exchange-card" :class="{ 'exchange-card--bound': okxBound }">
+                    <div class="exchange-header">
+                      <div class="exchange-logo okx-logo">
+                        <img :src="okxLogo" alt="OKX" class="exchange-logo-img" />
+                      </div>
+                      <div class="exchange-info">
+                        <div class="exchange-name">OKX</div>
+                        <el-tag :type="okxBound ? 'success' : 'info'" size="small">
+                          {{ okxBound ? '已绑定' : '未绑定' }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <!-- 已绑定：统计网格 -->
+                    <div v-if="okxBound" class="bound-stats">
+                      <div class="bound-stat">
+                        <div class="bound-stat-label">UID</div>
+                        <div class="bound-stat-value">{{ apiConfig.okx_uid || '--' }}</div>
+                      </div>
+                      <div class="bound-stat">
+                        <div class="bound-stat-label">账户余额</div>
+                        <div class="bound-stat-value" :class="{ 'stat-loading': accountBalance === null }">{{ accountBalance === null ? '...' : '$' + formatNum(accountBalance) }}</div>
+                      </div>
+                      <div class="bound-stat">
+                        <div class="bound-stat-label">策略</div>
+                        <div class="bound-stat-value accent" :class="{ 'stat-loading': runningStrategies === null }">{{ runningStrategies === null ? '...' : runningStrategies + ' 个' }}</div>
+                      </div>
+                      <div class="bound-stat">
+                        <div class="bound-stat-label">总盈亏</div>
+                        <div class="bound-stat-value" :class="[totalStrategyProfit === null ? '' : (totalStrategyProfit >= 0 ? 'stat-up' : 'stat-down'), { 'stat-loading': totalStrategyProfit === null }]">
+                          {{ totalStrategyProfit === null ? '...' : (totalStrategyProfit >= 0 ? '+' : '') + '$' + formatNum(totalStrategyProfit) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="okxBound" class="bound-unbind" @click="unbindExchange('okx')">
+                      <span class="unbind-icon">❌</span>
+                      <span class="unbind-text">解除绑定</span>
+                    </div>
+                    <div v-if="!okxBound" class="exchange-actions">
+                      <a :href="registerUrls.okx || '#'" target="_blank" class="register-btn">注册</a>
+                      <el-button type="primary" size="small" @click="showBindDialog('okx')">绑定</el-button>
                     </div>
                   </div>
-                </div>
-                <div v-if="okxBound" class="bound-unbind" @click="unbindExchange('okx')">
-                  <span class="unbind-icon">❌</span>
-                  <span class="unbind-text">解除绑定</span>
-                </div>
-                <div v-if="!okxBound" class="exchange-actions">
-                  <a :href="registerUrls.okx || '#'" target="_blank" class="register-btn">注册</a>
-                  <el-button type="primary" size="small" @click="showBindDialog('okx')">绑定</el-button>
-                </div>
-              </div>
 
-              <!-- Bitget & HTX: OKX未绑定时显示 -->
-              <template v-if="!okxBound">
-              <div class="exchange-card">
-                <div class="exchange-header">
-                  <div class="exchange-logo bitget-logo">
-                    <span class="logo-text">BG</span>
+                  <!-- Bitget & HTX: OKX未绑定时显示 -->
+                  <template v-if="!okxBound">
+                  <div class="exchange-card">
+                    <div class="exchange-header">
+                      <div class="exchange-logo bitget-logo">
+                        <span class="logo-text">BG</span>
+                      </div>
+                      <div class="exchange-info">
+                        <div class="exchange-name">Bitget</div>
+                        <el-tag type="info" size="small">未绑定</el-tag>
+                      </div>
+                    </div>
+                    <div class="exchange-actions">
+                      <a v-if="registerUrls.bitget" :href="registerUrls.bitget" target="_blank" class="register-btn">注册</a>
+                      <el-button type="primary" size="small" disabled>绑定</el-button>
+                    </div>
                   </div>
-                  <div class="exchange-info">
-                    <div class="exchange-name">Bitget</div>
-                    <el-tag type="info" size="small">未绑定</el-tag>
-                  </div>
-                </div>
-                <div class="exchange-actions">
-                  <a v-if="registerUrls.bitget" :href="registerUrls.bitget" target="_blank" class="register-btn">注册</a>
-                  <el-button type="primary" size="small" disabled>绑定</el-button>
-                </div>
-              </div>
 
-              <div class="exchange-card">
-                <div class="exchange-header">
-                  <div class="exchange-logo htx-logo">
-                    <span class="logo-text">HTX</span>
+                  <div class="exchange-card">
+                    <div class="exchange-header">
+                      <div class="exchange-logo htx-logo">
+                        <span class="logo-text">HTX</span>
+                      </div>
+                      <div class="exchange-info">
+                        <div class="exchange-name">HTX</div>
+                        <el-tag type="info" size="small">未绑定</el-tag>
+                      </div>
+                    </div>
+                    <div class="exchange-actions">
+                      <a v-if="registerUrls.htx" :href="registerUrls.htx" target="_blank" class="register-btn">注册</a>
+                      <el-button type="primary" size="small" disabled>绑定</el-button>
+                    </div>
                   </div>
-                  <div class="exchange-info">
-                    <div class="exchange-name">HTX</div>
-                    <el-tag type="info" size="small">未绑定</el-tag>
-                  </div>
+                </template>
                 </div>
-                <div class="exchange-actions">
-                  <a v-if="registerUrls.htx" :href="registerUrls.htx" target="_blank" class="register-btn">注册</a>
-                  <el-button type="primary" size="small" disabled>绑定</el-button>
+                <div v-if="!okxBound" class="exchange-tip">
+                  <img src="/images/warning.png" class="tip-icon" alt="⚠" />
+                  注意：以上三个交易所只能同时绑定一个
                 </div>
               </div>
-            </template>
-            </div>
-            <div v-if="!okxBound" class="exchange-tip">
-              <img src="/images/warning.png" class="tip-icon" alt="⚠" />
-              注意：以上三个交易所只能同时绑定一个
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="9">
-        <el-card shadow="hover" class="panel-card robot-panel">
-          <template #header>
-            <div class="panel-header">
-              <span class="panel-title">
-                <span class="robot-title-icon">🤖</span>
-                量化机器人收益
-              </span>
-              <router-link to="/strategy/robots" class="robot-view-all">
-                查看全部
-                <span class="view-all-arrow">→</span>
-              </router-link>
-            </div>
-          </template>
-          <div class="robot-summary-list" v-loading="robotsLoading">
-            <template v-if="robotsData.length > 0">
-              <!-- 总览头部 -->
-              <div class="robot-overview">
-                <div class="rov-item">
-                  <span class="rov-label">运行中</span>
-                  <span class="rov-value rov-running">{{ runningRobotCount }}</span>
-                </div>
-                <div class="rov-divider"></div>
-                <div class="rov-item">
-                  <span class="rov-label">总盈亏</span>
-                  <span class="rov-value" :class="totalRobotPnl >= 0 ? 'val-up' : 'val-down'">
-                    {{ totalRobotPnl >= 0 ? '+' : '' }}{{ totalRobotPnl.toFixed(2) }}U
+            </el-card>
+          </el-col>
+          <el-col :span="12">
+            <el-card shadow="hover" class="panel-card robot-panel">
+              <template #header>
+                <div class="panel-header">
+                  <span class="panel-title">
+                    <span class="robot-title-icon">🤖</span>
+                    量化机器人收益
                   </span>
+                  <router-link to="/strategy/robots" class="robot-view-all">
+                    查看全部
+                    <span class="view-all-arrow">→</span>
+                  </router-link>
                 </div>
-                <div class="rov-divider"></div>
-                <div class="rov-item">
-                  <span class="rov-label">平均胜率</span>
-                  <span class="rov-value rov-winrate">{{ avgWinRate.toFixed(1) }}%</span>
+              </template>
+              <div class="robot-summary-list" v-loading="robotsLoading">
+                <template v-if="robotsData.length > 0">
+                  <!-- 总览头部 - 玻璃态卡片 -->
+                  <div class="robot-stats-cards">
+                    <div class="stat-card stat-card--running">
+                      <div class="stat-icon">⚡</div>
+                      <div class="stat-info">
+                        <div class="stat-value">{{ runningRobotCount }}</div>
+                        <div class="stat-label">运行中</div>
+                      </div>
+                    </div>
+                    <div class="stat-card" :class="totalRobotPnl >= 0 ? 'stat-card--profit' : 'stat-card--loss'">
+                      <div class="stat-icon">{{ totalRobotPnl >= 0 ? '📈' : '📉' }}</div>
+                      <div class="stat-info">
+                        <div class="stat-value">{{ totalRobotPnl >= 0 ? '+' : '' }}{{ totalRobotPnl.toFixed(2) }}<span class="stat-unit">U</span></div>
+                        <div class="stat-label">总盈亏</div>
+                      </div>
+                    </div>
+                    <div class="stat-card stat-card--winrate">
+                      <div class="stat-icon">🎯</div>
+                      <div class="stat-info">
+                        <div class="stat-value">{{ avgWinRate.toFixed(1) }}<span class="stat-unit">%</span></div>
+                        <div class="stat-label">平均胜率</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 机器人列表 - 精美卡片 -->
+                  <div class="robot-cards-list">
+                    <div class="robot-card" v-for="r in robotsData" :key="r.id" :class="{ 'robot-card--running': r.is_running }">
+                      <div class="rc-header">
+                        <div class="rc-avatar">
+                          <span class="rc-emoji">{{ r.is_running ? '🤖' : '💤' }}</span>
+                          <span v-if="r.is_running" class="rc-status-dot"></span>
+                        </div>
+                        <div class="rc-info">
+                          <div class="rc-name">{{ r.name }}</div>
+                          <div class="rc-meta">
+                            <span class="rc-badge">{{ r.strategy_count || 0 }} 策略</span>
+                            <span class="rc-monthly" :class="calcRobotMonthly(r) >= 0 ? 'up' : 'down'">
+                              月化 {{ calcRobotMonthly(r) >= 0 ? '+' : '' }}{{ calcRobotMonthly(r).toFixed(1) }}%
+                            </span>
+                          </div>
+                        </div>
+                        <div class="rc-pnl" :class="r.total_pnl >= 0 ? 'pnl-up' : 'pnl-down'">
+                          <span class="rc-pnl-value">{{ r.total_pnl >= 0 ? '+' : '' }}{{ r.total_pnl.toFixed(2) }}</span>
+                          <span class="rc-pnl-unit">U</span>
+                        </div>
+                      </div>
+                      <div class="rc-footer">
+                        <div class="rc-stat">
+                          <span class="rc-stat-icon">🎯</span>
+                          <span class="rc-stat-val" :class="r.win_rate >= 70 ? 'high-win' : ''">{{ r.win_rate.toFixed(1) }}%</span>
+                        </div>
+                        <div class="rc-stat">
+                          <span class="rc-stat-icon">📊</span>
+                          <span class="rc-stat-val">{{ r.trade_count }} 笔</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="placeholder-block">
+                  <el-empty description="暂无机器人" :image-size="48" />
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <!-- 第二排：精选策略 + AI智能分析室 -->
+        <el-row :gutter="20" style="margin-top: 20px;">
+          <el-col :span="9" style="display: flex;">
+            <div class="featured-strategies-section" style="flex: 1; display: flex; flex-direction: column;">
+              <div class="panel-header" style="margin-bottom: 12px;">
+                <span class="panel-title">
+                  <span class="featured-icon">⭐</span>
+                  精选策略
+                </span>
+                <router-link to="/strategy" class="view-all-link">查看全部 →</router-link>
+              </div>
+              <div class="featured-strategies-list" v-loading="featuredStrategiesLoading" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                <template v-if="featuredStrategies.length > 0">
+                  <div class="strategy-card" v-for="(s, idx) in featuredStrategies" :key="s.id">
+                    <div class="sc-header">
+                      <div class="sc-title-row">
+                        <span class="sc-icon">⚡</span>
+                        <span class="sc-name">{{ s.name }}</span>
+                        <span class="sc-badge">官方</span>
+                      </div>
+                      <div class="sc-profit" :class="s.profit >= 0 ? 'profit-up' : 'profit-down'">
+                        <span class="sc-profit-val">{{ s.profit >= 0 ? '+' : '' }}{{ s.profit || 0 }}</span>
+                        <span class="sc-profit-unit">%</span>
+                      </div>
+                    </div>
+                    <div class="sc-desc">{{ s.desc || '多维度技术指标，捕捉市场趋势' }}</div>
+                    <div class="sc-metrics">
+                      <div class="sc-metric">
+                        <span class="sc-m-icon">🎯</span>
+                        <span class="sc-m-label">胜率</span>
+                        <span class="sc-m-val">{{ s.win_rate || '--' }}%</span>
+                      </div>
+                      <div class="sc-metric">
+                        <span class="sc-m-icon">📊</span>
+                        <span class="sc-m-label">回撤</span>
+                        <span class="sc-m-val">{{ s.max_drawdown || '--' }}%</span>
+                      </div>
+                    </div>
+                    <el-button type="primary" class="sc-btn" @click="useStrategy(s)">立即使用</el-button>
+                  </div>
+                </template>
+                <el-empty v-else description="暂无精选策略" :image-size="48" />
+              </div>
+            </div>
+          </el-col>
+
+          <el-col :span="15" style="display: flex;">
+            <div class="ai-chat-section" style="flex: 1;">
+              <div class="panel-header" style="margin-bottom: 8px;">
+                <span class="panel-title">
+                  <span class="ai-chat-icon">🤖</span>
+                  AI 智能分析室
+                </span>
+                <div class="ai-countdown" v-if="!aiTeamLoading">
+                  <span class="countdown-label">⏱️ 下次分析</span>
+                  <span class="countdown-time">{{ nextAnalysisCountdown }}</span>
                 </div>
               </div>
 
-              <!-- 机器人列表 -->
-              <div class="robot-item" v-for="r in robotsData" :key="r.id">
-                <div class="ri-left">
-                  <div class="ri-avatar" :class="r.is_running ? 'ri-avatar-active' : ''">
-                    <span class="ri-emoji">{{ r.is_running ? '🤖' : '⏸️' }}</span>
+              <!-- 聊天风格容器 -->
+              <div class="ai-chat-window">
+                <!-- 模型标识栏 -->
+                <div class="ai-models-bar">
+                  <span class="ai-model-tag">GLM-5</span>
+                  <span class="ai-model-tag">Kimi-2.5</span>
+                  <span class="ai-model-tag">Minimax-2.5</span>
+                  <span class="ai-model-tag judge">DeepSeek-V3 裁决</span>
+                </div>
+
+                <!-- 两栏布局 -->
+                <div class="ai-two-col" v-if="Object.keys(aiTeamOpinions).length > 0 || aiTeamJudge">
+                  <!-- 左栏：分析师 -->
+                  <div class="ai-col-left">
+                    <div class="ai-analyst-card" v-for="(opinion, key) in aiTeamOpinions" :key="key" @click="goToAIWarRoom">
+                      <div class="ai-ac-header">
+                        <div class="ai-ac-avatar">
+                          <img v-if="getAnalystAvatar(key)" :src="getAnalystAvatar(key)" />
+                          <span v-else>{{ getAnalystEmoji(key) }}</span>
+                        </div>
+                        <span class="ai-ac-name">{{ getAnalystName(key) }}</span>
+                      </div>
+                      <div class="ai-ac-content" v-html="formatContent(opinion)"></div>
+                    </div>
                   </div>
-                  <div class="ri-info">
-                    <div class="ri-name">{{ r.name }}</div>
-                    <div class="ri-meta">
-                      <span class="ri-strategies">{{ r.strategy_count || 0 }}个策略</span>
-                      <span class="ri-dot">·</span>
-                      <span class="ri-monthly" :class="calcRobotMonthly(r) >= 0 ? 'val-up' : 'val-down'">
-                        月化{{ calcRobotMonthly(r) >= 0 ? '+' : '' }}{{ calcRobotMonthly(r).toFixed(1) }}%
-                      </span>
+
+                  <!-- 右栏：裁决 -->
+                  <div class="ai-col-right">
+                    <div v-if="aiTeamJudge" class="ai-judge-card" @click="goToAIWarRoom">
+                      <div class="ai-jc-header">
+                        <span class="ai-jc-icon">🏆</span>
+                        <span class="ai-jc-title">综合判断</span>
+                      </div>
+                      <div class="ai-jc-content" v-html="formatContent(aiTeamJudge)"></div>
+                    </div>
+
+                    <!-- 实时状态 -->
+                    <div class="ai-live-panel" v-if="aiTeamJudge">
+                      <div class="ai-live-title">⚡ 实时监控</div>
+                      <div class="ai-live-grid">
+                        <div class="ai-live-item">
+                          <span class="ai-live-icon">🎯</span>
+                          <span class="ai-live-val" :class="'dir-' + currentDirection">{{ currentDirection === 'long' ? '做多' : currentDirection === 'short' ? '做空' : '观望' }}</span>
+                        </div>
+                        <div class="ai-live-item">
+                          <span class="ai-live-icon">📍</span>
+                          <span class="ai-live-val">${{ currentEntry || '--' }}</span>
+                        </div>
+                        <div class="ai-live-item">
+                          <span class="ai-live-icon">📊</span>
+                          <span class="ai-live-val">${{ btcPrice || '--' }}</span>
+                        </div>
+                        <div class="ai-live-item" :class="livePnL >= 0 ? 'pnl-up' : 'pnl-down'">
+                          <span class="ai-live-icon">💰</span>
+                          <span class="ai-live-val">{{ livePnL >= 0 ? '+' : '' }}{{ livePnL || 0 }}点</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="ri-right">
-                  <div class="ri-pnl" :class="r.total_pnl >= 0 ? 'pnl-up' : 'pnl-down'">
-                    {{ r.total_pnl >= 0 ? '+' : '' }}{{ r.total_pnl.toFixed(2) }}U
-                  </div>
-                  <div class="ri-stats">
-                    <span class="ri-winrate" :class="r.win_rate >= 70 ? 'win-high' : ''">
-                      胜率 {{ r.win_rate.toFixed(1) }}%
-                    </span>
-                    <span class="ri-trades">{{ r.trade_count }}笔</span>
-                  </div>
+
+                <!-- 空状态 -->
+                <div v-else class="ai-empty-state">
+                  <div class="ai-empty-icon">🤖</div>
+                  <p class="ai-empty-title">AI 团队待命中</p>
+                  <p class="ai-empty-desc">每30分钟自动分析市场</p>
                 </div>
               </div>
-            </template>
-            <div v-else class="placeholder-block">
-              <el-empty description="暂无机器人" :image-size="48" />
             </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-col>
+        </el-row>
+      </div>
 
-    <!-- 资产曲线 -->
-    <el-card shadow="hover" class="panel-card" style="margin-top: 16px;">
-      <template #header>
-        <div class="panel-header">
-          <span class="panel-title">资产曲线</span>
-          <el-radio-group v-model="pnlPeriod" size="small" @change="fetchPnlCurve">
-            <el-radio-button label="7d">7天</el-radio-button>
-            <el-radio-button label="30d">30天</el-radio-button>
-            <el-radio-button label="90d">90天</el-radio-button>
-          </el-radio-group>
-        </div>
-      </template>
-      <div class="chart-area" ref="pnlChartRef"></div>
-    </el-card>
-      </el-col>
-      <!-- 右侧：热门活动 -->
-      <el-col :span="6">
+      <!-- 右列：热门活动 + 市场状态（跨两行） -->
+      <div class="right-col">
         <div class="hot-activity-section">
           <div class="panel-header">
             <span class="panel-title">
@@ -216,7 +344,11 @@
             </span>
           </div>
           <div class="activity-banner">
-            <img v-if="activityBannerUrl" :src="activityBannerUrl" alt="活动横幅" class="banner-image" />
+            <el-carousel v-if="activityBanners.length > 0" height="230px" :autoplay="true" :interval="4000" indicator-position="none">
+              <el-carousel-item v-for="(banner, idx) in activityBanners" :key="idx">
+                <img :src="banner.url" alt="活动横幅" class="banner-image" @click="banner.link && window.open(banner.link)" :style="{ cursor: banner.link ? 'pointer' : 'default' }" />
+              </el-carousel-item>
+            </el-carousel>
             <div v-else class="banner-placeholder">图片展示区</div>
           </div>
           <div class="activity-list" v-if="!hotActivityLoading">
@@ -243,39 +375,157 @@
             </div>
           </div>
         </div>
-      </el-col>
-    </el-row>
 
-    <!-- 最近交易 -->
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card shadow="hover" class="panel-card">
-          <template #header>
-            <div class="panel-header">
-              <span class="panel-title">最近交易</span>
-              <el-button text size="small" type="primary">查看全部</el-button>
-            </div>
-          </template>
-          <div class="trade-list">
-            <div class="trade-item" v-for="t in recentTrades" :key="t.id">
-              <div class="trade-left">
-                <el-tag :type="t.side === '买入' ? 'danger' : 'success'" size="small" effect="plain" round>
-                  {{ t.side }}
-                </el-tag>
-                <span class="trade-symbol">{{ t.symbol }}</span>
+        <!-- 市场状态仪表盘 -->
+        <div class="market-regime-section" v-loading="regimeLoading">
+          <div class="panel-header" style="margin-bottom: 12px;">
+            <span class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
+              市场状态
+            </span>
+            <span class="regime-update-tag">实时</span>
+          </div>
+
+          <!-- 仪表盘主体 -->
+          <div class="regime-body" :class="'regime-body--' + regimeData.regime">
+            <!-- 上半部分：仪表盘 + 状态 -->
+            <div class="regime-top">
+              <!-- 弧形仪表盘 -->
+              <div class="regime-gauge-wrap">
+                <svg viewBox="0 0 200 130" class="regime-arc">
+                  <defs>
+                    <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" :stop-color="regimeColor" stop-opacity="0.3"/>
+                      <stop offset="100%" :stop-color="regimeColor" stop-opacity="1"/>
+                    </linearGradient>
+                    <filter id="arcGlow">
+                      <feGaussianBlur stdDeviation="3" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  <!-- 背景弧 -->
+                  <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none" stroke="var(--border-secondary)" stroke-width="12" stroke-linecap="round"/>
+                  <!-- 前景弧 -->
+                  <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none"
+                    stroke="url(#arcGrad)" stroke-width="12" stroke-linecap="round"
+                    :stroke-dasharray="251.3"
+                    :stroke-dashoffset="251.3 * (1 - regimeData.score)"
+                    filter="url(#arcGlow)"
+                    style="transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
+                  <!-- 分数 -->
+                  <text x="100" y="95" text-anchor="middle" fill="currentColor" font-size="36" font-weight="800" class="regime-score-text">{{ Math.round(regimeData.score * 100) }}</text>
+                  <text x="100" y="115" text-anchor="middle" fill="currentColor" font-size="11" opacity="0.5" class="regime-score-label">趋势评分</text>
+                </svg>
               </div>
-              <div class="trade-right">
-                <span class="trade-price">{{ t.price || '--' }}</span>
-                <span class="trade-pnl" v-if="t.pnl" :class="t.pnl >= 0 ? 'pnl-up' : 'pnl-down'">
-                  {{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl }}
+              <!-- 右侧状态信息 -->
+              <div class="regime-status">
+                <div class="regime-badge" :class="'badge--' + regimeData.regime" :style="{ '--rc': regimeColor }">
+                  {{ regimeData.regime_label }}
+                </div>
+                <div class="regime-direction" v-if="regimeData.trend_direction">
+                  <svg viewBox="0 0 16 16" class="dir-arrow" :class="'dir--' + regimeData.trend_direction">
+                    <path :d="regimeData.trend_direction === 'up' ? 'M8 2 L13 9 L10 9 L10 14 L6 14 L6 9 L3 9 Z' : 'M8 14 L3 7 L6 7 L6 2 L10 2 L10 7 L13 7 Z'"/>
+                  </svg>
+                  <span :class="'dir-text--' + regimeData.trend_direction">{{ regimeData.trend_direction === 'up' ? '偏多' : '偏空' }}</span>
+                </div>
+                <div class="regime-tip">{{ regimeHint }}</div>
+              </div>
+            </div>
+
+            <!-- 指标条 -->
+            <div class="regime-indicators">
+              <div class="indicator" v-for="m in regimeIndicators" :key="m.key">
+                <div class="indicator-head">
+                  <span class="indicator-name">{{ m.name }}</span>
+                  <span class="indicator-val">{{ m.value }}</span>
+                </div>
+                <div class="indicator-track">
+                  <div class="indicator-fill" :style="{ width: m.pct + '%', background: regimeColor }"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底栏 -->
+            <div class="regime-bar">
+              <div class="bar-cell">
+                <span class="bar-label">BTC</span>
+                <span class="bar-price">${{ formatNum(regimeData.btc_price) }}</span>
+                <span class="bar-chg" :class="regimeData.btc_change_24h >= 0 ? 'pnl-up' : 'pnl-down'">
+                  {{ regimeData.btc_change_24h >= 0 ? '+' : '' }}{{ regimeData.btc_change_24h?.toFixed(2) }}%
                 </span>
               </div>
+              <div class="bar-divider"></div>
+              <div class="bar-cell">
+                <span class="bar-label">资金费率</span>
+                <span class="bar-val">{{ (regimeData.funding_rate * 100).toFixed(4) }}%</span>
+              </div>
+              <div class="bar-divider"></div>
+              <div class="bar-cell">
+                <span class="bar-label">恐惧贪婪</span>
+                <span class="bar-val" :style="{ color: fearGreedColor }">{{ regimeData.fear_greed || 50 }}</span>
+              </div>
             </div>
-            <el-empty v-if="recentTrades.length === 0" description="暂无交易记录" :image-size="40" />
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+
+        <!-- AI分析按钮 -->
+        <div class="ai-analyze-section">
+          <el-button type="primary" class="ai-analyze-btn" @click="goToAIWarRoom" :loading="aiTeamLoading">
+            <span class="btn-icon">🤖</span>
+            AI 分析当前行情
+          </el-button>
+        </div>
+
+        <!-- AI判断追踪 -->
+        <div class="ai-judge-tracker" v-if="judgeRecords.length > 0">
+          <div class="tracker-title">
+            <span class="tracker-icon">📈</span>
+            <span>判断追踪</span>
+          </div>
+          <div class="tracker-list">
+            <div class="tracker-item" v-for="r in judgeRecords" :key="r.id">
+              <span class="tracker-time">{{ formatJudgeTime(r.created_at) }}</span>
+              <span class="tracker-dir" :class="'dir-' + r.direction">
+                {{ r.direction === 'long' ? '📈 多' : r.direction === 'short' ? '📉 空' : '⏸ 观' }}
+              </span>
+              <span class="tracker-price">${{ r.entry_price || '--' }}</span>
+              <span class="tracker-result" :class="'result-' + r.result">
+                <template v-if="r.result === 'correct'">✓</template>
+                <template v-else-if="r.result === 'wrong'">✗</template>
+                <template v-else>⏳</template>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end dashboard-three-col -->
+
+    <!-- 第三排：最近交易 -->
+    <div class="third-row-trades">
+      <el-card shadow="hover" class="panel-card">
+        <template #header>
+          <div class="panel-header">
+            <span class="panel-title">最近交易</span>
+            <el-button text size="small" type="primary">查看全部</el-button>
+          </div>
+        </template>
+        <div class="trade-list">
+          <div class="trade-item" v-for="t in recentTrades" :key="t.id">
+            <div class="trade-left">
+              <el-tag :type="t.side === '买入' ? 'danger' : 'success'" size="small" effect="plain" round>{{ t.side }}</el-tag>
+              <span class="trade-symbol">{{ t.symbol }}</span>
+            </div>
+            <div class="trade-right">
+              <span class="trade-price">{{ t.price || '--' }}</span>
+              <span class="trade-pnl" v-if="t.pnl" :class="t.pnl >= 0 ? 'pnl-up' : 'pnl-down'">{{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl }}</span>
+            </div>
+          </div>
+          <el-empty v-if="recentTrades.length === 0" description="暂无交易记录" :image-size="40" />
+        </div>
+      </el-card>
+    </div>
 
     <!-- OKX 绑定对话框 -->
     <el-dialog
@@ -358,7 +608,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { RefreshRight, WarningFilled } from '@element-plus/icons-vue'
 import api from '../utils/api'
@@ -370,8 +620,202 @@ import { useRouter } from 'vue-router'
 const { on: wsOn, off: wsOff, connected: wsConnected } = useWebSocket()
 const router = useRouter()
 
-const pnlPeriod = ref('30d')
-const pnlChartRef = ref(null)
+// ─── AI 分析室数据 ───
+const aiTeamOpinions = ref({})
+const aiTeamJudge = ref('')
+const aiTeamTimestamp = ref('')
+const aiTeamLoading = ref(false)
+const nextAnalysisCountdown = ref('')
+const btcPrice = ref(null)
+
+const analystConfig = ref({
+  aggressive: { name: '趋势猎手', emoji: '🚀', avatar_url: '' },
+  conservative: { name: '风控专家', emoji: '🛡️', avatar_url: '' },
+  technical: { name: '量化派', emoji: '📊', avatar_url: '' },
+  judge: { name: '裁决者', emoji: '⚖️', avatar_url: '' },
+})
+
+const analystShortNames = { aggressive: '趋势', conservative: '风控', technical: '量化', judge: '裁决' }
+
+function getAnalystName(key) { return analystConfig.value[key]?.name || key }
+function getAnalystEmoji(key) { return analystConfig.value[key]?.emoji || '🤖' }
+function getAnalystAvatar(key) { return analystConfig.value[key]?.avatar_url || '' }
+function getAnalystShortName(key) { return analystShortNames[key] || key }
+
+function formatContent(text) {
+  if (!text) return ''
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
+}
+
+function goToAIWarRoom() { router.push('/strategy/ai-war-room') }
+
+// ─── AI判断追踪 ───
+function formatJudgeTime(t) {
+  if (!t) return '--'
+  const d = new Date(t)
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+async function loadJudgeRecords() {
+  try {
+    const res = await api.get('/dashboard/ai_judge_records?limit=5')
+    judgeRecords.value = res.records || []
+  } catch (e) { console.error('judge records error:', e) }
+}
+
+// ─── 精选策略 ───
+const featuredStrategies = ref([])
+const featuredStrategiesLoading = ref(false)
+
+function useStrategy(s) { router.push(`/strategy/list?seed=${s.id}`) }
+
+// ─── 实时状态计算 ───
+const currentDirection = computed(() => {
+  if (!aiTeamJudge.value) return 'hold'
+  if (aiTeamJudge.value.includes('做多')) return 'long'
+  if (aiTeamJudge.value.includes('做空')) return 'short'
+  return 'hold'
+})
+const currentEntry = computed(() => {
+  if (judgeRecords.value.length === 0) return null
+  return judgeRecords.value[0].entry_price
+})
+const livePnL = computed(() => {
+  if (!currentEntry.value || !btcPrice.value) return 0
+  const diff = btcPrice.value - currentEntry.value
+  return currentDirection.value === 'long' ? diff : -diff
+})
+
+// ─── AI 数据加载 ───
+async function loadAnalystConfig() {
+  try {
+    const res = await api.get('/settings/ai')
+    if (res.analysts) {
+      for (const key of ['aggressive', 'conservative', 'technical']) {
+        if (res.analysts[key]) {
+          analystConfig.value[key] = { name: res.analysts[key].name || key, emoji: res.analysts[key].emoji || '🤖', avatar_url: res.analysts[key].avatar_url || '' }
+        }
+      }
+    }
+    if (res.judge) analystConfig.value.judge = { name: res.judge.name || '裁决者', emoji: res.judge.emoji || '⚖️', avatar_url: res.judge.avatar_url || '' }
+  } catch (e) { console.error('analyst config error:', e) }
+}
+
+async function loadAiChatHistory() {
+  try {
+    const res = await api.get('/dashboard/ai_chat_history?limit=1')
+    if (res.history && res.history.length > 0) {
+      const latest = res.history[0]
+      aiTeamOpinions.value = latest.opinions || {}
+      aiTeamJudge.value = latest.judge || ''
+      aiTeamTimestamp.value = latest.created_at ? new Date(latest.created_at).toLocaleString('zh-CN') : ''
+    }
+  } catch (e) { console.error('ai history error:', e) }
+}
+
+// ─── 市场状态仪表盘 ───
+const regimeLoading = ref(true)
+const regimeData = ref({
+  regime: 'ranging',
+  regime_label: '震荡',
+  score: 0,
+  trend_direction: '',
+  btc_price: 0,
+  btc_change_24h: 0,
+  funding_rate: 0,
+  fear_greed: 50,
+  details: {},
+})
+
+const regimeColor = computed(() => {
+  const map = {
+    strong_trend: '#00b96b',
+    trending: '#00b96b',
+    weak_trend: '#f5a623',
+    ranging: '#86909c',
+    volatile: '#ff4d4f',
+  }
+  return map[regimeData.value.regime] || '#86909c'
+})
+
+const fearGreedColor = computed(() => {
+  const v = regimeData.value.fear_greed || 50
+  if (v >= 70) return '#22c55e'
+  if (v >= 50) return '#f5a623'
+  return '#ef4444'
+})
+
+const regimeHint = computed(() => {
+  const map = {
+    strong_trend: '市场处于强势趋势中，趋势策略表现优异',
+    trending: '趋势形成中，可跟随方向操作',
+    weak_trend: '趋势信号偏弱，建议轻仓或观望',
+    ranging: '市场震荡整理，适合网格和高抛低吸',
+    volatile: '高波动环境，注意风险控制',
+  }
+  return map[regimeData.value.regime] || '加载中...'
+})
+
+const regimeIndicators = computed(() => {
+  const d = regimeData.value.details || {}
+  // 后端返回格式: {adx: {value: 38.44, score: 1.0}, vol_ratio: {value: 0.522, score: 0.3}, ...}
+  const adxVal = d.adx?.value ?? d.adx
+  const volVal = d.vol_ratio?.value ?? d.vol_compress_ratio
+  const devVal = d.deviation?.value ?? d.ma_deviation_pct
+  const atrVal = d.atr_change?.value ?? d.atr_change_rate
+  return [
+    { key: 'adx', name: 'ADX 趋势强度', value: typeof adxVal === 'number' ? adxVal.toFixed(1) : '--', pct: typeof adxVal === 'number' ? Math.min(adxVal / 50 * 100, 100) : 0 },
+    { key: 'vol_compress', name: '波动率压缩比', value: typeof volVal === 'number' ? volVal.toFixed(2) : '--', pct: typeof volVal === 'number' ? Math.min(volVal / 3 * 100, 100) : 0 },
+    { key: 'ma_dev', name: '均线偏离度', value: typeof devVal === 'number' ? (devVal * 100).toFixed(2) + '%' : '--', pct: typeof devVal === 'number' ? Math.min(Math.abs(devVal) * 100 / 5 * 100, 100) : 0 },
+    { key: 'atr_chg', name: 'ATR 变化率', value: typeof atrVal === 'number' ? (atrVal * 100).toFixed(1) + '%' : '--', pct: typeof atrVal === 'number' ? Math.min(Math.abs(atrVal) * 100, 100) : 0 },
+  ]
+})
+
+async function fetchBtcPrice() {
+  try {
+    const r = await api.get('/dashboard/market_regime')
+    if (r.btc_price) btcPrice.value = r.btc_price
+    // 同时更新市场状态仪表盘数据
+    regimeData.value = {
+      regime: r.regime || 'ranging',
+      regime_label: r.regime_label || '震荡',
+      score: r.score || 0,
+      trend_direction: r.trend_direction || '',
+      btc_price: r.btc_price || 0,
+      btc_change_24h: r.btc_change_24h || 0,
+      funding_rate: r.funding_rate || 0,
+      fear_greed: r.fear_greed || 50,
+      details: r.details || {},
+    }
+    regimeLoading.value = false
+  } catch (e) {
+    regimeLoading.value = false
+  }
+}
+
+function updateCountdown() {
+  const now = new Date()
+  const m = now.getMinutes(), s = now.getSeconds()
+  let nM = m < 30 ? 30 - m - 1 : 60 - m - 1
+  let nS = 60 - s
+  if (nS === 60) { nM += 1; nS = 0 }
+  if (nM < 0) nM = 0
+  nextAnalysisCountdown.value = `${nM}分${nS}秒`
+  if (s % 30 === 0) fetchBtcPrice()
+}
+
+async function loadFeaturedStrategies() {
+  featuredStrategiesLoading.value = true
+  try {
+    const res = await api.get('/strategy/list')
+    featuredStrategies.value = (res.strategies || res.list || res || []).slice(0, 2)
+  } catch (e) { console.error('strategies error:', e) }
+  featuredStrategiesLoading.value = false
+}
+
+let countdownTimer = null
+const judgeRecords = ref([])
+
 let pnlChart = null
 
 const hasApiKey = ref(localStorage.getItem('okx_bound') === '1')  // 先用 localStorage 快速渲染，防止闪烁
@@ -432,12 +876,12 @@ function _readCache() {
 const _cached = _readCache()
 
 const hotActivities = ref((_cached && _cached.activities) ? _cached.activities : [])
-const activityBannerUrl = ref((_cached && _cached.banner_url) ? _cached.banner_url : '')
+const activityBanners = ref((_cached && _cached.banners) ? _cached.banners : [])
 const hotActivityLoading = ref(!_cached)
 
-function saveActivitiesToCache(bannerUrl, activities) {
+function saveActivitiesToCache(banners, activities) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ banner_url: bannerUrl, activities }))
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ banners, activities }))
   } catch (e) { /* ignore */ }
 }
 
@@ -453,9 +897,9 @@ async function fetchHotActivities() {
       badge: a.badge,
       badgeType: a.badge_type || '',
     }))
-    activityBannerUrl.value = res.banner_url || ''
+    activityBanners.value = res.banners || []
     hotActivities.value = activities
-    saveActivitiesToCache(res.banner_url, activities)
+    saveActivitiesToCache(res.banners || [], activities)
   } catch (e) {
     console.error('Failed to load hot activities:', e)
   } finally {
@@ -716,17 +1160,6 @@ async function fetchOverview() {
   }
 }
 
-async function fetchPnlCurve() {
-  try {
-    const days = parseInt(pnlPeriod.value)
-    const res = await api.get('/dashboard/pnl_curve', { params: { days } })
-    const data = res.data || []
-    await nextTick()
-    renderPnlChart(data)
-  } catch (e) {
-    console.error('PnL curve error:', e)
-  }
-}
 
 function renderPnlChart(data) {
   if (!pnlChartRef.value) return
@@ -802,7 +1235,6 @@ function handleResize() {
 function onThemeChange() {
   // 主题变更后延迟重绘图表，等待CSS变量生效
   setTimeout(() => {
-    fetchPnlCurve()
   }, 100)
 }
 
@@ -1011,10 +1443,16 @@ onMounted(async () => {
   // 以下全部并行执行，不互相等待，不阻塞页面
   fetchOverview()
   fetchHotActivities()
-  fetchPnlCurve()
   fetchRecentTrades()
   fetchRobotsSummary()
+  fetchBtcPrice()
   startTickerAnimation()
+  loadAnalystConfig()
+  loadAiChatHistory()
+  loadJudgeRecords()
+  loadFeaturedStrategies()
+  updateCountdown()
+  countdownTimer = setInterval(updateCountdown, 1000)
 
   window.addEventListener('resize', handleResize)
   // 监听主题变更，重绘图表
@@ -1041,6 +1479,7 @@ let dashboardTimer = null
 onBeforeUnmount(() => {
   stopTickerAnimation()
   if (dashboardTimer) clearInterval(dashboardTimer)
+  if (countdownTimer) clearInterval(countdownTimer)
   if (tickerFlushTimer) clearTimeout(tickerFlushTimer)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('theme-change', onThemeChange)
@@ -1057,6 +1496,25 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .dashboard-page { min-height: 100%; }
+
+/* 三栏布局：左中列 + 右列 */
+.dashboard-three-col {
+  display: flex;
+  gap: 20px;
+}
+
+.left-center-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.right-col {
+  width: 20%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
 /* 实时价格滚动条 */
 .price-ticker {
@@ -1229,11 +1687,15 @@ onBeforeUnmount(() => {
 
 .activity-banner {
   margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .banner-image {
   width: 100%;
-  border-radius: 8px;
+  height: 230px;
+  object-fit: cover;
+  object-position: top center;
   display: block;
 }
 
@@ -1408,6 +1870,315 @@ onBeforeUnmount(() => {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* 市场状态仪表盘 */
+.market-regime-section {
+  margin-top: 16px;
+}
+
+.regime-update-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  letter-spacing: 0.5px;
+  animation: regimePulse 2s ease-in-out infinite;
+}
+
+@keyframes regimePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.regime-body {
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.regime-body::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: var(--rc, #86909c);
+  opacity: 0.06;
+  transition: background 0.6s;
+  pointer-events: none;
+}
+
+.regime-body--strong_trend { --rc: #00b96b; border-color: rgba(0,185,107,0.2); }
+.regime-body--trending { --rc: #00b96b; border-color: rgba(0,185,107,0.2); }
+.regime-body--weak_trend { --rc: #f5a623; border-color: rgba(245,166,35,0.2); }
+.regime-body--volatile { --rc: #ff4d4f; border-color: rgba(255,77,79,0.2); }
+.regime-body--ranging { --rc: #86909c; }
+
+.regime-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.regime-gauge-wrap {
+  flex-shrink: 0;
+  width: 140px;
+}
+
+.regime-arc {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.regime-score-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.regime-status {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.regime-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--rc, #86909c), var(--rc, #86909c));
+  width: fit-content;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: all 0.4s;
+}
+
+.badge--strong_trend { background: linear-gradient(135deg, #00b96b, #34d399); }
+.badge--trending { background: linear-gradient(135deg, #00b96b, #6ee7b7); }
+.badge--weak_trend { background: linear-gradient(135deg, #f5a623, #fbbf24); }
+.badge--volatile { background: linear-gradient(135deg, #ff4d4f, #f87171); }
+.badge--ranging { background: linear-gradient(135deg, #64748b, #94a3b8); }
+
+.regime-direction {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dir-arrow {
+  width: 14px;
+  height: 14px;
+}
+
+.dir-arrow.dir--up { fill: #22c55e; }
+.dir-arrow.dir--down { fill: #ef4444; }
+
+.dir-text--up { color: #22c55e; font-size: 13px; font-weight: 600; }
+.dir-text--down { color: #ef4444; font-size: 13px; font-weight: 600; }
+
+.regime-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.regime-indicators {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.indicator-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.indicator-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.indicator-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.indicator-track {
+  height: 4px;
+  background: var(--border-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.indicator-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+.regime-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 10px 0;
+  border: 1px solid var(--border-primary);
+}
+
+.bar-cell {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bar-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.bar-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-chg {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bar-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-primary);
+  flex-shrink: 0;
+}
+
+/* AI分析按钮 */
+.ai-analyze-section {
+  margin-top: 16px;
+}
+
+.ai-analyze-btn {
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ai-analyze-btn:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+.ai-analyze-btn .btn-icon {
+  font-size: 18px;
+}
+
+/* AI判断追踪 */
+.ai-judge-tracker {
+  margin-top: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.tracker-icon {
+  font-size: 14px;
+}
+
+.tracker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tracker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.tracker-time {
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.tracker-dir {
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.tracker-dir.dir-long { color: #22c55e; }
+.tracker-dir.dir-short { color: #ef4444; }
+.tracker-dir.dir-hold { color: #f5a623; }
+
+.tracker-price {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+}
+
+.tracker-result {
+  font-size: 14px;
+}
+
+.tracker-result.result-correct { color: #22c55e; }
+.tracker-result.result-wrong { color: #ef4444; }
 
 /* 个人中心 */
 .personal-center { padding: 10px 0; display: flex; flex-direction: column; flex: 1; min-height: 240px; }
@@ -1663,7 +2434,6 @@ onBeforeUnmount(() => {
 }
 
 /* 图表区域 */
-.chart-area { height: 320px; }
 
 /* 账户资产 */
 .asset-list { min-height: 280px; }
@@ -1694,8 +2464,8 @@ onBeforeUnmount(() => {
 .coin-available { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
 
 /* 持仓盈亏色 */
-.pnl-up { color: #ef5350; font-weight: 500; }
-.pnl-down { color: #26a69a; font-weight: 500; }
+.pnl-up { color: #16a34a; font-weight: 500; }
+.pnl-down { color: #dc2626; font-weight: 500; }
 .val-up { color: #ef5350; }
 .val-down { color: #26a69a; }
 
@@ -1731,6 +2501,390 @@ onBeforeUnmount(() => {
 .robot-view-all:hover .view-all-arrow {
   transform: translateX(3px);
 }
+
+/* ─── 量化机器人新UI ─── */
+.robot-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon { font-size: 28px; }
+
+.stat-info { flex: 1; }
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.stat-unit { font-size: 12px; font-weight: 400; opacity: 0.7; }
+
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.stat-card--running { border-color: #22c55e33; background: linear-gradient(135deg, var(--bg-secondary), #22c55e0a); }
+.stat-card--running .stat-value { color: #22c55e; }
+
+.stat-card--profit { border-color: #22c55e33; }
+.stat-card--profit .stat-value { color: #22c55e; }
+
+.stat-card--loss { border-color: #ef444433; }
+.stat-card--loss .stat-value { color: #ef4444; }
+
+.stat-card--winrate { border-color: #409eff33; }
+.stat-card--winrate .stat-value { color: #409eff; }
+
+.robot-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.robot-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 14px;
+  transition: all 0.2s;
+}
+
+.robot-card:hover { border-color: var(--accent-color); transform: translateY(-2px); }
+
+.robot-card--running { border-left: 3px solid #22c55e; }
+
+.rc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.rc-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.rc-emoji { font-size: 20px; }
+
+.rc-status-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.rc-info { flex: 1; min-width: 0; }
+
+.rc-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+.rc-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+.rc-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.rc-monthly { font-size: 12px; font-weight: 600; }
+.rc-monthly.up { color: #22c55e; }
+.rc-monthly.down { color: #ef4444; }
+
+.rc-pnl { text-align: right; }
+.rc-pnl-value { font-size: 18px; font-weight: 700; }
+.rc-pnl-unit { font-size: 12px; opacity: 0.7; }
+.rc-pnl.pnl-up .rc-pnl-value { color: #22c55e; }
+.rc-pnl.pnl-down .rc-pnl-value { color: #ef4444; }
+
+.rc-footer {
+  display: flex;
+  gap: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.rc-stat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.rc-stat-icon { font-size: 14px; }
+.rc-stat-val { font-weight: 600; }
+.rc-stat-val.high-win { color: #22c55e; }
+
+/* ─── 精选策略新UI ─── */
+.strategy-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.strategy-card:hover { border-color: var(--accent-color); }
+
+.sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.sc-title-row { display: flex; align-items: center; gap: 8px; }
+.sc-icon { font-size: 16px; }
+.sc-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.sc-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.sc-profit { text-align: right; }
+.sc-profit-val { font-size: 22px; font-weight: 800; }
+.sc-profit-unit { font-size: 12px; }
+.sc-profit.profit-up .sc-profit-val { color: #22c55e; }
+.sc-profit.profit-down .sc-profit-val { color: #ef4444; }
+
+.sc-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.sc-metrics {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.sc-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sc-m-icon { font-size: 14px; }
+.sc-m-label { color: var(--text-muted); }
+.sc-m-val { font-weight: 600; color: var(--text-primary); }
+
+.sc-btn {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ─── AI分析室新UI ─── */
+.ai-chat-window {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ai-models-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.ai-model-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.ai-model-tag.judge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+/* 两栏布局 */
+.ai-two-col {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.ai-col-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-col-right {
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* 分析师卡片 */
+.ai-analyst-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-analyst-card:hover { border-color: var(--accent-color); }
+
+.ai-ac-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ai-ac-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.ai-ac-avatar img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
+
+.ai-ac-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+
+.ai-ac-content {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 裁决卡片 */
+.ai-judge-card {
+  background: linear-gradient(135deg, #6366f11a, #8b5cf61a);
+  border: 1px solid #6366f133;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-jc-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ai-jc-icon { font-size: 16px; }
+
+.ai-jc-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+.ai-jc-content {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 实时监控面板 */
+.ai-live-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.ai-live-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.ai-live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.ai-live-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.ai-live-icon { font-size: 12px; }
+.ai-live-val { font-weight: 600; color: var(--text-primary); }
+.ai-live-item.pnl-up .ai-live-val { color: #22c55e; }
+.ai-live-item.pnl-down .ai-live-val { color: #ef4444; }
+.ai-live-val.dir-long { color: #22c55e; }
+.ai-live-val.dir-short { color: #ef4444; }
+
+.ai-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.ai-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.ai-empty-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.ai-empty-desc { font-size: 12px; color: var(--text-muted); }
 
 /* 机器人总览条 */
 .robot-overview {
@@ -1884,6 +3038,11 @@ onBeforeUnmount(() => {
 .ri-trades {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* 第三排：最近交易 */
+.third-row-trades {
+  margin-top: 20px;
 }
 
 /* 交易列表 */
@@ -2052,6 +3211,101 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 600;
 }
+
+/* ─── AI 聊天室 ─── */
+.ai-chat-section {
+  background: #ffffff;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  transition: all 0.2s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.ai-chat-section:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-color: rgba(99,102,241,0.2); }
+.ai-chat-icon { font-size: 18px; margin-right: 4px; }
+.ai-subtitle { font-size: 11px; color: #666; margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 6px; line-height: 1.6; }
+.ai-countdown { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1)); border-radius: 20px; font-size: 12px; border: 1px solid rgba(99,102,241,0.2); }
+.ai-chat-container { flex: 1; min-height: 0; }
+.ai-chat-messages { display: flex; flex-direction: column; gap: 16px; padding: 4px 0; }
+.ai-chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; }
+.ai-analysis-grid { display: grid; grid-template-columns: 1.2fr auto 0.8fr; gap: 20px; align-items: start; }
+.ai-analysts-column { display: flex; flex-direction: column; gap: 16px; }
+.ai-message { display: flex; gap: 12px; cursor: pointer; border-radius: 10px; padding: 4px; transition: background 0.2s; }
+.ai-message:hover { background: rgba(99,102,241,0.03); }
+.ai-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ai-message-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; background: var(--bg-secondary); border: 1px solid var(--border-primary); overflow: hidden; }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.ai-avatar-name { font-size: 10px; color: var(--text-muted); }
+.ai-message-body { flex: 1; min-width: 0; }
+.ai-message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ai-message-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ai-message-content { font-size: 12px; line-height: 1.6; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 10px; padding: 10px 14px; border: 1px solid var(--border-primary); }
+.ai-message-content strong { font-weight: 600; color: var(--text-primary); }
+.ai-analysts-column .ai-message-content { max-height: 9em; overflow: hidden; position: relative; }
+.ai-analysts-column .ai-message-content::after { content: '...'; position: absolute; bottom: 0; right: 6px; background: var(--bg-secondary); padding: 0 4px; font-size: 12px; line-height: 1.6; }
+.ai-divider { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
+.divider-line { width: 2px; height: 30px; background: linear-gradient(to bottom, transparent, var(--border-primary), transparent); }
+.divider-label { writing-mode: vertical-rl; font-size: 11px; font-weight: 600; color: var(--accent); }
+.ai-judge-column { display: flex; flex-direction: column; }
+.ai-message--judge .ai-message-avatar { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); }
+.ai-message--judge .ai-message-content { background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.04)); border-color: rgba(99,102,241,0.15); }
+.ai-live-monitor { margin-top: 12px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(59,130,246,0.04)); border: 1px solid rgba(99,102,241,0.1); border-radius: 10px; }
+.live-header { font-size: 11px; font-weight: 600; color: #6366f1; margin-bottom: 10px; }
+.live-body { display: flex; flex-direction: column; gap: 6px; }
+.live-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-radius: 6px; background: rgba(255,255,255,0.6); font-size: 11px; }
+.live-pnl-row { border-radius: 6px; animation: pnlPulse 2s infinite; }
+.live-cell { display: flex; align-items: center; gap: 6px; }
+.live-icon { font-size: 12px; width: 18px; text-align: center; }
+.live-label { color: #666; font-size: 10px; }
+.live-dir { font-weight: 600; font-size: 12px; padding: 2px 10px; border-radius: 12px; }
+.live-val { font-weight: 600; color: #333; font-size: 12px; }
+.live-pnl { font-weight: 700; font-size: 14px; }
+.pnl-up { color: #16a34a; }
+.pnl-down { color: #dc2626; }
+@keyframes pnlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.85; } }
+
+/* ─── 精选策略 ─── */
+.featured-strategies-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.featured-icon { font-size: 16px; margin-right: 4px; }
+.view-all-link { font-size: 12px; color: var(--accent); text-decoration: none; }
+.view-all-link:hover { text-decoration: underline; }
+.featured-strategies-list { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.featured-strategy-item { flex: 1; position: relative; padding: 16px; background: var(--bg-secondary); border-radius: 12px; transition: all 0.2s; }
+.featured-strategy-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.strategy-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.strategy-title-row { display: flex; align-items: center; gap: 6px; }
+.strategy-item-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.strategy-official-badge { font-size: 10px; padding: 2px 6px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 4px; }
+.strategy-profit-badge { display: flex; flex-direction: column; align-items: flex-end; padding: 8px 12px; border-radius: 8px; }
+.strategy-profit-badge.profit-up { background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.05)); }
+.strategy-profit-badge.profit-down { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05)); }
+.profit-value { font-size: 18px; font-weight: 700; }
+.profit-label { font-size: 10px; color: var(--text-muted); }
+.strategy-item-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+.strategy-metrics { display: flex; gap: 8px; margin-bottom: 10px; }
+.metric-pill { display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: rgba(0,0,0,0.03); border-radius: 20px; font-size: 11px; }
+.pill-icon { font-size: 12px; }
+.pill-label { color: var(--text-muted); }
+.pill-value { font-weight: 600; color: var(--text-primary); }
+.strategy-actions { display: flex; gap: 8px; align-items: center; }
+.use-strategy-btn { flex: 1; }
+
+/* ─── 盈利颜色 ─── */
+.profit-up { color: #16a34a; }
+.profit-down { color: #dc2626; }
+.dir-long { color: #16a34a; background: rgba(22,163,74,0.08); }
+.dir-short { color: #dc2626; background: rgba(220,38,38,0.08); }
+.dir-hold { color: #666; background: rgba(0,0,0,0.06); }
 </style>
 
 <!-- 非scoped样式：ticker滚动条由innerHTML动态创建，scoped属性无法匹配 -->
