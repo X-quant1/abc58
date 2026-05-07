@@ -1020,13 +1020,17 @@ const aiQuickText = ref('')
 const aiQuickAnalyst = ref('')
 
 async function triggerAiAnalysis() {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('AI分析功能仅限登录用户使用')
+    return
+  }
   if (aiAnalyzing.value) return
   aiAnalyzing.value = true
   aiQuickText.value = ''
   aiQuickAnalyst.value = ''
 
   try {
-    const token = localStorage.getItem('token')
     const resp = await fetch('/api/dashboard/ai_quick_analysis', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1228,6 +1232,15 @@ function strategyTypeLabel(type) {
 }
 
 function useStrategy(s) {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('请登录后再操作')
+    return
+  }
+  if (!okxBound.value) {
+    ElMessage.warning('未检测到交易所绑定')
+    return
+  }
   strategyEditId.value = s.id
   const p = s.params || {}
   strategyForm.name = s.name || '策略'
@@ -2046,6 +2059,11 @@ async function unbindApi() {
 // ─── 交易所绑定管理 ───
 
 function showBindDialog(exchange) {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('请登录后再操作')
+    return
+  }
   if (exchange === 'okx') {
     bindForm.value = {
       key: '',
