@@ -687,68 +687,222 @@
       </template>
     </el-dialog>
 
-    <!-- 策略快速设置弹窗 -->
+    <!-- 策略设置弹窗（简易版/专业版） -->
     <el-dialog
       v-model="strategyDialogVisible"
-      width="480px"
+      width="720px"
       :close-on-click-modal="false"
-      :show-close="true"
-      class="strategy-quick-dialog"
+      class="strategy-settings-dialog"
       destroy-on-close
     >
       <template #header>
-        <div class="sqd-header">
-          <span class="sqd-icon">⚡</span>
-          <span class="sqd-title">{{ strategyDialogTitle }}</span>
+        <div class="settings-header">
+          <span>{{ strategyForm.name }} - 策略设置</span>
+          <div class="mode-switch">
+            <el-button :type="strategySettingsMode === 'simple' ? 'primary' : 'default'" size="small" @click="strategySettingsMode = 'simple'">简易版</el-button>
+            <el-button :type="strategySettingsMode === 'pro' ? 'primary' : 'default'" size="small" @click="strategySettingsMode = 'pro'">专业版</el-button>
+          </div>
         </div>
       </template>
-      <el-form :model="strategyForm" label-width="90px" class="sqd-form">
-        <el-form-item label="交易币种">
-          <el-select v-model="strategyForm.inst_id" style="width: 100%;">
-            <el-option label="BTC-USDT 永续" value="BTC-USDT-SWAP" />
-            <el-option label="ETH-USDT 永续" value="ETH-USDT-SWAP" />
-            <el-option label="SOL-USDT 永续" value="SOL-USDT-SWAP" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="开仓杠杆">
-          <el-slider v-model="strategyForm.leverage" :min="1" :max="125" :step="1" show-input />
-        </el-form-item>
-        <el-form-item label="仓位大小">
-          <div class="sqd-size-row">
-            <el-select v-model="strategyForm.size_mode" style="width: 100px;">
-              <el-option label="固定张数" value="fixed" />
-              <el-option label="百分比" value="percent" />
+
+      <!-- 简易版 -->
+      <div v-if="strategySettingsMode === 'simple'" class="simple-settings">
+        <el-form :model="strategyForm" label-width="100px" class="sqd-form">
+          <el-form-item label="开仓平台">
+            <el-select v-model="strategyForm.platform" style="width: 100%;" disabled>
+              <el-option label="OKX" value="okx" />
             </el-select>
-            <el-input-number v-if="strategyForm.size_mode === 'fixed'" v-model="strategyForm.size" :min="0.01" :step="0.01" :precision="2" style="flex: 1;" />
-            <el-input-number v-else v-model="strategyForm.size_pct" :min="1" :max="100" :step="5" style="flex: 1;" />
-            <span class="sqd-size-hint" v-if="strategyForm.size_mode === 'percent'">% 可用资金</span>
-          </div>
-        </el-form-item>
-        <el-form-item label="止盈比例">
-          <el-input-number v-model="strategyForm.take_profit_pct" :min="0" :max="50" :step="0.5" :precision="1" />
-          <span class="sqd-hint">% · 0=不设置</span>
-        </el-form-item>
-        <el-form-item label="止损比例">
-          <el-input-number v-model="strategyForm.stop_loss_pct" :min="0" :max="50" :step="0.5" :precision="1" />
-          <span class="sqd-hint">% · 0=不设置</span>
-        </el-form-item>
-        <el-form-item label="K线周期">
-          <el-select v-model="strategyForm.timeframes" multiple collapse-tags collapse-tags-tooltip style="width: 100%;">
-            <el-option label="5分钟" value="5m" />
-            <el-option label="15分钟" value="15m" />
-            <el-option label="30分钟" value="30m" />
-            <el-option label="1小时" value="1h" />
-            <el-option label="4小时" value="4h" />
-            <el-option label="日线" value="1d" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="保证金模式">
-          <el-radio-group v-model="strategyForm.td_mode">
-            <el-radio-button value="cross">全仓</el-radio-button>
-            <el-radio-button value="isolated">逐仓</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
+            <span class="hint-label">当前仅支持 OKX</span>
+          </el-form-item>
+          <el-form-item label="交易币种">
+            <el-select v-model="strategyForm.inst_id" style="width: 100%;">
+              <el-option label="BTC-USDT 永续" value="BTC-USDT-SWAP" />
+              <el-option label="ETH-USDT 永续" value="ETH-USDT-SWAP" />
+              <el-option label="SOL-USDT 永续" value="SOL-USDT-SWAP" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="开仓杠杆">
+            <el-slider v-model="strategyForm.leverage" :min="1" :max="125" :step="1" show-input />
+          </el-form-item>
+          <el-form-item label="开仓百分比">
+            <el-input-number v-model="strategyForm.size_pct" :min="1" :max="100" :step="5" />
+            <span class="hint-label">% 可用资金</span>
+          </el-form-item>
+        </el-form>
+        <div class="simple-tip">
+          <el-icon><InfoFilled /></el-icon>
+          <span>其他参数使用管理员预设值，如需调整请切换到专业版</span>
+        </div>
+      </div>
+
+      <!-- 专业版 -->
+      <div v-else class="pro-settings">
+        <el-tabs v-model="strategyProTab" type="border-card">
+          <!-- Tab 1: 策略配置 -->
+          <el-tab-pane label="策略配置" name="config">
+            <el-form :model="strategyForm" label-width="100px" class="tab-form">
+              <el-form-item label="开仓平台">
+                <el-select v-model="strategyForm.platform" style="width: 100%;" disabled>
+                  <el-option label="OKX" value="okx" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="交易币种">
+                <el-select v-model="strategyForm.inst_id" style="width: 100%;">
+                  <el-option label="BTC-USDT 永续" value="BTC-USDT-SWAP" />
+                  <el-option label="ETH-USDT 永续" value="ETH-USDT-SWAP" />
+                  <el-option label="SOL-USDT 永续" value="SOL-USDT-SWAP" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="开仓杠杆">
+                <el-slider v-model="strategyForm.leverage" :min="1" :max="125" :step="1" show-input />
+              </el-form-item>
+              <el-form-item label="开仓模式">
+                <el-radio-group v-model="strategyForm.position_mode">
+                  <el-radio value="both">多空双开</el-radio>
+                  <el-radio value="long_only">仅开多</el-radio>
+                  <el-radio value="short_only">仅开空</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="运行周期">
+                <el-checkbox-group v-model="strategyForm.timeframes">
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px 24px;">
+                    <el-checkbox value="5m">5分钟</el-checkbox>
+                    <el-checkbox value="15m">15分钟</el-checkbox>
+                    <el-checkbox value="30m">30分钟</el-checkbox>
+                    <el-checkbox value="1h">1小时</el-checkbox>
+                    <el-checkbox value="4h">4小时</el-checkbox>
+                  </div>
+                </el-checkbox-group>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <!-- Tab 2: 仓位控制 -->
+          <el-tab-pane label="仓位控制" name="position">
+            <el-form :model="strategyForm" label-width="100px" class="tab-form">
+              <el-form-item label="下单方式">
+                <el-radio-group v-model="strategyForm.size_mode">
+                  <el-radio value="fixed">按张数下单</el-radio>
+                  <el-radio value="percent">按百分比下单</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="strategyForm.size_mode === 'fixed'" label="下单张数">
+                <el-input-number v-model="strategyForm.size" :min="0.01" :max="1000" :step="0.01" :precision="2" />
+                <span class="hint-label">合约张数（最小0.01）</span>
+              </el-form-item>
+              <el-form-item v-else label="仓位比例">
+                <el-input-number v-model="strategyForm.size_pct" :min="1" :max="100" :step="5" />
+                <span class="hint-label">% 可用资金</span>
+              </el-form-item>
+
+              <el-divider content-position="left">风控参数</el-divider>
+              <el-form-item label="固定止盈">
+                <el-input-number v-model="strategyForm.take_profit_pct" :min="0" :max="100" :step="0.1" :precision="2" />
+                <span class="hint-label">%（0=不设止盈）</span>
+              </el-form-item>
+              <el-form-item label="固定止损">
+                <el-input-number v-model="strategyForm.stop_loss_pct" :min="0" :max="50" :step="0.1" :precision="2" />
+                <span class="hint-label">%（0=不设止损）</span>
+              </el-form-item>
+              <el-form-item label="移动止盈">
+                <el-input-number v-model="strategyForm.trailing_stop_pct" :min="0" :max="20" :step="0.1" :precision="2" />
+                <span class="hint-label">%（0=不启用）</span>
+              </el-form-item>
+              <el-form-item label="移动激活阈值">
+                <el-input-number v-model="strategyForm.trail_activate_pct" :min="0" :max="10" :step="0.1" :precision="2" />
+                <span class="hint-label">%（盈利达到此比例激活移动止盈）</span>
+              </el-form-item>
+              <el-form-item label="回调点数">
+                <el-input-number v-model="strategyForm.trail_callback_points" :min="0" :max="1000" :step="1" />
+                <span class="hint-label">点（价格回调此点数触发平仓）</span>
+              </el-form-item>
+              <el-form-item label="冷却时间">
+                <el-input-number v-model="strategyForm.cooldown_minutes" :min="0" :max="1440" :step="5" />
+                <span class="hint-label">分钟（开仓后冷却时间，0=不限制）</span>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <!-- Tab 3: 策略指标参数 -->
+          <el-tab-pane label="策略指标参数" name="indicator">
+            <el-form :model="strategyForm" label-width="100px" class="tab-form">
+              <template v-if="strategyForm.type === 'ma_cross'">
+                <el-form-item label="短均线周期"><el-input-number v-model="strategyForm.params.fast_period" :min="2" :max="100" /></el-form-item>
+                <el-form-item label="长均线周期"><el-input-number v-model="strategyForm.params.slow_period" :min="5" :max="200" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'rsi'">
+                <el-form-item label="RSI周期"><el-input-number v-model="strategyForm.params.period" :min="2" :max="100" /></el-form-item>
+                <el-form-item label="超卖线"><el-input-number v-model="strategyForm.params.oversold" :min="10" :max="40" /></el-form-item>
+                <el-form-item label="超买线"><el-input-number v-model="strategyForm.params.overbought" :min="60" :max="90" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'bollinger'">
+                <el-form-item label="布林带周期"><el-input-number v-model="strategyForm.params.period" :min="5" :max="100" /></el-form-item>
+                <el-form-item label="标准差倍数"><el-input-number v-model="strategyForm.params.std_dev" :min="1" :max="4" :step="0.1" :precision="1" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'macd_divergence'">
+                <el-form-item label="MACD快线"><el-input-number v-model="strategyForm.params.macd_fast" :min="3" :max="20" /></el-form-item>
+                <el-form-item label="MACD慢线"><el-input-number v-model="strategyForm.params.macd_slow" :min="10" :max="40" /></el-form-item>
+                <el-form-item label="MACD信号线"><el-input-number v-model="strategyForm.params.macd_signal" :min="3" :max="15" /></el-form-item>
+                <el-form-item label="峰值窗口"><el-input-number v-model="strategyForm.params.peak_window" :min="2" :max="20" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'trend_break'">
+                <el-form-item label="趋势EMA周期"><el-input-number v-model="strategyForm.params.ema_period" :min="5" :max="60" /></el-form-item>
+                <el-form-item label="布林带周期"><el-input-number v-model="strategyForm.params.boll_period" :min="5" :max="30" /></el-form-item>
+                <el-form-item label="布林标准差"><el-input-number v-model="strategyForm.params.boll_std" :min="0.5" :max="4" :step="0.1" :precision="1" /></el-form-item>
+                <el-form-item label="量均周期"><el-input-number v-model="strategyForm.params.vol_ma_period" :min="5" :max="30" /></el-form-item>
+                <el-form-item label="量比阈值"><el-input-number v-model="strategyForm.params.vol_ratio" :min="0.5" :max="3" :step="0.1" :precision="1" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'rsi_macd'">
+                <el-form-item label="RSI周期"><el-input-number v-model="strategyForm.params.rsi_period" :min="2" :max="30" /></el-form-item>
+                <el-form-item label="超卖线"><el-input-number v-model="strategyForm.params.oversold" :min="10" :max="40" /></el-form-item>
+                <el-form-item label="超买线"><el-input-number v-model="strategyForm.params.overbought" :min="60" :max="90" /></el-form-item>
+                <el-form-item label="MACD快线"><el-input-number v-model="strategyForm.params.macd_fast" :min="3" :max="20" /></el-form-item>
+                <el-form-item label="MACD慢线"><el-input-number v-model="strategyForm.params.macd_slow" :min="10" :max="40" /></el-form-item>
+                <el-form-item label="MACD信号线"><el-input-number v-model="strategyForm.params.macd_signal" :min="3" :max="15" /></el-form-item>
+              </template>
+              <template v-if="strategyForm.type === 'vol_break'">
+                <el-form-item label="回望周期"><el-input-number v-model="strategyForm.params.lookback" :min="5" :max="60" /></el-form-item>
+                <el-form-item label="量均周期"><el-input-number v-model="strategyForm.params.vol_ma_period" :min="5" :max="30" /></el-form-item>
+                <el-form-item label="量比阈值"><el-input-number v-model="strategyForm.params.vol_ratio" :min="1" :max="5" :step="0.1" :precision="1" /></el-form-item>
+              </template>
+              <template v-if="!['ma_cross', 'rsi', 'bollinger', 'macd_divergence', 'trend_break', 'rsi_macd', 'vol_break'].includes(strategyForm.type)">
+                <div class="no-params-tip">该策略无额外指标参数</div>
+              </template>
+            </el-form>
+          </el-tab-pane>
+
+          <!-- Tab 4: 运行时间 -->
+          <el-tab-pane label="运行时间" name="schedule">
+            <el-form label-width="100px" class="tab-form">
+              <el-form-item label="运行星期">
+                <el-checkbox-group v-model="strategyForm.run_days">
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px 16px;">
+                    <el-checkbox :value="1">周一</el-checkbox>
+                    <el-checkbox :value="2">周二</el-checkbox>
+                    <el-checkbox :value="3">周三</el-checkbox>
+                    <el-checkbox :value="4">周四</el-checkbox>
+                    <el-checkbox :value="5">周五</el-checkbox>
+                    <el-checkbox :value="6">周六</el-checkbox>
+                    <el-checkbox :value="0">周日</el-checkbox>
+                  </div>
+                </el-checkbox-group>
+              </el-form-item>
+              <el-form-item label="每日时间段">
+                <div class="time-range-row">
+                  <el-time-select v-model="strategyForm.run_start_time" placeholder="开始时间" start="00:00" step="00:30" end="23:30" style="width: 120px;" />
+                  <span class="time-sep">至</span>
+                  <el-time-select v-model="strategyForm.run_end_time" placeholder="结束时间" start="00:00" step="00:30" end="23:30" style="width: 120px;" />
+                </div>
+              </el-form-item>
+              <div class="schedule-tip">
+                <el-icon><InfoFilled /></el-icon>
+                <span>策略仅在选定的星期和时间段内运行，默认全天候运行</span>
+              </div>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
       <template #footer>
         <div class="sqd-footer">
           <el-button @click="strategyDialogVisible = false">取消</el-button>
@@ -763,9 +917,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { RefreshRight, WarningFilled } from '@element-plus/icons-vue'
+import { RefreshRight, WarningFilled, InfoFilled } from '@element-plus/icons-vue'
 import api from '../utils/api'
 import { useWebSocket } from '../utils/ws'
 import * as echarts from 'echarts'
@@ -885,38 +1039,101 @@ async function loadJudgeRecords() {
 // ─── 精选策略 ───
 const featuredStrategies = ref([])
 const featuredStrategiesLoading = ref(false)
+const availableStrategies = ref([])
 const strategyDialogVisible = ref(false)
-const strategyDialogTitle = ref('')
 const strategySaving = ref(false)
 const strategyEditId = ref(null)
-const strategyForm = ref({
+const strategySettingsMode = ref('simple')  // 'simple' | 'pro'
+const strategyProTab = ref('config')
+
+const strategyForm = reactive({
+  name: '',
+  type: '',
+  platform: 'okx',
   inst_id: 'BTC-USDT-SWAP',
-  leverage: 10,
   size_mode: 'percent',
   size: 1,
   size_pct: 10,
-  take_profit_pct: 3,
-  stop_loss_pct: 5,
-  timeframes: ['1h'],
+  leverage: 10,
+  take_profit_pct: 5,
+  stop_loss_pct: 3,
+  trailing_stop_pct: 0,
+  trail_activate_pct: 0,
+  trail_callback_points: 0,
+  cooldown_minutes: 0,
   td_mode: 'cross',
+  position_mode: 'both',
+  timeframes: ['1h'],
+  run_days: [1, 2, 3, 4, 5, 6, 0],
+  run_start_time: '00:00',
+  run_end_time: '23:59',
+  description: '',
+  params: {},
 })
+
+// 各策略类型的指标参数 key 映射
+const strategyParamKeys = {
+  ma_cross: ['fast_period', 'slow_period', 'timeframe'],
+  rsi: ['period', 'oversold', 'overbought', 'timeframe'],
+  bollinger: ['period', 'std_dev', 'timeframe'],
+  macd: ['fast_period', 'slow_period', 'signal_period', 'timeframe'],
+  macd_divergence: ['macd_fast', 'macd_slow', 'macd_signal', 'peak_window'],
+  ema_volume: ['fast_period', 'slow_period', 'volume_ma_period', 'volume_ratio', 'timeframe'],
+  supertrend: ['atr_period', 'multiplier', 'timeframe'],
+  kdj: ['k_period', 'k_smooth', 'd_smooth', 'oversold', 'overbought', 'timeframe'],
+  dual_ema: ['trend_period', 'fast_period', 'slow_period', 'timeframe'],
+  ma_ribbon: ['period1', 'period2', 'period3', 'period4', 'timeframe'],
+  cci: ['period', 'oversold', 'overbought', 'timeframe'],
+  trend_break: ['ema_period', 'boll_period', 'boll_std', 'vol_ma_period', 'vol_ratio', 'timeframe'],
+  rsi_macd: ['rsi_period', 'oversold', 'overbought', 'macd_fast', 'macd_slow', 'macd_signal', 'timeframe'],
+  st_kdj: ['atr_period', 'multiplier', 'k_period', 'k_smooth', 'd_smooth', 'oversold', 'overbought', 'timeframe'],
+  ribbon_macd: ['period1', 'period2', 'period3', 'period4', 'macd_fast', 'macd_slow', 'macd_signal', 'timeframe'],
+  vol_break: ['lookback', 'vol_ma_period', 'vol_ratio', 'timeframe'],
+}
+
+async function loadAvailableStrategies() {
+  try {
+    const res = await api.get('/strategy/available')
+    availableStrategies.value = res.strategies || []
+  } catch { /* ignore */ }
+}
 
 function useStrategy(s) {
   strategyEditId.value = s.id
-  strategyDialogTitle.value = s.name || '策略设置'
-  // 填充已有参数
   const p = s.params || {}
-  strategyForm.value = {
-    inst_id: p.inst_id || 'BTC-USDT-SWAP',
-    leverage: p.leverage || 10,
-    size_mode: p.size_mode || 'percent',
-    size: p.size ?? 1,
-    size_pct: p.size_pct || 10,
-    take_profit_pct: p.take_profit_pct ?? 3,
-    stop_loss_pct: p.stop_loss_pct ?? 5,
-    timeframes: p.timeframes || ['1h'],
-    td_mode: p.td_mode || 'cross',
+  strategyForm.name = s.name || '策略'
+  strategyForm.type = s.type || ''
+  strategyForm.platform = p.platform || 'okx'
+  strategyForm.inst_id = p.inst_id || 'BTC-USDT-SWAP'
+  strategyForm.size_mode = p.size_mode || 'percent'
+  strategyForm.size = p.size ?? 1
+  strategyForm.size_pct = p.size_pct ?? 10
+  strategyForm.leverage = p.leverage ?? 10
+  strategyForm.take_profit_pct = p.take_profit_pct ?? 5
+  strategyForm.stop_loss_pct = p.stop_loss_pct ?? 3
+  strategyForm.trailing_stop_pct = p.trailing_stop_pct ?? 0
+  strategyForm.trail_activate_pct = p.trail_activate_pct ?? 0
+  strategyForm.trail_callback_points = p.trail_callback_points ?? 0
+  strategyForm.cooldown_minutes = p.cooldown_minutes ?? 0
+  strategyForm.td_mode = p.td_mode || 'cross'
+  strategyForm.position_mode = p.position_mode || 'both'
+  strategyForm.timeframes = p.timeframes || ['1h']
+  strategyForm.run_days = p.run_days || [1, 2, 3, 4, 5, 6, 0]
+  strategyForm.run_start_time = p.run_start_time || '00:00'
+  strategyForm.run_end_time = p.run_end_time || '23:59'
+  strategyForm.description = p.description || ''
+
+  // 填充策略指标参数
+  const keys = strategyParamKeys[s.type] || []
+  const paramsCopy = {}
+  for (const k of keys) {
+    paramsCopy[k] = p[k] ?? (availableStrategies.value.find(x => x.type === s.type)?.default_params || {})[k]
   }
+  strategyForm.params = paramsCopy
+
+  // 重置为简易版
+  strategySettingsMode.value = 'simple'
+  strategyProTab.value = 'config'
   strategyDialogVisible.value = true
 }
 
@@ -924,8 +1141,30 @@ async function saveAndStartStrategy() {
   if (!strategyEditId.value) return
   strategySaving.value = true
   try {
+    const body = {
+      platform: strategyForm.platform,
+      inst_id: strategyForm.inst_id,
+      leverage: strategyForm.leverage,
+      size_mode: strategyForm.size_mode,
+      size: strategyForm.size,
+      size_pct: strategyForm.size_pct,
+      position_mode: strategyForm.position_mode,
+      timeframes: strategyForm.timeframes,
+      run_days: strategyForm.run_days,
+      run_start_time: strategyForm.run_start_time,
+      run_end_time: strategyForm.run_end_time,
+      take_profit_pct: strategyForm.take_profit_pct,
+      stop_loss_pct: strategyForm.stop_loss_pct,
+      trailing_stop_pct: strategyForm.trailing_stop_pct,
+      trail_activate_pct: strategyForm.trail_activate_pct,
+      trail_callback_points: strategyForm.trail_callback_points,
+      cooldown_minutes: strategyForm.cooldown_minutes,
+      td_mode: strategyForm.td_mode,
+      description: strategyForm.description,
+      params: strategyForm.params,
+    }
     // 先保存设置
-    await api.put(`/strategy/${strategyEditId.value}`, strategyForm.value)
+    await api.put(`/strategy/${strategyEditId.value}`, body)
     // 再启动
     await api.post(`/strategy/${strategyEditId.value}/start`)
     ElMessage.success('策略已启动')
@@ -1756,6 +1995,7 @@ onMounted(async () => {
   loadAiChatHistory()
   loadJudgeRecords()
   loadFeaturedStrategies()
+  loadAvailableStrategies()
   updateCountdown()
   countdownTimer = setInterval(updateCountdown, 1000)
 
@@ -3122,18 +3362,55 @@ onBeforeUnmount(() => {
 .rc-stat-val { font-weight: 600; }
 .rc-stat-val.high-win { color: #22c55e; }
 
-/* ─── 策略快速设置弹窗 ─── */
-.sqd-header { display: flex; align-items: center; gap: 8px; }
-.sqd-icon { font-size: 20px; }
-.sqd-title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+/* ─── 策略设置弹窗 ─── */
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.mode-switch { display: flex; gap: 0; }
+.mode-switch .el-button { border-radius: 0; }
+.mode-switch .el-button:first-child { border-radius: 4px 0 0 4px; }
+.mode-switch .el-button:last-child { border-radius: 0 4px 4px 0; }
+
+.simple-settings { padding: 10px 0; }
+.hint-label { margin-left: 8px; font-size: 12px; color: var(--text-muted); }
+
+.simple-tip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 16px; background: var(--accent-light);
+  border-radius: 8px; color: var(--accent); font-size: 13px; margin-top: 16px;
+}
+
+.pro-settings { margin: 0 -20px; padding: 0; }
+.pro-settings :deep(.el-tabs--border-card) { border: none; border-radius: 0; background: transparent; box-shadow: none; }
+.pro-settings :deep(.el-tabs__header) { background: var(--bg-secondary); border-bottom: 1px solid var(--border-primary); margin: 0; padding: 0 20px; }
+.pro-settings :deep(.el-tabs__nav) { border: none; }
+.pro-settings :deep(.el-tabs__item) { padding: 0 20px; height: 40px; line-height: 40px; }
+.pro-settings :deep(.el-tabs__content) { padding: 16px 20px; max-height: 420px; overflow-y: auto; background: transparent; border: none; }
+.pro-settings :deep(.el-tab-pane) { overflow: visible; }
+
+.tab-form { max-width: 100%; padding: 0; }
+.tab-form :deep(.el-form-item) { margin-bottom: 18px; }
+.tab-form :deep(.el-divider) { margin: 16px 0; }
+.tab-form :deep(.el-input-number) { width: 160px; }
+.tab-form :deep(.el-slider) { max-width: 320px; }
+
+.time-range-row { display: flex; align-items: center; gap: 12px; }
+.time-sep { color: var(--text-muted); font-size: 13px; }
+
+.schedule-tip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 16px; background: var(--blue-light);
+  border-radius: 8px; color: var(--blue); font-size: 13px; margin-top: 12px;
+}
+
+.no-params-tip { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
 
 .sqd-form .el-form-item { margin-bottom: 18px; }
 .sqd-form .el-form-item__label { font-weight: 600; color: var(--text-primary); }
 .sqd-form .el-slider { padding-right: 16px; }
-
-.sqd-size-row { display: flex; align-items: center; gap: 10px; width: 100%; }
-.sqd-size-hint { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.sqd-hint { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
 
 .sqd-footer { display: flex; justify-content: flex-end; gap: 10px; }
 .sqd-start-btn { min-width: 130px; font-weight: 700; }
