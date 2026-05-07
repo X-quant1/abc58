@@ -134,31 +134,6 @@
               </template>
               <div class="robot-summary-list" v-loading="robotsLoading">
                 <template v-if="robotsData.length > 0">
-                  <!-- 总览头部 - 玻璃态卡片 -->
-                  <div class="robot-stats-cards">
-                    <div class="stat-card stat-card--running">
-                      <div class="stat-icon">⚡</div>
-                      <div class="stat-info">
-                        <div class="stat-value">{{ runningRobotCount }}</div>
-                        <div class="stat-label">运行中</div>
-                      </div>
-                    </div>
-                    <div class="stat-card" :class="totalRobotPnl >= 0 ? 'stat-card--profit' : 'stat-card--loss'">
-                      <div class="stat-icon">{{ totalRobotPnl >= 0 ? '📈' : '📉' }}</div>
-                      <div class="stat-info">
-                        <div class="stat-value">{{ totalRobotPnl >= 0 ? '+' : '' }}{{ totalRobotPnl.toFixed(2) }}<span class="stat-unit">U</span></div>
-                        <div class="stat-label">总盈亏</div>
-                      </div>
-                    </div>
-                    <div class="stat-card stat-card--winrate">
-                      <div class="stat-icon">🎯</div>
-                      <div class="stat-info">
-                        <div class="stat-value">{{ avgWinRate.toFixed(1) }}<span class="stat-unit">%</span></div>
-                        <div class="stat-label">平均胜率</div>
-                      </div>
-                    </div>
-                  </div>
-
                   <!-- 领奖台 - 前三名 -->
                   <div class="podium-section" v-if="podiumRobots.length > 0">
                     <!-- 第一名 - 居中大卡片 -->
