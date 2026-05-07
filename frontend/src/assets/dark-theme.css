@@ -229,8 +229,9 @@ body {
 .app-container.light .el-button--danger.is-text { background-color: transparent !important; border-color: transparent !important; color: #f43f5e !important; }
 .app-container.light .el-button--danger.is-text:hover { background-color: rgba(244, 63, 94, 0.1) !important; color: #e11d48 !important; }
 
-/* 亮色主题 MessageBox 覆盖 */
-.app-container.light .el-message-box { background: #ffffff !important; border-color: #e2e8f0 !important; }
-.app-container.light .el-message-box__title { color: #1e293b !important; }
-.app-container.light .el-message-box__content { color: #475569 !important; }
-.app-container.light .el-overlay { background-color: rgba(0, 0, 0, 0.5) !important; }
+/* 亮色主题 MessageBox 覆盖 - 使用 body data-theme 属性 */
+body[data-theme="light"] .el-message-box { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body[data-theme="light"] .el-message-box__title { color: #1e293b !important; }
+body[data-theme="light"] .el-message-box__content { color: #475569 !important; }
+body[data-theme="light"] .el-message-box__headerbtn .el-message-box__close { color: #94a3b8 !important; }
+body[data-theme="light"] .el-overlay { background-color: rgba(0, 0, 0, 0.5) !important; }

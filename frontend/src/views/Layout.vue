@@ -436,8 +436,9 @@ function applyTheme() {
     app.classList.toggle('dark', isDark.value)
     app.classList.toggle('light', !isDark.value)
   }
-  // 更新 body 背景色
+  // 更新 body 背景色和 data-theme 属性
   document.body.style.background = isDark.value ? '#0D0E11' : '#f5f5f5'
+  document.body.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
   // 通知其他组件主题变更（如 ECharts 图表重绘）
   window.dispatchEvent(new CustomEvent('theme-change', { detail: { isDark: isDark.value } }))
 }
