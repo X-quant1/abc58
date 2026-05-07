@@ -3861,9 +3861,10 @@ onBeforeUnmount(() => {
   padding: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  flex: 1;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .ai-jc-header {
