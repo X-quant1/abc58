@@ -116,7 +116,7 @@
           </transition>
         </div>
         <!-- 退出登录 -->
-        <div class="logout-btn" @click="handleLogout">
+        <div v-if="isLoggedIn" class="logout-btn" @click="handleLogout">
           <el-icon :size="16"><SwitchButton /></el-icon>
           <transition name="fade-text">
             <span v-show="!isCollapsed" class="logout-label">退出登录</span>
@@ -448,6 +448,9 @@ function cancelRedirect() {
   if (loginTimer) clearInterval(loginTimer)
   showLoginHint.value = false
 }
+
+// ─── 登录状态 ───
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 
 // ─── 主题切换 ───
 const isDark = ref(localStorage.getItem('theme') === 'dark')
