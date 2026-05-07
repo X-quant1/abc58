@@ -3767,8 +3767,6 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: all 0.25s;
   display: flex;
-  flex: 1;
-  min-height: 0;
 }
 
 .ai-analyst-card:hover {
@@ -3835,11 +3833,6 @@ onBeforeUnmount(() => {
   font-size: 11px;
   color: var(--text-secondary);
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  flex: 1;
 }
 
 /* 裁决卡片 */
