@@ -487,7 +487,7 @@
             </span>
           </div>
           <div class="activity-banner">
-            <el-carousel v-if="activityBanners.length > 0" height="auto" :autoplay="true" :interval="4000" indicator-position="none">
+            <el-carousel v-if="activityBanners.length > 0" height="200px" :autoplay="true" :interval="4000" indicator-position="none">
               <el-carousel-item v-for="(banner, idx) in activityBanners" :key="idx">
                 <img :src="banner.url" alt="活动横幅" class="banner-image" @click="banner.link && window.open(banner.link)" :style="{ cursor: banner.link ? 'pointer' : 'default' }" />
               </el-carousel-item>
@@ -2368,20 +2368,16 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   border: 1px solid var(--border-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.activity-banner .el-carousel__container {
-  height: auto !important;
-  min-height: 120px;
+  background: var(--bg-card);
 }
 
 .banner-image {
   width: 100%;
-  height: auto;
-  max-height: 280px;
+  height: 200px;
   object-fit: contain;
   object-position: center;
   display: block;
+  background: var(--bg-secondary);
   transition: transform 0.3s;
 }
 
