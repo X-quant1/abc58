@@ -1736,6 +1736,8 @@ function onTicker(data) {
       // 限频更新 DOM，避免打断 CSS 动画
       scheduleTickerUpdate(symbol, data.price, data.change_24h ?? coin.change)
     }
+    // BTC-USDT 实时价格同步到全局状态，保证市场状态和滚动条价格一致
+    if (symbol === 'BTC') btcPrice.value = data.price
   }
 }
 
