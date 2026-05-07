@@ -362,14 +362,16 @@
                   <span class="ai-chat-icon">🤖</span>
                   AI 智能分析室
                 </span>
-                <div class="ai-countdown" v-if="!aiTeamLoading">
-                  <span class="countdown-label">⏱️ 下次分析</span>
-                  <span class="countdown-time">{{ nextAnalysisCountdown }}</span>
-                </div>
-                <div class="ai-current-time" v-if="aiTeamTimestamp">
-                  <span class="act-label">当前</span>
-                  <span class="act-time">{{ aiTeamTimestamp }}</span>
-                  <span class="act-period">({{ aiTeamPeriod }})</span>
+                <div class="ai-right-badges">
+                  <div class="ai-current-time" v-if="aiTeamTimestamp">
+                    <span class="act-label">当前分析为</span>
+                    <span class="act-time">{{ formattedAnalysisTime }}</span>
+                    <span class="act-period">{{ aiTeamPeriod }}周期</span>
+                  </div>
+                  <div class="ai-countdown" v-if="!aiTeamLoading">
+                    <span class="countdown-label">⏱️ 下次</span>
+                    <span class="countdown-time">{{ nextAnalysisCountdown }}</span>
+                  </div>
                 </div>
               </div>
 
@@ -978,6 +980,11 @@ const aiTeamOpinions = ref({})
 const aiTeamJudge = ref('')
 const aiTeamTimestamp = ref('')
 const aiTeamPeriod = ref('')
+const formattedAnalysisTime = computed(() => {
+  if (!aiTeamTimestamp.value) return ''
+  // 去掉秒数，保留到分钟
+  return aiTeamTimestamp.value.replace(/:\d{2}$/, '')
+})
 const aiTeamLoading = ref(false)
 const nextAnalysisCountdown = ref('')
 const btcPrice = ref(null)
@@ -4266,10 +4273,11 @@ onBeforeUnmount(() => {
 .ai-countdown { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1)); border-radius: 20px; font-size: 12px; border: 1px solid rgba(99,102,241,0.2); }
 .countdown-label { color: #6366f1; font-weight: 500; }
 .countdown-time { color: #818cf8; font-weight: 600; font-variant-numeric: tabular-nums; }
-.ai-current-time { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; background: rgba(99,102,241,0.05); border-radius: 8px; border: 1px solid rgba(99,102,241,0.1); }
+.ai-right-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.ai-current-time { display: flex; align-items: center; gap: 4px; font-size: 12px; padding: 5px 12px; background: rgba(99,102,241,0.05); border-radius: 8px; border: 1px solid rgba(99,102,241,0.1); white-space: nowrap; }
 .act-label { color: #64748b; font-weight: 500; }
-.act-time { color: #334155; font-weight: 600; font-size: 11px; }
-.act-period { color: #6366f1; font-weight: 600; }
+.act-time { color: #334155; font-weight: 600; }
+.act-period { color: #ef4444; font-weight: 700; }
 .ai-chat-container { flex: 1; min-height: 0; }
 .ai-chat-messages { display: flex; flex-direction: column; gap: 16px; padding: 4px 0; }
 .ai-chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; }
