@@ -99,8 +99,7 @@ async def _push_loop():
             if ticker_counter >= ticker_interval:
                 ticker_counter = 0
                 try:
-                    ticker = await asyncio.to_thread(_get_ms().get_ticker, "BTC-USDT-SWAP")
-                    ticker["symbol"] = "BTC-USDT"  # 统一为现货格式，前端兼容
+                    ticker = await asyncio.to_thread(_get_ms().get_ticker, "BTC-USDT")
                     await ws_manager.broadcast("ticker", ticker)
                 except Exception:
                     pass

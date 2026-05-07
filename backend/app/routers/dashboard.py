@@ -292,8 +292,8 @@ async def get_market_regime():
             print(f"[Dashboard] Market regime error: {e}")
 
         try:
-            # 2. BTC价格和涨跌幅（直接获取单个ticker，更快）
-            btc_ticker = _ms().get_ticker("BTC-USDT-SWAP")
+            # 2. BTC价格和涨跌幅（使用现货价格，与滚动条保持一致）
+            btc_ticker = _ms().get_ticker("BTC-USDT")
             if btc_ticker:
                 result["btc_price"] = btc_ticker.get("price", 0)
                 result["btc_change_24h"] = btc_ticker.get("change_24h", 0) or 0
