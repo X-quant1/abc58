@@ -2367,15 +2367,15 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 12px;
   border: 1px solid var(--border-primary);
-  background: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .banner-image {
   width: 100%;
   height: 220px;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   display: block;
-  background: var(--bg-secondary);
   transition: transform 0.3s;
 }
 
