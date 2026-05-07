@@ -1,5 +1,14 @@
 <template>
   <el-container class="app-container" :class="{ dark: isDark, light: !isDark }">
+    <!-- 未登录提示条 -->
+    <transition name="slide-down">
+      <div v-if="showLoginHint" class="login-hint-bar">
+        <span class="hint-text">您还未登录，<strong>{{ loginCountdown }}</strong> 秒后跳转到登录页</span>
+        <el-button type="primary" size="small" @click="goLogin">立即登录</el-button>
+        <el-button size="small" @click="cancelRedirect">继续浏览</el-button>
+      </div>
+    </transition>
+
     <!-- 移动端遮罩 -->
     <div v-if="isMobile && !isCollapsed" class="mobile-overlay" @click="isCollapsed = true"></div>
 
@@ -410,6 +419,36 @@ function formatAnnouncementTime(id) {
   return dates[(id - 1) % 3] || '2026-05-04'
 }
 
+// ─── 未登录倒计时 ───
+const showLoginHint = ref(false)
+const loginCountdown = ref(3)
+let loginTimer = null
+
+function startLoginCountdown() {
+  const token = localStorage.getItem('token')
+  if (!token && route.path === '/dashboard') {
+    showLoginHint.value = true
+    loginCountdown.value = 3
+    loginTimer = setInterval(() => {
+      loginCountdown.value--
+      if (loginCountdown.value <= 0) {
+        clearInterval(loginTimer)
+        router.push('/login')
+      }
+    }, 1000)
+  }
+}
+
+function goLogin() {
+  if (loginTimer) clearInterval(loginTimer)
+  router.push('/login')
+}
+
+function cancelRedirect() {
+  if (loginTimer) clearInterval(loginTimer)
+  showLoginHint.value = false
+}
+
 // ─── 主题切换 ───
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 
@@ -738,6 +777,7 @@ let refreshTimer = null
 onMounted(async () => {
   loadTheme()
   loadUser()
+  startLoginCountdown()  // 未登录用户3秒后跳转
   checkMobile()
   fetchSiteSettings()  // 加载站点配置
   fetchAnnouncements()  // 加载公告
@@ -788,6 +828,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (refreshTimer) clearInterval(refreshTimer)
   if (announcementTimer) clearInterval(announcementTimer)
+  if (loginTimer) clearInterval(loginTimer)
   wsOff('ticker', onWsTicker)
   wsOff('notification', onWsNotification)
   window.removeEventListener('resize', checkMobile)
@@ -805,6 +846,43 @@ body {
   -webkit-font-smoothing: antialiased;
   background: var(--bg-primary);
   color: var(--text-primary);
+}
+
+/* ===== 未登录提示条 ===== */
+.login-hint-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.hint-text {
+  color: #fff;
+  font-size: 14px;
+}
+
+.hint-text strong {
+  font-size: 18px;
+  margin: 0 4px;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateY(-100%);
+  opacity: 0;
 }
 
 /* ===== 主容器 ===== */

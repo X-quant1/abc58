@@ -19,7 +19,7 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
-        meta: { title: '总览', icon: 'DataBoard' },
+        meta: { title: '总览', icon: 'DataBoard', public: true },
       },
       {
         path: 'market',
@@ -42,6 +42,12 @@ const routes = [
         name: 'Robots',
         component: () => import('../views/Robots.vue'),
         meta: { title: '量化机器人', icon: 'Monitor' },
+      },
+      {
+        path: 'strategy/ai-war-room',
+        name: 'AIWarRoom',
+        component: () => import('../views/AIWarRoom.vue'),
+        meta: { title: 'AI作战室', icon: 'Cpu' },
       },
       {
         path: 'backtest',
