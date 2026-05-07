@@ -1792,7 +1792,7 @@ async function fetchOverview() {
     // 更新币种价格
     if (res.prices) {
       for (const [symbol, data] of Object.entries(res.prices)) {
-        const coinSymbol = symbol.replace('-USDT', '')
+        const coinSymbol = symbol.replace('-USDT-SWAP', '').replace('-USDT', '')
         const coin = tickerCoins.find(c => c.symbol === coinSymbol)
         if (coin && data.price > 0) {
           coin.price = data.price

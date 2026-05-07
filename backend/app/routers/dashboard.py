@@ -53,14 +53,14 @@ async def get_overview():
     """获取总览数据：多币种行情 + 账户信息 + 持仓"""
     import asyncio
 
-    symbols = ["BTC-USDT", "ETH-USDT", "BNB-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "DOGE-USDT", "DOT-USDT"]
+    symbols = ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "BNB-USDT-SWAP", "SOL-USDT-SWAP", "XRP-USDT-SWAP", "ADA-USDT-SWAP", "DOGE-USDT-SWAP", "DOT-USDT-SWAP"]
 
     def _fetch_all():
         """所有数据在单个线程中按顺序获取"""
-        # 行情
+        # 行情（合约价格）
         prices = {}
         try:
-            all_tickers = _ms().get_tickers("SPOT")
+            all_tickers = _ms().get_tickers("SWAP")
             ticker_map = {t["symbol"]: t for t in all_tickers}
             for s in symbols:
                 prices[s] = ticker_map.get(s, {"price": 0, "change_24h": 0})
@@ -111,7 +111,7 @@ async def get_overview():
 
     # 恐惧贪婪指数
     fear_greed = 50
-    btc_change = prices.get("BTC-USDT", {}).get("change_24h", 0) if isinstance(prices, dict) else 0
+    btc_change = prices.get("BTC-USDT-SWAP", {}).get("change_24h", 0) if isinstance(prices, dict) else 0
     if btc_change > 5: fear_greed = 75
     elif btc_change > 2: fear_greed = 65
     elif btc_change > 0: fear_greed = 55
@@ -145,10 +145,10 @@ async def get_overview():
         "running_strategies": strategy_stats["running_count"],
         "total_strategy_profit": strategy_stats["total_profit"],
         # 多币种价格
-        "btc_price": prices.get("BTC-USDT", {}).get("price", 0),
-        "btc_change_24h": prices.get("BTC-USDT", {}).get("change_24h", 0),
-        "eth_price": prices.get("ETH-USDT", {}).get("price", 0),
-        "eth_change_24h": prices.get("ETH-USDT", {}).get("change_24h", 0),
+        "btc_price": prices.get("BTC-USDT-SWAP", {}).get("price", 0),
+        "btc_change_24h": prices.get("BTC-USDT-SWAP", {}).get("change_24h", 0),
+        "eth_price": prices.get("ETH-USDT-SWAP", {}).get("price", 0),
+        "eth_change_24h": prices.get("ETH-USDT-SWAP", {}).get("change_24h", 0),
         "prices": prices,
         # 恐惧贪婪指数
         "fear_greed_index": fear_greed,
@@ -292,8 +292,8 @@ async def get_market_regime():
             print(f"[Dashboard] Market regime error: {e}")
 
         try:
-            # 2. BTC价格和涨跌幅（使用现货价格，与滚动条保持一致）
-            btc_ticker = _ms().get_ticker("BTC-USDT")
+            # 2. BTC合约价格和涨跌幅
+            btc_ticker = _ms().get_ticker("BTC-USDT-SWAP")
             if btc_ticker:
                 result["btc_price"] = btc_ticker.get("price", 0)
                 result["btc_change_24h"] = btc_ticker.get("change_24h", 0) or 0
