@@ -2365,15 +2365,22 @@ onBeforeUnmount(() => {
 .activity-banner {
   margin-bottom: 16px;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-card);
 }
 
 .banner-image {
   width: 100%;
-  height: 230px;
-  object-fit: cover;
-  object-position: top center;
+  height: 220px;
+  object-fit: contain;
   display: block;
+  background: var(--bg-secondary);
+  transition: transform 0.3s;
+}
+
+.banner-image:hover {
+  transform: scale(1.02);
 }
 
 .banner-placeholder {
