@@ -686,6 +686,79 @@
         <span></span>
       </template>
     </el-dialog>
+
+    <!-- 策略快速设置弹窗 -->
+    <el-dialog
+      v-model="strategyDialogVisible"
+      width="480px"
+      :close-on-click-modal="false"
+      :show-close="true"
+      class="strategy-quick-dialog"
+      destroy-on-close
+    >
+      <template #header>
+        <div class="sqd-header">
+          <span class="sqd-icon">⚡</span>
+          <span class="sqd-title">{{ strategyDialogTitle }}</span>
+        </div>
+      </template>
+      <el-form :model="strategyForm" label-width="90px" class="sqd-form">
+        <el-form-item label="交易币种">
+          <el-select v-model="strategyForm.inst_id" style="width: 100%;">
+            <el-option label="BTC-USDT 永续" value="BTC-USDT-SWAP" />
+            <el-option label="ETH-USDT 永续" value="ETH-USDT-SWAP" />
+            <el-option label="SOL-USDT 永续" value="SOL-USDT-SWAP" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开仓杠杆">
+          <el-slider v-model="strategyForm.leverage" :min="1" :max="125" :step="1" show-input />
+        </el-form-item>
+        <el-form-item label="仓位大小">
+          <div class="sqd-size-row">
+            <el-select v-model="strategyForm.size_mode" style="width: 100px;">
+              <el-option label="固定张数" value="fixed" />
+              <el-option label="百分比" value="percent" />
+            </el-select>
+            <el-input-number v-if="strategyForm.size_mode === 'fixed'" v-model="strategyForm.size" :min="0.01" :step="0.01" :precision="2" style="flex: 1;" />
+            <el-input-number v-else v-model="strategyForm.size_pct" :min="1" :max="100" :step="5" style="flex: 1;" />
+            <span class="sqd-size-hint" v-if="strategyForm.size_mode === 'percent'">% 可用资金</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="止盈比例">
+          <el-input-number v-model="strategyForm.take_profit_pct" :min="0" :max="50" :step="0.5" :precision="1" />
+          <span class="sqd-hint">% · 0=不设置</span>
+        </el-form-item>
+        <el-form-item label="止损比例">
+          <el-input-number v-model="strategyForm.stop_loss_pct" :min="0" :max="50" :step="0.5" :precision="1" />
+          <span class="sqd-hint">% · 0=不设置</span>
+        </el-form-item>
+        <el-form-item label="K线周期">
+          <el-select v-model="strategyForm.timeframes" multiple collapse-tags collapse-tags-tooltip style="width: 100%;">
+            <el-option label="5分钟" value="5m" />
+            <el-option label="15分钟" value="15m" />
+            <el-option label="30分钟" value="30m" />
+            <el-option label="1小时" value="1h" />
+            <el-option label="4小时" value="4h" />
+            <el-option label="日线" value="1d" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="保证金模式">
+          <el-radio-group v-model="strategyForm.td_mode">
+            <el-radio-button value="cross">全仓</el-radio-button>
+            <el-radio-button value="isolated">逐仓</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="sqd-footer">
+          <el-button @click="strategyDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="strategySaving" @click="saveAndStartStrategy" class="sqd-start-btn">
+            <span v-if="!strategySaving">🚀 保存并启动</span>
+            <span v-else>启动中...</span>
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -812,8 +885,59 @@ async function loadJudgeRecords() {
 // ─── 精选策略 ───
 const featuredStrategies = ref([])
 const featuredStrategiesLoading = ref(false)
+const strategyDialogVisible = ref(false)
+const strategyDialogTitle = ref('')
+const strategySaving = ref(false)
+const strategyEditId = ref(null)
+const strategyForm = ref({
+  inst_id: 'BTC-USDT-SWAP',
+  leverage: 10,
+  size_mode: 'percent',
+  size: 1,
+  size_pct: 10,
+  take_profit_pct: 3,
+  stop_loss_pct: 5,
+  timeframes: ['1h'],
+  td_mode: 'cross',
+})
 
-function useStrategy(s) { router.push(`/strategy/list?seed=${s.id}`) }
+function useStrategy(s) {
+  strategyEditId.value = s.id
+  strategyDialogTitle.value = s.name || '策略设置'
+  // 填充已有参数
+  const p = s.params || {}
+  strategyForm.value = {
+    inst_id: p.inst_id || 'BTC-USDT-SWAP',
+    leverage: p.leverage || 10,
+    size_mode: p.size_mode || 'percent',
+    size: p.size ?? 1,
+    size_pct: p.size_pct || 10,
+    take_profit_pct: p.take_profit_pct ?? 3,
+    stop_loss_pct: p.stop_loss_pct ?? 5,
+    timeframes: p.timeframes || ['1h'],
+    td_mode: p.td_mode || 'cross',
+  }
+  strategyDialogVisible.value = true
+}
+
+async function saveAndStartStrategy() {
+  if (!strategyEditId.value) return
+  strategySaving.value = true
+  try {
+    // 先保存设置
+    await api.put(`/strategy/${strategyEditId.value}`, strategyForm.value)
+    // 再启动
+    await api.post(`/strategy/${strategyEditId.value}/start`)
+    ElMessage.success('策略已启动')
+    strategyDialogVisible.value = false
+    // 刷新列表
+    loadFeaturedStrategies()
+  } catch (e) {
+    ElMessage.error('操作失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    strategySaving.value = false
+  }
+}
 
 // ─── 实时状态计算 ───
 const currentDirection = computed(() => {
@@ -2997,6 +3121,22 @@ onBeforeUnmount(() => {
 .rc-stat-icon { font-size: 14px; }
 .rc-stat-val { font-weight: 600; }
 .rc-stat-val.high-win { color: #22c55e; }
+
+/* ─── 策略快速设置弹窗 ─── */
+.sqd-header { display: flex; align-items: center; gap: 8px; }
+.sqd-icon { font-size: 20px; }
+.sqd-title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+
+.sqd-form .el-form-item { margin-bottom: 18px; }
+.sqd-form .el-form-item__label { font-weight: 600; color: var(--text-primary); }
+.sqd-form .el-slider { padding-right: 16px; }
+
+.sqd-size-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.sqd-size-hint { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.sqd-hint { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
+
+.sqd-footer { display: flex; justify-content: flex-end; gap: 10px; }
+.sqd-start-btn { min-width: 130px; font-weight: 700; }
 
 /* ─── 精选策略新UI ─── */
 .strategy-card {
