@@ -996,7 +996,7 @@ function getAnalystTag(key) {
 
 function formatContent(text) {
   if (!text) return ''
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
+  return text.replace(/\n{2,}/g, '\n').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
 }
 
 function goToAIWarRoom() { router.push('/strategy/ai-war-room') }
