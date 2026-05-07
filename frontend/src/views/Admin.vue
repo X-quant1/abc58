@@ -242,8 +242,28 @@
           <el-form-item label="底部版权信息">
             <el-input v-model="siteConfig.brand_footer" />
           </el-form-item>
-          <el-form-item label="Logo URL">
-            <el-input v-model="siteConfig.logo_url" placeholder="https://example.com/logo.png" />
+          <el-form-item label="Logo">
+            <div class="logo-upload-area">
+              <div class="logo-preview" v-if="siteConfig.site_logo">
+                <img :src="siteConfig.site_logo" alt="Logo" />
+                <el-button type="danger" size="small" @click="siteConfig.site_logo = ''">删除</el-button>
+              </div>
+              <el-upload
+                v-else
+                class="logo-uploader"
+                action="#"
+                :show-file-list="false"
+                :auto-upload="false"
+                :on-change="handleLogoChange"
+                accept="image/*"
+              >
+                <div class="upload-placeholder">
+                  <el-icon><Plus /></el-icon>
+                  <span>上传Logo</span>
+                </div>
+              </el-upload>
+              <div class="logo-tip">建议尺寸：36x36px，支持 PNG/JPG/SVG</div>
+            </div>
           </el-form-item>
 
           <h3 class="panel-title" style="margin-top: 24px">功能开关</h3>
@@ -366,6 +386,134 @@
             </div>
           </el-col>
         </el-row>
+      </el-tab-pane>
+
+      <!-- ═══ AI 模型配置（多模型协作） ═══ -->
+      <el-tab-pane label="AI 配置" name="ai">
+        <div style="max-width: 800px;">
+          <h3 style="margin: 0 0 6px; font-size: 15px; color: var(--text-primary);">AI 团队配置</h3>
+          <p style="margin: 0 0 18px; font-size: 12px; color: var(--text-muted);">配置3个分析师模型（不同风格）+ 1个裁决者模型，实现多模型协作分析</p>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <!-- 激进派 -->
+            <div class="ai-card" v-if="aiConfig.analysts?.aggressive">
+              <div class="ai-card-header">
+                <span class="ai-card-title">
+                  <img v-if="aiConfig.analysts.aggressive.avatar_url" :src="aiConfig.analysts.aggressive.avatar_url" class="ai-avatar-preview" />
+                  <span v-else>{{ aiConfig.analysts.aggressive.emoji || '🚀' }}</span>
+                  {{ aiConfig.analysts.aggressive.name || '激进派' }}
+                </span>
+                <el-tag v-if="aiConfig.analysts.aggressive.configured" type="success" size="small">已配置</el-tag>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                <el-upload
+                  :show-file-list="false"
+                  :before-upload="(file) => uploadAvatar(file, 'aggressive')"
+                  accept="image/*"
+                >
+                  <el-button size="small">
+                    <span v-if="aiConfig.analysts.aggressive.avatar_url">更换头像</span>
+                    <span v-else>上传头像</span>
+                  </el-button>
+                </el-upload>
+                <el-input v-model="aiConfig.analysts.aggressive.name" placeholder="名称" size="small" style="flex:1" />
+              </div>
+              <el-input v-model="aiConfig.analysts.aggressive.api_key" placeholder="API Key" size="small" show-password style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.aggressive.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.aggressive.model" placeholder="模型名称" size="small" />
+            </div>
+
+            <!-- 稳健派 -->
+            <div class="ai-card" v-if="aiConfig.analysts?.conservative">
+              <div class="ai-card-header">
+                <span class="ai-card-title">
+                  <img v-if="aiConfig.analysts.conservative.avatar_url" :src="aiConfig.analysts.conservative.avatar_url" class="ai-avatar-preview" />
+                  <span v-else>{{ aiConfig.analysts.conservative.emoji || '🛡️' }}</span>
+                  {{ aiConfig.analysts.conservative.name || '稳健派' }}
+                </span>
+                <el-tag v-if="aiConfig.analysts.conservative.configured" type="success" size="small">已配置</el-tag>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                <el-upload
+                  :show-file-list="false"
+                  :before-upload="(file) => uploadAvatar(file, 'conservative')"
+                  accept="image/*"
+                >
+                  <el-button size="small">
+                    <span v-if="aiConfig.analysts.conservative.avatar_url">更换头像</span>
+                    <span v-else>上传头像</span>
+                  </el-button>
+                </el-upload>
+                <el-input v-model="aiConfig.analysts.conservative.name" placeholder="名称" size="small" style="flex:1" />
+              </div>
+              <el-input v-model="aiConfig.analysts.conservative.api_key" placeholder="API Key" size="small" show-password style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.conservative.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.conservative.model" placeholder="模型名称" size="small" />
+            </div>
+
+            <!-- 技术派 -->
+            <div class="ai-card" v-if="aiConfig.analysts?.technical">
+              <div class="ai-card-header">
+                <span class="ai-card-title">
+                  <img v-if="aiConfig.analysts.technical.avatar_url" :src="aiConfig.analysts.technical.avatar_url" class="ai-avatar-preview" />
+                  <span v-else>{{ aiConfig.analysts.technical.emoji || '📊' }}</span>
+                  {{ aiConfig.analysts.technical.name || '技术派' }}
+                </span>
+                <el-tag v-if="aiConfig.analysts.technical.configured" type="success" size="small">已配置</el-tag>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                <el-upload
+                  :show-file-list="false"
+                  :before-upload="(file) => uploadAvatar(file, 'technical')"
+                  accept="image/*"
+                >
+                  <el-button size="small">
+                    <span v-if="aiConfig.analysts.technical.avatar_url">更换头像</span>
+                    <span v-else>上传头像</span>
+                  </el-button>
+                </el-upload>
+                <el-input v-model="aiConfig.analysts.technical.name" placeholder="名称" size="small" style="flex:1" />
+              </div>
+              <el-input v-model="aiConfig.analysts.technical.api_key" placeholder="API Key" size="small" show-password style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.technical.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.analysts.technical.model" placeholder="模型名称" size="small" />
+            </div>
+
+            <!-- 裁决者 -->
+            <div class="ai-card ai-card--judge" v-if="aiConfig.judge">
+              <div class="ai-card-header">
+                <span class="ai-card-title">
+                  <img v-if="aiConfig.judge.avatar_url" :src="aiConfig.judge.avatar_url" class="ai-avatar-preview" />
+                  <span v-else>{{ aiConfig.judge.emoji || '⚖️' }}</span>
+                  {{ aiConfig.judge.name || '裁决者' }}
+                </span>
+                <el-tag v-if="aiConfig.judge.configured" type="success" size="small">已配置</el-tag>
+                <el-tag v-else type="info" size="small">可选</el-tag>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                <el-upload
+                  :show-file-list="false"
+                  :before-upload="(file) => uploadAvatar(file, 'judge')"
+                  accept="image/*"
+                >
+                  <el-button size="small">
+                    <span v-if="aiConfig.judge.avatar_url">更换头像</span>
+                    <span v-else>上传头像</span>
+                  </el-button>
+                </el-upload>
+                <el-input v-model="aiConfig.judge.name" placeholder="名称" size="small" style="flex:1" />
+              </div>
+              <el-input v-model="aiConfig.judge.api_key" placeholder="API Key (留空则用激进派)" size="small" show-password style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.judge.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.judge.model" placeholder="模型名称" size="small" />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 16px; align-items: center;">
+            <el-button type="primary" @click="saveAiConfig" :loading="aiSaving">保存配置</el-button>
+            <span style="font-size: 12px; color: var(--text-muted);">已配置 {{ aiConfig.configured_count || 0 }} 个分析师</span>
+          </div>
+        </div>
       </el-tab-pane>
 
       <!-- ═══ 6. 策略管理 ═══ -->
@@ -532,12 +680,21 @@
       <!-- ═══ 9. 活动管理 ═══ -->
       <el-tab-pane label="活动管理" name="activities">
         <div class="panel">
-          <h3 class="panel-title">横幅图片</h3>
-          <el-form-item label="当前图片">
-            <div v-if="activityForm.banner_url" class="banner-preview">
-              <img :src="activityForm.banner_url" style="max-width: 100%; max-height: 200px; border-radius: 6px;" />
+          <h3 class="panel-title">横幅图片（支持多张轮播）</h3>
+          <div class="banner-list">
+            <div v-for="(banner, idx) in activityForm.banners" :key="idx" class="banner-item">
+              <div class="banner-preview">
+                <img :src="banner.url" class="banner-thumb" />
+                <div class="banner-actions">
+                  <el-button type="danger" size="small" circle @click="removeBanner(idx)">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+              </div>
+              <div class="banner-info">
+                <el-input v-model="banner.link" placeholder="跳转链接（可选）" size="small" />
+              </div>
             </div>
-            <div v-else class="banner-empty">未设置横幅图片</div>
             <el-upload
               :action="`/api/admin/activities/upload`"
               :headers="uploadHeaders"
@@ -545,11 +702,13 @@
               :before-upload="beforeImageUpload"
               :show-file-list="false"
               accept="image/*"
-              style="margin-top: 10px;"
             >
-              <el-button type="primary" size="small">{{ activityForm.banner_url ? '更换横幅图片' : '上传横幅图片' }}</el-button>
+              <div class="banner-add">
+                <el-icon><Plus /></el-icon>
+                <span>添加横幅</span>
+              </div>
             </el-upload>
-          </el-form-item>
+          </div>
         </div>
 
         <div class="panel" v-for="(card, index) in activityForm.activities" :key="index">
@@ -674,6 +833,43 @@
           </el-table>
         </div>
       </el-tab-pane>
+
+      <!-- ═══ 公告管理 ═══ -->
+      <el-tab-pane label="公告管理" name="announcements">
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">系统公告</h3>
+            <el-button type="primary" size="small" @click="openAnnouncementDialog()">
+              <el-icon><Plus /></el-icon> 新建公告
+            </el-button>
+          </div>
+          <el-table :data="announcements" stripe size="small">
+            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column prop="title" label="标题" min-width="150">
+              <template #default="{ row }">
+                <span :style="{ color: row.color, fontWeight: row.bold ? 'bold' : 'normal' }">{{ row.title }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="content" label="内容" min-width="200">
+              <template #default="{ row }">
+                <span style="color: var(--text-muted);">{{ row.content?.substring(0, 50) }}{{ row.content?.length > 50 ? '...' : '' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="70" />
+            <el-table-column prop="is_active" label="状态" width="80">
+              <template #default="{ row }">
+                <el-switch :model-value="row.is_active" @change="toggleAnnouncement(row)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="140">
+              <template #default="{ row }">
+                <el-button size="small" @click="openAnnouncementDialog(row)">编辑</el-button>
+                <el-button type="danger" size="small" @click="deleteAnnouncement(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <!-- OKX UID 编辑对话框 -->
@@ -689,6 +885,43 @@
       <template #footer>
         <el-button @click="okxUidDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="saveOkxUid">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 公告编辑对话框 -->
+    <el-dialog v-model="announcementDialogVisible" :title="announcementDialogId ? '编辑公告' : '新建公告'" width="500px">
+      <el-form :model="announcementForm" label-width="80px">
+        <el-form-item label="标题">
+          <el-input v-model="announcementForm.title" placeholder="公告标题（轮播显示）" maxlength="100" show-word-limit />
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input v-model="announcementForm.content" type="textarea" :rows="4" placeholder="公告内容（点击后显示）" maxlength="500" show-word-limit />
+        </el-form-item>
+        <el-form-item label="颜色">
+          <div class="color-picker-row">
+            <el-color-picker v-model="announcementForm.color" :predefine="predefineColors" />
+            <el-input v-model="announcementForm.color" placeholder="#3b82f6" style="width: 120px; margin-left: 10px;" />
+          </div>
+        </el-form-item>
+        <el-form-item label="加粗">
+          <el-switch v-model="announcementForm.bold" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="announcementForm.sort_order" :min="1" :max="999" />
+        </el-form-item>
+        <el-form-item label="启用">
+          <el-switch v-model="announcementForm.is_active" />
+        </el-form-item>
+        <el-form-item label="预览">
+          <div class="announcement-preview" :style="{ color: announcementForm.color, fontWeight: announcementForm.bold ? 'bold' : 'normal' }">
+            <div style="font-weight: 500; margin-bottom: 4px;">{{ announcementForm.title || '公告标题' }}</div>
+            <div style="font-size: 12px; opacity: 0.8;">{{ announcementForm.content || '公告内容...' }}</div>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="announcementDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveAnnouncement">保存</el-button>
       </template>
     </el-dialog>
 
@@ -1085,7 +1318,7 @@ async function loadTrades() {
 // ═══ 4. 站点配置 ═══
 const siteConfig = reactive({
   site_name: '', site_slogan: '', brand_headline: '', brand_desc: '',
-  brand_footer: '', logo_url: '', allow_register: 'true',
+  brand_footer: '', site_logo: '', allow_register: 'true',
   announcement_title: '', announcement_content: '',
   contact_email: '', contact_telegram: '',
   okx_register_url: '', bitget_register_url: '', htx_register_url: '',
@@ -1100,11 +1333,27 @@ const allowRegister = computed({
   set: v => { siteConfig.allow_register = v ? 'true' : 'false' }
 })
 
+// Logo上传处理
+function handleLogoChange(file) {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    siteConfig.site_logo = e.target.result
+  }
+  reader.readAsDataURL(file.raw)
+}
+
 async function loadConfig() {
   configLoading.value = true
   try {
     const data = await axios.get('/admin/config')
     Object.assign(siteConfig, data.configs)
+  } catch { /* ignore */ }
+  // 加载站点配置中的 site_name、site_logo、site_slogan
+  try {
+    const siteData = await axios.get('/settings/site')
+    if (siteData.site_name) siteConfig.site_name = siteData.site_name
+    if (siteData.site_logo) siteConfig.site_logo = siteData.site_logo
+    if (siteData.site_slogan) siteConfig.site_slogan = siteData.site_slogan
   } catch { /* ignore */ }
   configLoading.value = false
 }
@@ -1114,6 +1363,25 @@ async function saveConfig() {
   configSaved.value = false
   try {
     await axios.post('/admin/config', { configs: { ...siteConfig } })
+    // 同时保存站点名称、Logo、副标题到 /settings/site
+    try {
+      const siteRes = await axios.post('/settings/site', {
+        site_name: siteConfig.site_name,
+        site_logo: siteConfig.site_logo,
+        site_slogan: siteConfig.site_slogan
+      })
+      // 后端返回文件 URL，替换 Base64 为 URL
+      if (siteRes.site_logo) {
+        siteConfig.site_logo = siteRes.site_logo
+      }
+      // 更新缓存（URL 很小，不会造成延迟）
+      const cacheData = JSON.stringify({
+        site_name: siteConfig.site_name || 'BTC Quant',
+        site_logo: siteConfig.site_logo || '',
+        site_slogan: siteConfig.site_slogan || '量化交易系统',
+      })
+      localStorage.setItem('site_settings_cache', cacheData)
+    } catch { /* ignore */ }
     ElMessage.success('配置已保存')
     configSaved.value = true
     setTimeout(() => { configSaved.value = false }, 3000)
@@ -1190,6 +1458,59 @@ async function testNotifyEmail() {
   } finally {
     testingNotify.value = false
   }
+}
+
+// ═══ AI 模型配置（多模型协作） ═══
+const aiConfig = ref({
+  analysts: {
+    aggressive: { name: '激进派', emoji: '🚀', api_key: '', base_url: '', model: '', configured: false },
+    conservative: { name: '稳健派', emoji: '🛡️', api_key: '', base_url: '', model: '', configured: false },
+    technical: { name: '技术派', emoji: '📊', api_key: '', base_url: '', model: '', configured: false },
+  },
+  judge: { name: '裁决者', emoji: '⚖️', api_key: '', base_url: '', model: '', configured: false },
+  configured_count: 0,
+})
+const aiSaving = ref(false)
+
+async function fetchAiConfig() {
+  try {
+    const res = await axios.get('/settings/ai')
+    aiConfig.value = res
+  } catch (e) {
+    console.error('Fetch AI config error:', e)
+  }
+}
+
+async function saveAiConfig() {
+  aiSaving.value = true
+  try {
+    await axios.post('/settings/ai', aiConfig.value)
+    ElMessage.success('AI 配置已保存')
+    await fetchAiConfig()
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    aiSaving.value = false
+  }
+}
+
+async function uploadAvatar(file, key) {
+  const formData = new FormData()
+  formData.append('file', file)
+  try {
+    const res = await axios.post('/settings/ai/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if (key === 'judge') {
+      aiConfig.value.judge.avatar_url = res.url
+    } else {
+      aiConfig.value.analysts[key].avatar_url = res.url
+    }
+    ElMessage.success('头像上传成功')
+  } catch (e) {
+    ElMessage.error('上传失败: ' + (e.response?.data?.detail || e.message))
+  }
+  return false
 }
 
 // ═══ 6. 策略管理 ═══
@@ -1547,6 +1868,102 @@ async function loadLogs() {
   logLoading.value = false
 }
 
+// ═══ 公告管理 ═══
+const announcements = ref([])
+const announcementDialogVisible = ref(false)
+const announcementDialogId = ref(null)
+const announcementForm = reactive({
+  title: '',
+  content: '',
+  color: '#3b82f6',
+  bold: false,
+  sort_order: 1,
+  is_active: true,
+})
+
+const predefineColors = [
+  '#3b82f6', // 蓝色
+  '#ef4444', // 红色
+  '#22c55e', // 绿色
+  '#f59e0b', // 橙色
+  '#8b5cf6', // 紫色
+  '#ec4899', // 粉色
+]
+
+async function loadAnnouncements() {
+  try {
+    announcements.value = await axios.get('/announcements')
+  } catch (e) {
+    console.error('Failed to load announcements:', e)
+  }
+}
+
+function openAnnouncementDialog(row = null) {
+  if (row) {
+    announcementDialogId.value = row.id
+    announcementForm.title = row.title || ''
+    announcementForm.content = row.content || ''
+    announcementForm.color = row.color || '#3b82f6'
+    announcementForm.bold = row.bold || false
+    announcementForm.sort_order = row.sort_order
+    announcementForm.is_active = row.is_active
+  } else {
+    announcementDialogId.value = null
+    announcementForm.title = ''
+    announcementForm.content = ''
+    announcementForm.color = '#3b82f6'
+    announcementForm.bold = false
+    announcementForm.sort_order = 1
+    announcementForm.is_active = true
+  }
+  announcementDialogVisible.value = true
+}
+
+async function saveAnnouncement() {
+  if (!announcementForm.title.trim()) {
+    ElMessage.warning('请输入公告标题')
+    return
+  }
+  if (!announcementForm.content.trim()) {
+    ElMessage.warning('请输入公告内容')
+    return
+  }
+  try {
+    if (announcementDialogId.value) {
+      await axios.put(`/announcements/${announcementDialogId.value}`, announcementForm)
+      ElMessage.success('更新成功')
+    } else {
+      await axios.post('/announcements', announcementForm)
+      ElMessage.success('创建成功')
+    }
+    announcementDialogVisible.value = false
+    loadAnnouncements()
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message))
+  }
+}
+
+async function toggleAnnouncement(row) {
+  try {
+    await axios.post(`/announcements/${row.id}/toggle`)
+    row.is_active = !row.is_active
+    ElMessage.success(row.is_active ? '已启用' : '已禁用')
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
+}
+
+async function deleteAnnouncement(row) {
+  try {
+    await ElMessageBox.confirm('确定删除该公告？', '确认', { type: 'warning' })
+    await axios.delete(`/announcements/${row.id}`)
+    ElMessage.success('删除成功')
+    loadAnnouncements()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error('删除失败')
+  }
+}
+
 // ═══ 工具函数 ═══
 function formatTime(ts) {
   if (!ts) return ''
@@ -1566,7 +1983,7 @@ function directionLabel(d) {
 
 // ═══ 9. 活动管理 ═══
 const activityForm = reactive({
-  banner_url: '',
+  banners: [],
   activities: [
     { id: null, sort_order: 1, icon_url: '', title: '', description: '', status_text: '', badge_label: '', badge_type: 'none', active: true },
     { id: null, sort_order: 2, icon_url: '', title: '', description: '', status_text: '', badge_label: '', badge_type: 'none', active: true },
@@ -1588,8 +2005,12 @@ function beforeImageUpload(file) {
 }
 
 function onBannerUploadSuccess(res) {
-  activityForm.banner_url = res.url
+  activityForm.banners.push({ url: res.url, link: '' })
   ElMessage.success('横幅上传成功')
+}
+
+function removeBanner(idx) {
+  activityForm.banners.splice(idx, 1)
 }
 
 function onIconUploadSuccess(res, index) {
@@ -1600,7 +2021,7 @@ function onIconUploadSuccess(res, index) {
 async function loadActivities() {
   try {
     const data = await axios.get('/admin/activities')
-    activityForm.banner_url = data.banner_url || ''
+    activityForm.banners = data.banners || []
     if (data.activities) {
       for (let i = 0; i < 3; i++) {
         if (data.activities[i]) {
@@ -1617,7 +2038,7 @@ async function saveActivities() {
   activitySaving.value = true
   try {
     await axios.post('/admin/activities/save', {
-      banner_url: activityForm.banner_url,
+      banners: activityForm.banners,
       activities: activityForm.activities,
     })
     ElMessage.success('活动配置已保存')
@@ -1891,8 +2312,10 @@ onMounted(async () => {
   }
   loadConfig()
   loadNotifyConfig()
+  fetchAiConfig()
   loadAvailableStrategies()  // 加载可用策略类型列表
   loadStrategyTemplates()    // 加载策略模板（用于机器人管理）
+  loadAnnouncements()        // 加载公告列表
 })
 
 // Tab 切换时加载对应数据
@@ -2133,8 +2556,28 @@ watch(activeTab, (tab) => {
   font-size: 14px;
 }
 
+/* ═══ 公告管理 ═══ */
+.color-picker-row {
+  display: flex;
+  align-items: center;
+}
+
+.announcement-preview {
+  padding: 12px 16px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
 /* ═══ 邮件通知 ═══ */
 .panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2323,10 +2766,199 @@ watch(activeTab, (tab) => {
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* Logo上传区域 */
+.logo-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.logo-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-preview img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.logo-uploader {
+  width: 80px;
+  height: 80px;
+}
+
+.upload-placeholder {
+  width: 80px;
+  height: 80px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-placeholder:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+}
+
+.upload-placeholder .el-icon {
+  font-size: 24px;
+}
+
+.upload-placeholder span {
+  font-size: 12px;
+}
+
+.logo-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* 活动横幅列表 */
+.banner-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.banner-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--bg-card);
+  transition: all 0.2s;
+}
+
+.banner-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.banner-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.banner-thumb {
+  width: 240px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  display: block;
+}
+
+.banner-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.banner-preview:hover .banner-actions {
+  opacity: 1;
+}
+
+.banner-info {
+  display: flex;
+  gap: 8px;
+  width: 240px;
+}
+
+.banner-add {
+  width: 240px;
+  height: 155px;
+  border: 2px dashed var(--border-secondary);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--bg-secondary);
+}
+
+.banner-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.banner-add .el-icon {
+  font-size: 32px;
+}
+
+.banner-add span {
+  font-size: 13px;
+}
+
 @media (max-width: 600px) {
   .strategy-params {
     grid-template-columns: 1fr;
   }
+}
+
+/* AI 配置卡片 */
+.ai-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.ai-card--judge {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(168, 85, 247, 0.04));
+}
+
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ai-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-avatar-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ai-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  line-height: 1.4;
 }
 
 </style>
