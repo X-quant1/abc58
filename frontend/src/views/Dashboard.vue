@@ -366,6 +366,11 @@
                   <span class="countdown-label">⏱️ 下次分析</span>
                   <span class="countdown-time">{{ nextAnalysisCountdown }}</span>
                 </div>
+                <div class="ai-current-time" v-if="aiTeamTimestamp">
+                  <span class="act-label">当前</span>
+                  <span class="act-time">{{ aiTeamTimestamp }}</span>
+                  <span class="act-period">({{ aiTeamPeriod }})</span>
+                </div>
               </div>
 
               <!-- 聊天风格容器 -->
@@ -972,6 +977,7 @@ const router = useRouter()
 const aiTeamOpinions = ref({})
 const aiTeamJudge = ref('')
 const aiTeamTimestamp = ref('')
+const aiTeamPeriod = ref('')
 const aiTeamLoading = ref(false)
 const nextAnalysisCountdown = ref('')
 const btcPrice = ref(null)
@@ -1333,6 +1339,7 @@ async function loadAiChatHistory() {
       const latest = res.history[0]
       aiTeamOpinions.value = latest.opinions || {}
       aiTeamJudge.value = latest.judge || ''
+      aiTeamPeriod.value = latest.period || '30m'
       aiTeamTimestamp.value = latest.created_at ? new Date(latest.created_at).toLocaleString('zh-CN') : ''
     }
   } catch (e) { console.error('ai history error:', e) }
@@ -4259,6 +4266,10 @@ onBeforeUnmount(() => {
 .ai-countdown { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1)); border-radius: 20px; font-size: 12px; border: 1px solid rgba(99,102,241,0.2); }
 .countdown-label { color: #6366f1; font-weight: 500; }
 .countdown-time { color: #818cf8; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ai-current-time { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; background: rgba(99,102,241,0.05); border-radius: 8px; border: 1px solid rgba(99,102,241,0.1); }
+.act-label { color: #64748b; font-weight: 500; }
+.act-time { color: #334155; font-weight: 600; font-size: 11px; }
+.act-period { color: #6366f1; font-weight: 600; }
 .ai-chat-container { flex: 1; min-height: 0; }
 .ai-chat-messages { display: flex; flex-direction: column; gap: 16px; padding: 4px 0; }
 .ai-chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; }
