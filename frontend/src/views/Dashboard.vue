@@ -136,97 +136,94 @@
                 <template v-if="robotsData.length > 0">
                   <!-- 领奖台 - 前三名 -->
                   <div class="podium-section" v-if="podiumRobots.length > 0">
-                    <!-- 第一名 - 王者大卡片 -->
+                    <!-- 第一名 - 王者卡片 -->
                     <div class="podium-gold" :class="{ 'pnl-bg-up': podiumRobots[0].total_pnl >= 0, 'pnl-bg-down': podiumRobots[0].total_pnl < 0 }">
-                      <div class="pg-shine"></div>
-                      <div class="pg-row-top">
-                        <div class="pg-avatar-wrap">
-                          <img src="../assets/robot-icon.png" class="pg-avatar" />
-                          <img :src="trophyImgs[0]" class="pg-crown" />
-                        </div>
-                        <div class="pg-info">
-                          <div class="pg-name">{{ podiumRobots[0].name }}</div>
-                          <div class="pg-tags">
-                            <span class="pg-tag pg-tag--strat">{{ podiumRobots[0].strategy_count || 0 }} 策略运行</span>
-                            <span v-if="podiumRobots[0].is_running" class="pg-tag pg-tag--live">
-                              <i class="pg-dot"></i> 运行中
-                            </span>
+                      <div class="pg-glow"></div>
+                      <div class="pg-border-shine"></div>
+                      <div class="pg-top">
+                        <div class="pg-left">
+                          <div class="pg-avatar-box">
+                            <img src="../assets/robot-icon.png" class="pg-avatar" />
+                            <span class="pg-rank-badge">NO.1</span>
+                            <img :src="trophyImgs[0]" class="pg-crown" />
+                          </div>
+                          <div class="pg-info">
+                            <div class="pg-name">{{ podiumRobots[0].name }}</div>
+                            <div class="pg-sub">
+                              <span class="pg-chip pg-chip--gold"><i class="pg-dot pg-dot--gold"></i> {{ formatRuntime(podiumRobots[0]) }}</span>
+                              <span class="pg-chip pg-chip--strat">{{ podiumRobots[0].strategy_count || 0 }} 策略</span>
+                              <span v-if="podiumRobots[0].is_running" class="pg-chip pg-chip--live"><i class="pg-dot"></i> 运行中</span>
+                            </div>
                           </div>
                         </div>
-                        <div class="pg-pnl-block" :class="podiumRobots[0].total_pnl >= 0 ? 'pnl-up' : 'pnl-down'">
-                          <div class="pg-pnl-num">{{ podiumRobots[0].total_pnl >= 0 ? '+' : '' }}{{ podiumRobots[0].total_pnl.toFixed(2) }}</div>
-                          <div class="pg-pnl-unit">USDT</div>
+                        <div class="pg-right">
+                          <div class="pg-pnl-wrap" :class="podiumRobots[0].total_pnl >= 0 ? 'pnl-up' : 'pnl-down'">
+                            <div class="pg-pnl-sign">{{ podiumRobots[0].total_pnl >= 0 ? '+' : '-' }}</div>
+                            <div class="pg-pnl-num">{{ Math.abs(podiumRobots[0].total_pnl).toFixed(2) }}</div>
+                          </div>
+                          <div class="pg-pnl-label">总盈亏 (USDT)</div>
                         </div>
                       </div>
+                      <div class="pg-divider"></div>
                       <div class="pg-metrics">
-                        <div class="gm-card">
-                          <div class="gm-icon">🎯</div>
-                          <div class="gm-body">
-                            <div class="gm-label">胜率</div>
-                            <div class="gm-val" :class="podiumRobots[0].win_rate >= 70 ? 'gm-val--green' : ''">{{ podiumRobots[0].win_rate?.toFixed(1) }}%</div>
+                        <div class="gm-item">
+                          <div class="gm-ring" :class="podiumRobots[0].win_rate >= 70 ? 'gm-ring--green' : 'gm-ring--blue'">
+                            <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" fill="none" stroke-width="2.5" stroke="currentColor" class="gm-ring-bg"/><circle cx="18" cy="18" r="15.5" fill="none" stroke-width="2.5" :stroke-dasharray="`${podiumRobots[0].win_rate * 0.974} 97.4`" stroke-linecap="round" class="gm-ring-fg"/></svg>
+                            <span class="gm-ring-val">{{ podiumRobots[0].win_rate?.toFixed(0) }}</span>
                           </div>
+                          <span class="gm-text">胜率%</span>
                         </div>
-                        <div class="gm-card">
-                          <div class="gm-icon">📈</div>
-                          <div class="gm-body">
-                            <div class="gm-label">月化收益</div>
-                            <div class="gm-val" :class="calcRobotMonthly(podiumRobots[0]) >= 0 ? 'gm-val--green' : 'gm-val--red'">{{ calcRobotMonthly(podiumRobots[0]) >= 0 ? '+' : '' }}{{ calcRobotMonthly(podiumRobots[0]).toFixed(1) }}%</div>
-                          </div>
+                        <div class="gm-bar-item">
+                          <span class="gm-bar-label">月化收益</span>
+                          <div class="gm-bar-track"><div class="gm-bar-fill" :class="calcRobotMonthly(podiumRobots[0]) >= 0 ? 'gm-bar--up' : 'gm-bar--down'" :style="{ width: Math.min(Math.abs(calcRobotMonthly(podiumRobots[0])) * 2, 100) + '%' }"></div></div>
+                          <span class="gm-bar-val" :class="calcRobotMonthly(podiumRobots[0]) >= 0 ? 'gm-val--green' : 'gm-val--red'">{{ calcRobotMonthly(podiumRobots[0]) >= 0 ? '+' : '' }}{{ calcRobotMonthly(podiumRobots[0]).toFixed(1) }}%</span>
                         </div>
-                        <div class="gm-card">
-                          <div class="gm-icon">📊</div>
-                          <div class="gm-body">
-                            <div class="gm-label">交易笔数</div>
-                            <div class="gm-val">{{ podiumRobots[0].trade_count }}</div>
-                          </div>
+                        <div class="gm-num-item">
+                          <span class="gm-num-val">{{ podiumRobots[0].trade_count }}</span>
+                          <span class="gm-num-label">交易笔数</span>
                         </div>
-                        <div class="gm-card">
-                          <div class="gm-icon">📉</div>
-                          <div class="gm-body">
-                            <div class="gm-label">最大回撤</div>
-                            <div class="gm-val" :class="(podiumRobots[0].max_drawdown || 0) > 5 ? 'gm-val--red' : ''">{{ podiumRobots[0].max_drawdown?.toFixed(1) }}%</div>
-                          </div>
+                        <div class="gm-num-item">
+                          <span class="gm-num-val" :class="(podiumRobots[0].max_drawdown || 0) > 5 ? 'gm-val--red' : ''">{{ podiumRobots[0].max_drawdown?.toFixed(1) }}%</span>
+                          <span class="gm-num-label">最大回撤</span>
                         </div>
-                        <div class="gm-card">
-                          <div class="gm-icon">⚡</div>
-                          <div class="gm-body">
-                            <div class="gm-label">运行策略</div>
-                            <div class="gm-val">{{ podiumRobots[0].strategy_count || 0 }} 个</div>
-                          </div>
+                        <div class="gm-num-item">
+                          <span class="gm-num-val">{{ podiumRobots[0].strategy_count || 0 }}</span>
+                          <span class="gm-num-label">运行策略</span>
                         </div>
-                        <div class="gm-card">
-                          <div class="gm-icon">💰</div>
-                          <div class="gm-body">
-                            <div class="gm-label">剩余资金</div>
-                            <div class="gm-val" :class="(10000 + (podiumRobots[0].total_pnl || 0)) >= 10000 ? 'gm-val--green' : 'gm-val--red'">{{ (10000 + (podiumRobots[0].total_pnl || 0)).toFixed(0) }}U</div>
-                          </div>
+                        <div class="gm-num-item">
+                          <span class="gm-num-val" :class="(10000 + (podiumRobots[0].total_pnl || 0)) >= 10000 ? 'gm-val--green' : 'gm-val--red'">{{ (10000 + (podiumRobots[0].total_pnl || 0)).toFixed(0) }}U</span>
+                          <span class="gm-num-label">剩余资金</span>
                         </div>
                       </div>
                     </div>
-                    <!-- 第二三名 - 并排卡片 -->
+                    <!-- 第二三名 -->
                     <div class="podium-row-bottom">
                       <template v-for="(robot, idx) in podiumRobots.slice(1)" :key="robot.id">
                         <div class="podium-small" :class="[idx === 0 ? 'podium-silver' : 'podium-bronze', robot.total_pnl >= 0 ? 'pnl-bg-up' : 'pnl-bg-down']">
                           <div class="ps-header">
-                            <div class="ps-avatar-wrap">
+                            <div class="ps-avatar-box">
                               <img src="../assets/robot-icon.png" class="ps-avatar" />
+                              <span class="ps-rank">{{ idx === 0 ? '2' : '3' }}</span>
                               <img :src="trophyImgs[idx + 1]" class="ps-medal" />
                             </div>
-                            <div class="ps-info">
+                            <div class="ps-mid">
                               <div class="ps-name">{{ robot.name }}</div>
-                              <span v-if="robot.is_running" class="ps-live"><i class="pg-dot"></i> 运行中</span>
+                              <div class="ps-meta-row">
+                                <span class="ps-runtime"><i class="ps-clock">⏱</i> {{ formatRuntime(robot) }}</span>
+                                <span v-if="robot.is_running" class="ps-live"><i class="pg-dot"></i> 运行中</span>
+                              </div>
                             </div>
                             <div class="ps-pnl" :class="robot.total_pnl >= 0 ? 'pnl-up' : 'pnl-down'">
-                              {{ robot.total_pnl >= 0 ? '+' : '' }}{{ robot.total_pnl.toFixed(2) }}<span class="pnl-u">U</span>
+                              <span class="ps-pnl-sign">{{ robot.total_pnl >= 0 ? '+' : '' }}</span>{{ robot.total_pnl.toFixed(2) }}<span class="pnl-u">U</span>
                             </div>
                           </div>
                           <div class="ps-grid">
-                            <div class="ps-cell"><span class="ps-cl">胜率</span><span class="ps-cv">{{ robot.win_rate?.toFixed(1) }}%</span></div>
+                            <div class="ps-cell"><span class="ps-cl">胜率</span><span class="ps-cv" :class="robot.win_rate >= 70 ? 'gm-val--green' : ''">{{ robot.win_rate?.toFixed(1) }}%</span></div>
                             <div class="ps-cell"><span class="ps-cl">月化</span><span class="ps-cv" :class="calcRobotMonthly(robot) >= 0 ? 'gm-val--green' : 'gm-val--red'">{{ calcRobotMonthly(robot) >= 0 ? '+' : '' }}{{ calcRobotMonthly(robot).toFixed(1) }}%</span></div>
                             <div class="ps-cell"><span class="ps-cl">交易</span><span class="ps-cv">{{ robot.trade_count }}笔</span></div>
                             <div class="ps-cell"><span class="ps-cl">回撤</span><span class="ps-cv">{{ robot.max_drawdown?.toFixed(1) }}%</span></div>
                             <div class="ps-cell"><span class="ps-cl">策略</span><span class="ps-cv">{{ robot.strategy_count || 0 }}个</span></div>
-                            <div class="ps-cell"><span class="ps-cl">资金</span><span class="ps-cv">{{ (10000 + (robot.total_pnl || 0)).toFixed(0) }}U</span></div>
+                            <div class="ps-cell"><span class="ps-cl">资金</span><span class="ps-cv" :class="(10000 + (robot.total_pnl || 0)) >= 10000 ? 'gm-val--green' : 'gm-val--red'">{{ (10000 + (robot.total_pnl || 0)).toFixed(0) }}U</span></div>
                           </div>
                         </div>
                       </template>
@@ -245,6 +242,7 @@
                           <div class="rc-name">{{ r.name }}</div>
                           <div class="rc-meta">
                             <span class="rc-badge">{{ r.strategy_count || 0 }} 策略</span>
+                            <span class="rc-badge">⏱ {{ formatRuntime(r) }}</span>
                             <span class="rc-monthly" :class="calcRobotMonthly(r) >= 0 ? 'up' : 'down'">
                               月化 {{ calcRobotMonthly(r) >= 0 ? '+' : '' }}{{ calcRobotMonthly(r).toFixed(1) }}%
                             </span>
@@ -1009,6 +1007,28 @@ function calcRobotMonthly(robot) {
   const now = new Date()
   const daysRunning = Math.max(1, Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)))
   return (totalReturn / daysRunning) * 30
+}
+
+function formatRuntime(robot) {
+  if (!robot.created_at) return '--'
+  const created = new Date(robot.created_at)
+  const now = new Date()
+  const diffMs = now - created
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  if (days < 1) {
+    const hours = Math.floor(diffMs / (1000 * 60 * 60))
+    return `${hours}小时`
+  } else if (days < 30) {
+    return `${days}天`
+  } else if (days < 365) {
+    const months = Math.floor(days / 30)
+    const remainDays = days % 30
+    return remainDays > 0 ? `${months}月${remainDays}天` : `${months}个月`
+  } else {
+    const years = Math.floor(days / 365)
+    const months = Math.floor((days % 365) / 30)
+    return months > 0 ? `${years}年${months}月` : `${years}年`
+  }
 }
 
 // API配置相关
@@ -2750,107 +2770,140 @@ onBeforeUnmount(() => {
 
 /* === 第一名 王者卡片 === */
 .podium-gold {
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 20px;
   margin-bottom: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  border: 1.5px solid rgba(251, 191, 36, 0.2);
   position: relative;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 0 0 transparent;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .podium-gold:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(251, 191, 36, 0.15), 0 0 60px rgba(251, 191, 36, 0.06);
+  transform: translateY(-3px) scale(1.005);
+  box-shadow: 0 16px 40px rgba(251, 191, 36, 0.12), 0 0 80px rgba(251, 191, 36, 0.04);
   border-color: rgba(251, 191, 36, 0.4);
 }
-.podium-gold::before {
-  content: '';
+/* 金色光晕 */
+.pg-glow {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #f59e0b, #fbbf24);
-  border-radius: 16px 16px 0 0;
-}
-/* 金色光晕背景 */
-.podium-gold::after {
-  content: '';
-  position: absolute;
-  top: -40px; right: -40px;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+  top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.1) 0%, transparent 65%);
   pointer-events: none;
 }
-.pg-shine {
+/* 边框流光动画 */
+.pg-border-shine {
   position: absolute;
-  top: 0; right: 0;
-  width: 200px; height: 200px;
-  background: radial-gradient(ellipse at top right, rgba(251, 191, 36, 0.06) 0%, transparent 60%);
+  top: -1px; left: -100%;
+  width: 60%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.6), transparent);
+  animation: borderSweep 3s ease-in-out infinite;
   pointer-events: none;
 }
-.pnl-bg-up { background: linear-gradient(145deg, var(--bg-secondary), rgba(34, 197, 94, 0.05)); }
-.pnl-bg-down { background: linear-gradient(145deg, var(--bg-secondary), rgba(239, 68, 68, 0.05)); }
+@keyframes borderSweep {
+  0% { left: -60%; }
+  100% { left: 120%; }
+}
+.pnl-bg-up { background: linear-gradient(145deg, var(--bg-secondary) 0%, rgba(34, 197, 94, 0.03) 100%); }
+.pnl-bg-down { background: linear-gradient(145deg, var(--bg-secondary) 0%, rgba(239, 68, 68, 0.03) 100%); }
 
-.pg-row-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; position: relative; z-index: 1; }
-.pg-avatar-wrap { position: relative; flex-shrink: 0; }
-.pg-avatar { width: 48px; height: 48px; border-radius: 14px; object-fit: cover; border: 2px solid rgba(251, 191, 36, 0.35); }
-.pg-crown { position: absolute; top: -14px; right: -10px; width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3)); }
+/* 顶部区域 */
+.pg-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: relative; z-index: 1; }
+.pg-left { display: flex; align-items: center; gap: 14px; }
+.pg-avatar-box { position: relative; flex-shrink: 0; }
+.pg-avatar { width: 52px; height: 52px; border-radius: 16px; object-fit: cover; border: 2px solid rgba(251, 191, 36, 0.3); box-shadow: 0 4px 12px rgba(251, 191, 36, 0.1); }
+.pg-rank-badge { position: absolute; bottom: -5px; left: -5px; font-size: 8px; font-weight: 900; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; padding: 1px 5px; border-radius: 6px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3); }
+.pg-crown { position: absolute; top: -12px; right: -8px; width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
 
-.pg-info { flex: 1; min-width: 0; }
-.pg-name { font-size: 17px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.3px; }
-.pg-tags { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-.pg-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-.pg-tag--strat { background: rgba(251, 191, 36, 0.12); color: #f59e0b; }
-.pg-tag--live { background: rgba(34, 197, 94, 0.12); color: #22c55e; display: inline-flex; align-items: center; gap: 3px; }
-.pg-dot { display: inline-block; width: 5px; height: 5px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+.pg-info { min-width: 0; }
+.pg-name { font-size: 18px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.5px; }
+.pg-sub { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.pg-chip { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.pg-chip--gold { background: rgba(251, 191, 36, 0.12); color: #f59e0b; }
+.pg-chip--strat { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+.pg-chip--live { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.pg-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+.pg-dot--gold { background: #f59e0b; }
 
-.pg-pnl-block { text-align: right; flex-shrink: 0; }
-.pg-pnl-num { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.5px; }
-.pg-pnl-unit { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 3px; letter-spacing: 0.5px; }
+/* 盈亏区域 */
+.pg-right { text-align: right; flex-shrink: 0; }
+.pg-pnl-wrap { display: flex; align-items: baseline; justify-content: flex-end; }
+.pg-pnl-sign { font-size: 18px; font-weight: 700; opacity: 0.6; margin-right: 1px; }
+.pg-pnl-num { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -1px; line-height: 1; }
+.pg-pnl-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500; }
 .pnl-up { color: #22c55e; }
 .pnl-down { color: #ef4444; }
-.pnl-u { font-size: 12px; font-weight: 500; opacity: 0.7; margin-left: 2px; }
+.pnl-u { font-size: 11px; font-weight: 500; opacity: 0.6; margin-left: 2px; }
 
-/* 6项指标网格 */
-.pg-metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; position: relative; z-index: 1; }
-.gm-card { display: flex; align-items: center; gap: 8px; padding: 10px 10px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); transition: all 0.2s; }
-.gm-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-1px); }
-.gm-icon { font-size: 18px; flex-shrink: 0; }
-.gm-body { min-width: 0; }
-.gm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.3px; text-transform: uppercase; font-weight: 500; }
-.gm-val { font-size: 14px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.3; }
+/* 分隔线 */
+.pg-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.15), transparent); margin-bottom: 16px; position: relative; z-index: 1; }
+
+/* 指标区域 */
+.pg-metrics { display: grid; grid-template-columns: auto 1fr repeat(4, 1fr); gap: 12px; align-items: center; position: relative; z-index: 1; }
+
+/* 胜率环形图 */
+.gm-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.gm-ring { position: relative; width: 48px; height: 48px; }
+.gm-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.gm-ring-bg { color: rgba(255,255,255,0.06); }
+.gm-ring-fg { transition: stroke-dasharray 0.6s ease; }
+.gm-ring--green .gm-ring-fg { color: #22c55e; }
+.gm-ring--blue .gm-ring-fg { color: #60a5fa; }
+.gm-ring-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--text-primary); }
+.gm-text { font-size: 9px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.3px; }
+
+/* 月化进度条 */
+.gm-bar-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gm-bar-label { font-size: 9px; color: var(--text-muted); font-weight: 500; }
+.gm-bar-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+.gm-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.gm-bar--up { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.gm-bar--down { background: linear-gradient(90deg, #ef4444, #f87171); }
+.gm-bar-val { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .gm-val--green { color: #22c55e; }
 .gm-val--red { color: #ef4444; }
 
+/* 数字指标 */
+.gm-num-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 10px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.03); }
+.gm-num-val { font-size: 15px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
+.gm-num-label { font-size: 9px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.2px; }
+
 /* === 第二三名 并排卡片 === */
 .podium-row-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
 .podium-small {
   border-radius: 14px;
   padding: 14px;
   border: 1px solid var(--border-primary);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 .podium-small:hover { transform: translateY(-2px); }
 .podium-silver { border-top: 2px solid #94a3b8; }
-.podium-silver:hover { box-shadow: 0 6px 20px rgba(148, 163, 184, 0.12); border-color: rgba(148, 163, 184, 0.4); }
+.podium-silver:hover { box-shadow: 0 8px 24px rgba(148, 163, 184, 0.1); border-color: rgba(148, 163, 184, 0.35); }
 .podium-bronze { border-top: 2px solid #d97706; }
-.podium-bronze:hover { box-shadow: 0 6px 20px rgba(217, 119, 6, 0.12); border-color: rgba(217, 119, 6, 0.4); }
+.podium-bronze:hover { box-shadow: 0 8px 24px rgba(217, 119, 6, 0.1); border-color: rgba(217, 119, 6, 0.35); }
 
 .ps-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.ps-avatar-wrap { position: relative; flex-shrink: 0; }
-.ps-avatar { width: 32px; height: 32px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--border-primary); }
-.ps-medal { position: absolute; top: -8px; right: -6px; width: 16px; height: 16px; object-fit: contain; }
-.ps-info { flex: 1; min-width: 0; }
+.ps-avatar-box { position: relative; flex-shrink: 0; }
+.ps-avatar { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--border-primary); }
+.ps-rank { position: absolute; bottom: -4px; left: -4px; font-size: 8px; font-weight: 800; background: var(--bg-secondary); border: 1px solid var(--border-primary); padding: 0 4px; border-radius: 5px; color: var(--text-muted); }
+.podium-silver .ps-rank { color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+.podium-bronze .ps-rank { color: #d97706; border-color: rgba(217, 119, 6, 0.3); }
+.ps-medal { position: absolute; top: -8px; right: -6px; width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+
+.ps-mid { flex: 1; min-width: 0; }
 .ps-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ps-live { font-size: 10px; color: #22c55e; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-top: 1px; }
+.ps-meta-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.ps-runtime { font-size: 10px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px; }
+.ps-clock { font-size: 10px; }
+.ps-live { font-size: 10px; color: #22c55e; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
 
-.ps-pnl { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; letter-spacing: -0.3px; }
+.ps-pnl { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; line-height: 1; }
+.ps-pnl-sign { opacity: 0.6; }
 
-.ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.ps-cell { display: flex; justify-content: space-between; padding: 4px 0; }
+.ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.ps-cell { display: flex; justify-content: space-between; padding: 3px 0; }
 .ps-cl { font-size: 10px; color: var(--text-muted); }
 .ps-cv { font-size: 11px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
