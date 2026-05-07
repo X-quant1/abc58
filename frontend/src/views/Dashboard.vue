@@ -372,25 +372,29 @@
               <div class="ai-chat-window">
                 <!-- 模型标识栏 -->
                 <div class="ai-models-bar">
-                  <span class="ai-model-tag">GLM-5</span>
-                  <span class="ai-model-tag">Kimi-2.5</span>
-                  <span class="ai-model-tag">Minimax-2.5</span>
-                  <span class="ai-model-tag judge">DeepSeek-V3 裁决</span>
+                  <span class="ai-model-tag"><span class="amt-dot"></span>GLM-5</span>
+                  <span class="ai-model-tag"><span class="amt-dot"></span>Kimi-2.5</span>
+                  <span class="ai-model-tag"><span class="amt-dot"></span>Minimax-2.5</span>
+                  <span class="ai-model-tag judge">⚖️ DeepSeek-V3 裁决</span>
                 </div>
 
                 <!-- 两栏布局 -->
                 <div class="ai-two-col" v-if="Object.keys(aiTeamOpinions).length > 0 || aiTeamJudge">
                   <!-- 左栏：分析师 -->
                   <div class="ai-col-left">
-                    <div class="ai-analyst-card" v-for="(opinion, key) in aiTeamOpinions" :key="key" @click="goToAIWarRoom">
-                      <div class="ai-ac-header">
-                        <div class="ai-ac-avatar">
-                          <img v-if="getAnalystAvatar(key)" :src="getAnalystAvatar(key)" />
-                          <span v-else>{{ getAnalystEmoji(key) }}</span>
+                    <div class="ai-analyst-card" v-for="(opinion, key, idx) in aiTeamOpinions" :key="key" :class="'aac-' + key" @click="goToAIWarRoom">
+                      <div class="aac-color-bar"></div>
+                      <div class="aac-body">
+                        <div class="ai-ac-header">
+                          <div class="ai-ac-avatar">
+                            <img v-if="getAnalystAvatar(key)" :src="getAnalystAvatar(key)" />
+                            <span v-else>{{ getAnalystEmoji(key) }}</span>
+                          </div>
+                          <span class="ai-ac-name">{{ getAnalystName(key) }}</span>
+                          <span class="ai-ac-tag">{{ getAnalystTag(key) }}</span>
                         </div>
-                        <span class="ai-ac-name">{{ getAnalystName(key) }}</span>
+                        <div class="ai-ac-content" v-html="formatContent(opinion)"></div>
                       </div>
-                      <div class="ai-ac-content" v-html="formatContent(opinion)"></div>
                     </div>
                   </div>
 
@@ -985,6 +989,10 @@ function getAnalystName(key) { return analystConfig.value[key]?.name || key }
 function getAnalystEmoji(key) { return analystConfig.value[key]?.emoji || '🤖' }
 function getAnalystAvatar(key) { return analystConfig.value[key]?.avatar_url || '' }
 function getAnalystShortName(key) { return analystShortNames[key] || key }
+function getAnalystTag(key) {
+  const tags = { aggressive: '激进派', conservative: '稳健派', technical: '技术派' }
+  return tags[key] || ''
+}
 
 function formatContent(text) {
   if (!text) return ''
@@ -3695,23 +3703,34 @@ onBeforeUnmount(() => {
 
 .ai-models-bar {
   display: flex;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 6px;
+  padding: 6px 12px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-primary);
 }
 
 .ai-model-tag {
   font-size: 10px;
-  padding: 2px 6px;
+  padding: 2px 8px 2px 6px;
   background: var(--bg-hover);
-  border-radius: 4px;
+  border-radius: 10px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.amt-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
 }
 
 .ai-model-tag.judge {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+  color: #6366f1;
+  border: 1px solid rgba(99,102,241,0.2);
 }
 
 /* 两栏布局 */
@@ -3744,34 +3763,73 @@ onBeforeUnmount(() => {
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
   border-radius: 10px;
-  padding: 10px;
+  overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
-.ai-analyst-card:hover { border-color: var(--accent-color); }
+.ai-analyst-card:hover {
+  border-color: var(--accent-color);
+  transform: translateX(2px);
+}
+
+/* 左侧彩色边条 */
+.aac-color-bar {
+  width: 3px;
+  flex-shrink: 0;
+  border-radius: 3px 0 0 3px;
+}
+.aac-aggressive .aac-color-bar { background: linear-gradient(180deg, #ef4444, #f97316); }
+.aac-conservative .aac-color-bar { background: linear-gradient(180deg, #3b82f6, #6366f1); }
+.aac-technical .aac-color-bar { background: linear-gradient(180deg, #22c55e, #10b981); }
+
+.aac-body {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
 
 .ai-ac-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .ai-ac-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--bg-hover);
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
+  flex-shrink: 0;
 }
+.aac-aggressive .ai-ac-avatar { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(249,115,22,0.12)); }
+.aac-conservative .ai-ac-avatar { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.12)); }
+.aac-technical .ai-ac-avatar { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(16,185,129,0.12)); }
 
-.ai-ac-avatar img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
+.ai-ac-avatar img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
 
-.ai-ac-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.ai-ac-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+
+.ai-ac-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.aac-aggressive .ai-ac-tag { background: rgba(239,68,68,0.1); color: #ef4444; }
+.aac-conservative .ai-ac-tag { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.aac-technical .ai-ac-tag { background: rgba(34,197,94,0.1); color: #22c55e; }
 
 .ai-ac-content {
   font-size: 11px;
@@ -3781,6 +3839,7 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex: 1;
 }
 
 /* 裁决卡片 */
