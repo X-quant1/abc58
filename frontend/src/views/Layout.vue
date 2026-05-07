@@ -10,12 +10,13 @@
       :class="{ 'mobile-aside': isMobile, 'mobile-aside-hidden': isMobile && isCollapsed }"
     >
       <!-- Logo -->
-      <div class="logo-area">
-        <div class="logo-badge">₿</div>
+      <div class="logo-area" @click="router.push('/dashboard')" style="cursor: pointer;">
+        <div class="logo-badge" v-if="!siteLogo">₿</div>
+        <img v-else :src="siteLogo" class="logo-img" />
         <transition name="fade-text">
           <div v-show="!isCollapsed" class="logo-text-group">
-            <span class="logo-text">BTC Quant</span>
-            <span class="logo-sub">量化交易系统</span>
+            <span class="logo-text">{{ siteName }}</span>
+            <span class="logo-sub">{{ siteSlogan }}</span>
           </div>
         </transition>
       </div>
@@ -127,15 +128,18 @@
           <span class="page-desc" v-show="!isMobile">{{ currentDesc }}</span>
         </div>
         <div class="header-right">
-          <el-tag
-            v-show="!isMobile"
-            :type="isSandbox ? 'warning' : 'danger'"
-            effect="plain"
-            size="small"
-            round
-          >
-            {{ isSandbox ? '模拟盘' : '实盘' }}
-          </el-tag>
+          <!-- 公告轮播 -->
+          <div v-if="announcements.length > 0" class="announcement-bar" @click="showAnnouncementDetail">
+            <span class="announcement-emoji">📢</span>
+            <span class="announcement-label">公告：</span>
+            <div class="announcement-scroll">
+              <transition name="announcement-slide" mode="out-in">
+                <span :key="currentAnnouncement?.id" class="announcement-text" :style="{ color: currentAnnouncement?.color || '#3b82f6', fontWeight: currentAnnouncement?.bold ? '600' : '400' }">
+                  {{ currentAnnouncement?.title }}
+                </span>
+              </transition>
+            </div>
+          </div>
           <div class="ws-status" :class="wsConnected ? 'ws-on' : 'ws-off'" :title="wsConnected ? 'WebSocket 已连接' : 'WebSocket 未连接'">
             <span class="ws-dot"></span>
             <span class="ws-text" v-show="false">{{ wsConnected ? '在线' : '离线' }}</span>
@@ -148,10 +152,13 @@
           <!-- 用户头像 + 下拉 -->
           <el-dropdown trigger="click" @command="onUserCommand">
             <div class="user-avatar-wrap">
-              <el-avatar :size="32" class="user-avatar">
+              <el-avatar :size="32" class="user-avatar" :src="currentUser?.avatar || undefined">
                 <el-icon><User /></el-icon>
               </el-avatar>
-              <span class="user-name" v-show="!isMobile">{{ displayName }}</span>
+              <div class="user-info" v-show="!isMobile">
+                <span class="user-name">{{ displayName }}</span>
+                <span class="user-username">@{{ currentUser?.username }}</span>
+              </div>
               <el-button type="primary" size="small" class="edit-profile-btn" @click.stop="showProfileDialog = true">
                 <el-icon><EditPen /></el-icon>
               </el-button>
@@ -169,6 +176,31 @@
           </el-dropdown>
         </div>
       </el-header>
+
+      <!-- 公告详情弹框 -->
+      <el-dialog 
+        v-model="announcementDialogVisible" 
+        :show-close="false"
+        :close-on-click-modal="true"
+        :close-on-press-escape="true"
+        width="560px"
+        custom-class="announcement-detail-dialog"
+      >
+        <template #header>
+          <div class="modal-header">
+            <div class="modal-title">公告详情</div>
+            <button class="close-btn" @click="announcementDialogVisible = false">×</button>
+          </div>
+        </template>
+        <div class="modal-body">
+          <h1 class="announcement-title">{{ selectedAnnouncement?.title }}</h1>
+          <div class="meta-info">
+            <span>{{ formatAnnouncementTime(selectedAnnouncement?.id) }}</span>
+            <span class="tag">系统通知</span>
+          </div>
+          <div class="announcement-content">{{ selectedAnnouncement?.content }}</div>
+        </div>
+      </el-dialog>
 
       <!-- 个人资料弹框 -->
       <el-dialog v-model="showProfileDialog" title="个人资料" width="400px">
@@ -274,13 +306,109 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, EditPen } from '@element-plus/icons-vue'
+import { User, EditPen, Bell } from '@element-plus/icons-vue'
 import api from '../utils/api'
 import { useWebSocket } from '../utils/ws'
 
 const route = useRoute()
 const router = useRouter()
 const { on: wsOn, off: wsOff, connected: wsConnected } = useWebSocket()
+
+// ─── 站点配置（带缓存） ───
+const SITE_CACHE_KEY = 'site_settings_cache'
+const siteName = ref('BTC Quant')
+const siteLogo = ref('')
+const siteSlogan = ref('量化交易系统')
+
+// 先从缓存加载（首帧即有数据）
+function loadSiteSettingsFromCache() {
+  try {
+    const cached = localStorage.getItem(SITE_CACHE_KEY)
+    if (cached) {
+      const data = JSON.parse(cached)
+      if (data.site_name) siteName.value = data.site_name
+      if (data.site_logo) siteLogo.value = data.site_logo
+      if (data.site_slogan) siteSlogan.value = data.site_slogan
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// 立即加载缓存
+loadSiteSettingsFromCache()
+
+// 监听其他标签页对站点设置的修改（跨标签页同步）
+function onStorageChange(e) {
+  if (e.key === SITE_CACHE_KEY) {
+    if (e.newValue) {
+      try {
+        const data = JSON.parse(e.newValue)
+        if (data.site_name) siteName.value = data.site_name
+        if (data.site_logo) siteLogo.value = data.site_logo
+        if (data.site_slogan) siteSlogan.value = data.site_slogan
+      } catch { /* ignore */ }
+    }
+  }
+}
+
+async function fetchSiteSettings() {
+  try {
+    const res = await api.get('/settings/site')
+    if (res.site_name) siteName.value = res.site_name
+    if (res.site_logo) siteLogo.value = res.site_logo
+    if (res.site_slogan) siteSlogan.value = res.site_slogan
+    // 缓存到 localStorage
+    localStorage.setItem(SITE_CACHE_KEY, JSON.stringify({
+      site_name: res.site_name || 'BTC Quant',
+      site_logo: res.site_logo || '',
+      site_slogan: res.site_slogan || '量化交易系统',
+    }))
+  } catch (e) {
+    console.error('Failed to fetch site settings:', e)
+  }
+}
+
+// ─── 公告轮播 ───
+const announcements = ref([])
+const currentAnnouncementIndex = ref(0)
+const currentAnnouncement = computed(() => announcements.value[currentAnnouncementIndex.value] || null)
+let announcementTimer = null
+
+async function fetchAnnouncements() {
+  try {
+    const res = await api.get('/announcements/active')
+    announcements.value = Array.isArray(res) ? res : []
+    if (announcements.value.length > 1) {
+      startAnnouncementRotation()
+    }
+  } catch (e) {
+    console.error('Failed to fetch announcements:', e)
+  }
+}
+
+function startAnnouncementRotation() {
+  if (announcementTimer) clearInterval(announcementTimer)
+  announcementTimer = setInterval(() => {
+    if (announcements.value.length > 1) {
+      currentAnnouncementIndex.value = (currentAnnouncementIndex.value + 1) % announcements.value.length
+    }
+  }, 5000) // 每5秒切换
+}
+
+// 公告详情弹窗
+const announcementDialogVisible = ref(false)
+const selectedAnnouncement = ref(null)
+
+function showAnnouncementDetail() {
+  if (currentAnnouncement.value) {
+    selectedAnnouncement.value = { ...currentAnnouncement.value }
+    announcementDialogVisible.value = true
+  }
+}
+
+function formatAnnouncementTime(id) {
+  const dates = ['2026-05-04', '2026-05-03', '2026-05-02']
+  return dates[(id - 1) % 3] || '2026-05-04'
+}
 
 // ─── 主题切换 ───
 const isDark = ref(localStorage.getItem('theme') === 'dark')
@@ -520,6 +648,7 @@ const menuItems = [
     children: [
       { path: '/strategy/list', title: '策略管理', icon: 'Operation' },
       { path: '/strategy/robots', title: '量化机器人', icon: 'Promotion' },
+      { path: '/strategy/ai-war-room', title: 'AI作战室', icon: 'Cpu' },
     ]
   },
   { path: '/backtest',  title: '回测',     icon: 'DataAnalysis',  desc: '历史回测与绩效分析' },
@@ -609,7 +738,10 @@ onMounted(async () => {
   loadTheme()
   loadUser()
   checkMobile()
+  fetchSiteSettings()  // 加载站点配置
+  fetchAnnouncements()  // 加载公告
   window.addEventListener('resize', checkMobile)
+  window.addEventListener('storage', onStorageChange)
 
   // 自动展开当前子菜单所在的父级
   for (const item of menuItems) {
@@ -654,9 +786,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (refreshTimer) clearInterval(refreshTimer)
+  if (announcementTimer) clearInterval(announcementTimer)
   wsOff('ticker', onWsTicker)
   wsOff('notification', onWsNotification)
   window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('storage', onStorageChange)
 })
 </script>
 
@@ -687,7 +821,7 @@ body {
 }
 
 .logo-area {
-  height: 64px;
+  height: 65px;
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -696,16 +830,25 @@ body {
 }
 
 .logo-badge {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.logo-img {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: contain;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
@@ -713,7 +856,8 @@ body {
 .logo-text-group {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
 
 .logo-text {
@@ -722,6 +866,8 @@ body {
   color: var(--text-primary);
   line-height: 1.2;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logo-sub {
@@ -729,6 +875,8 @@ body {
   color: var(--text-muted);
   line-height: 1.2;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 导航列表 */
@@ -906,7 +1054,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  height: 52px !important;
+  height: 65px !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
@@ -1052,14 +1200,96 @@ body {
   height: 24px !important;
   min-width: 24px !important;
 }
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 80px;
+}
 .user-name {
   font-size: 13px;
   color: var(--text-secondary);
   font-weight: 500;
-  max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.user-username {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 公告详情弹框 */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.close-btn {
+  font-size: 20px;
+  color: #909399;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #409eff;
+}
+
+.modal-body {
+  padding: 8px 20px 20px;
+}
+
+.announcement-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.tag {
+  background-color: #e6f0ff;
+  color: #4080ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.announcement-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #4b5563;
+  white-space: pre-wrap;
 }
 
 /* 个人资料弹框 */
@@ -1111,6 +1341,67 @@ body {
 .user-avatar {
   background: var(--bg-card);
   color: var(--text-muted);
+}
+
+/* 公告轮播 */
+.announcement-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  width: 340px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.announcement-bar:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-primary);
+}
+
+.announcement-emoji {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.announcement-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.announcement-scroll {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.announcement-text {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.announcement-slide-enter-active,
+.announcement-slide-leave-active {
+  transition: all 0.4s ease;
+}
+
+.announcement-slide-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.announcement-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 /* WebSocket 状态指示 */
@@ -1642,4 +1933,17 @@ body {
     width: auto;
   }
 }
+</style>
+
+<style>
+.announcement-detail-dialog {
+  background: #ffffff !important;
+  border: 1px solid #e8ecf1 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+  overflow: hidden !important;
+}
+.announcement-detail-dialog .el-dialog__header { padding: 0 !important; margin: 0 !important; border-bottom: none !important; }
+.announcement-detail-dialog .el-dialog__body { padding: 0 !important; }
+.announcement-detail-dialog .el-dialog__headerbtn { display: none !important; }
 </style>
