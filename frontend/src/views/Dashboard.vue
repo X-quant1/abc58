@@ -305,9 +305,11 @@
                         </div>
                       </div>
                       <div class="sc-profit-box" :class="s.profit >= 0 ? 'profit-up' : 'profit-down'">
-                        <span class="sc-profit-val">{{ s.profit >= 0 ? '+' : '' }}{{ s.profit || 0 }}</span>
-                        <span class="sc-profit-unit">%</span>
-                        <span class="sc-profit-period">/ 月化</span>
+                        <div class="sc-profit-main">
+                          <span class="sc-profit-val">{{ s.profit >= 0 ? '+' : '' }}{{ s.profit || 0 }}</span>
+                          <span class="sc-profit-unit">%</span>
+                        </div>
+                        <span class="sc-profit-period">月化</span>
                       </div>
                     </div>
                     <!-- 策略描述 -->
@@ -3596,11 +3598,12 @@ onBeforeUnmount(() => {
   padding: 4px 10px;
   border-radius: 8px;
 }
+.sc-profit-main { display: flex; align-items: baseline; gap: 1px; }
 .sc-profit-box.profit-up { background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03)); }
 .sc-profit-box.profit-down { background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03)); }
 .sc-profit-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
-.sc-profit-unit { font-size: 11px; font-weight: 600; }
-.sc-profit-period { font-size: 10px; color: var(--text-muted); }
+.sc-profit-unit { font-size: 12px; font-weight: 600; }
+.sc-profit-period { font-size: 10px; color: var(--text-muted); line-height: 1; }
 .sc-profit-box.profit-up .sc-profit-val,
 .sc-profit-box.profit-up .sc-profit-unit { color: #22c55e; }
 .sc-profit-box.profit-down .sc-profit-val,
