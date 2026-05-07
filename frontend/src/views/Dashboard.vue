@@ -2374,10 +2374,9 @@ onBeforeUnmount(() => {
 .banner-image {
   width: 100%;
   height: 200px;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   display: block;
-  background: var(--bg-secondary);
   transition: transform 0.3s;
 }
 
