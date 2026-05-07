@@ -4257,6 +4257,8 @@ onBeforeUnmount(() => {
 .ai-chat-icon { font-size: 18px; margin-right: 4px; }
 .ai-subtitle { font-size: 11px; color: #666; margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 6px; line-height: 1.6; }
 .ai-countdown { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1)); border-radius: 20px; font-size: 12px; border: 1px solid rgba(99,102,241,0.2); }
+.countdown-label { color: #6366f1; font-weight: 500; }
+.countdown-time { color: #818cf8; font-weight: 600; font-variant-numeric: tabular-nums; }
 .ai-chat-container { flex: 1; min-height: 0; }
 .ai-chat-messages { display: flex; flex-direction: column; gap: 16px; padding: 4px 0; }
 .ai-chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; }
