@@ -996,7 +996,7 @@ function getAnalystTag(key) {
 
 function formatContent(text) {
   if (!text) return ''
-  return text.replace(/\n{2,}/g, '\n').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
+  return text.replace(/\r?\n/g, '\n').replace(/\n{2,}/g, '\n').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
 }
 
 function goToAIWarRoom() { router.push('/strategy/ai-war-room') }
@@ -3834,7 +3834,7 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 7;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
