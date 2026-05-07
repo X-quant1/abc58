@@ -3836,7 +3836,7 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
