@@ -14,17 +14,12 @@ backend/.venv
 backend/venv
 *.egg-info
 
-# 数据库（保留结构，不保留数据）
+# 数据库临时文件
 backend/data/*.db-shm
 backend/data/*.db-wal
 
 # 日志和临时文件
 *.log
-*.txt
-*.png
-*.jpg
-*.jpeg
-*.gif
 .DS_Store
 Thumbs.db
 
@@ -36,6 +31,5 @@ docker-compose.yml
 # 其他
 .idea
 .vscode
-*.md
 test-results/
 ai_*.png
