@@ -1469,7 +1469,7 @@ async function fetchSiteLogo() {
 async function loadFeaturedStrategies() {
   featuredStrategiesLoading.value = true
   try {
-    const res = await api.get('/strategy/list')
+    const res = await api.get('/strategy/available')
     featuredStrategies.value = (res.strategies || res.list || res || []).slice(0, 2)
   } catch (e) { console.error('strategies error:', e) }
   featuredStrategiesLoading.value = false
