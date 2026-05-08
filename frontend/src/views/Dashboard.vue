@@ -2959,7 +2959,7 @@ onBeforeUnmount(() => {
 /* 交易所绑定卡片 */
 .exchange-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   flex: 1;
   align-content: stretch;
@@ -2967,6 +2967,7 @@ onBeforeUnmount(() => {
 
 .exchange-cards.single-bound {
   grid-template-columns: 1fr;
+  max-width: 400px;
 }
 
 .exchange-card {
@@ -4157,11 +4158,52 @@ onBeforeUnmount(() => {
 .trade-pnl { font-size: 12px; margin-left: 8px; }
 
 /* 响应式 */
+@media (max-width: 1400px) {
+  .right-col { width: 25%; }
+}
 @media (max-width: 1200px) {
+  .dashboard-three-col {
+    flex-direction: column;
+  }
+  .right-col {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .right-col > * {
+    flex: 1;
+    min-width: 280px;
+  }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .pair-row {
+    flex-direction: column;
+  }
+  .pair-row > .el-col {
+    width: 100% !important;
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+}
+@media (max-width: 900px) {
+  .exchange-cards {
+    flex-direction: column;
+  }
+  .exchange-card {
+    min-width: 100%;
+  }
 }
 @media (max-width: 768px) {
   .stat-grid { grid-template-columns: repeat(1, 1fr); }
+  .fear-greed-fixed {
+    flex-direction: column;
+    padding: 6px 12px;
+  }
+  .price-ticker {
+    flex-direction: column;
+  }
+  .banner-image {
+    height: 150px;
+  }
 }
 
 /* 绑定对话框 */
