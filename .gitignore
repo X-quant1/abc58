@@ -19,10 +19,20 @@ backend/dist/
 *.key
 api_config.json
 
-# Database (should not be committed)
+# Database (should not be committed - CRITICAL!)
 backend/data/*.db
 backend/data/*.sqlite
 backend/data/*.sqlite3
+backend/data/*.db-journal
+backend/data/*.sql
+backend/platform_stats.json
+
+# Uploaded files (CRITICAL - never commit user uploads!)
+backend/static/uploads/
+backend/static/uploads/*
+
+# AI Config (contains API keys - CRITICAL!)
+backend/app/data/ai_config.json
 
 # Logs & temp files
 *.log
