@@ -357,7 +357,6 @@
 
           <el-col :span="15" style="display: flex;">
             <div class="ai-chat-section" style="flex: 1;">
-              <img v-if="siteLogo" :src="siteLogo" class="ai-logo-watermark" />
               <div class="panel-header" style="margin-bottom: 8px;">
                 <span class="panel-title">
                   <span class="ai-chat-icon">🤖</span>
@@ -4308,19 +4307,7 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
-.ai-logo-watermark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 50%;
-  opacity: 0.10;
-  pointer-events: none;
-  z-index: 0;
-}
-.ai-chat-section > * { position: relative; z-index: 1; }
 .ai-chat-section:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-color: rgba(99,102,241,0.2); }
 .ai-chat-icon { font-size: 18px; margin-right: 4px; }
 .ai-subtitle { font-size: 11px; color: #666; margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 6px; line-height: 1.6; }
