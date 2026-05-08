@@ -1487,6 +1487,7 @@ const aiConfig = ref({
     technical: { name: '技术派', emoji: '📊', api_key: '', base_url: '', model: '', configured: false },
   },
   judge: { name: '裁决者', emoji: '⚖️', api_key: '', base_url: '', model: '', configured: false },
+  quick_analysis: { name: '快速分析', api_key: '', base_url: '', model: '', configured: false },
   configured_count: 0,
 })
 const aiSaving = ref(false)
