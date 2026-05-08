@@ -4298,7 +4298,10 @@ onBeforeUnmount(() => {
 
 /* ─── AI 聊天室 ─── */
 .ai-chat-section {
-  background: #ffffff;
+  background: 
+    linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)),
+    url(/static/uploads/site-logo.jpg) center/50% no-repeat;
+  background-color: #ffffff;
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px;
