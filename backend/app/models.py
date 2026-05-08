@@ -123,6 +123,46 @@ class User(Base):
     is_subordinate = Column(Boolean, default=False)                # 是否下级用户
     created_at = Column(DateTime, server_default=func.now())
     last_login = Column(DateTime)
+    
+    # 关联用户 API 配置
+    api_configs = relationship("UserAPIConfig", back_populates="user", cascade="all, delete-orphan")
+
+
+class UserAPIConfig(Base):
+    """用户交易所 API 配置（支持多交易所）
+    
+    每个用户可以绑定多个交易所 API，策略运行时选择使用哪个配置
+    """
+    __tablename__ = "user_api_configs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # 交易所信息
+    exchange = Column(String(20), nullable=False, default="okx")  # okx/binance/bybit
+    
+    # API 凭证（加密存储）
+    api_key_encrypted = Column(Text, nullable=False)              # 加密后的 API Key
+    api_secret_encrypted = Column(Text, nullable=False)           # 加密后的 Secret
+    api_passphrase_encrypted = Column(Text, nullable=True)        # 加密后的 Passphrase（OKX 需要）
+    
+    # 配置信息
+    label = Column(String(50), default="默认配置")                  # 配置名称（如"主账户"、"子账户1"）
+    is_sandbox = Column(Boolean, default=False)                   # 是否测试网
+    is_default = Column(Boolean, default=False)                   # 是否默认配置
+    
+    # 状态
+    is_active = Column(Boolean, default=True)                     # 是否启用
+    last_used = Column(DateTime, nullable=True)                   # 最后使用时间
+    
+    # OKX UID（从 API 获取后存储）
+    okx_uid = Column(String(50), nullable=True)
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # 关联
+    user = relationship("User", back_populates="api_configs")
 
 
 class SubordinateUID(Base):
@@ -257,3 +297,49 @@ class HotActivity(Base):
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class Announcement(Base):
+    """系统公告（右上角轮播展示）"""
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(100), nullable=False)           # 公告标题（轮播显示）
+    content = Column(String(500), nullable=False)         # 公告内容（弹窗显示）
+    color = Column(String(20), default="#3b82f6")         # 文字颜色（十六进制）
+    bold = Column(Boolean, default=False)                 # 是否加粗
+    sort_order = Column(Integer, default=1, index=True)   # 排序（数字越小越靠前）
+    is_active = Column(Boolean, default=True)             # 是否启用
+    start_time = Column(DateTime, nullable=True)          # 开始时间（可选）
+    end_time = Column(DateTime, nullable=True)            # 结束时间（可选，过期自动隐藏）
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class AiChatHistory(Base):
+    """AI聊天历史记录"""
+    __tablename__ = "ai_chat_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    period = Column(String(10), nullable=False)             # 分析周期: 30m / 1h
+    opinions = Column(Text, nullable=False)                 # JSON: 分析师观点 {"aggressive": "...", ...}
+    judge = Column(Text, default="")                       # 裁决者结论
+    market_data = Column(Text, default="")                 # JSON: 当时的市场数据快照
+    created_at = Column(DateTime, server_default=func.now(), index=True)
+
+
+class AiJudgeRecord(Base):
+    """AI综合判断追踪记录"""
+    __tablename__ = "ai_judge_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    period = Column(String(10), nullable=False)             # 分析周期: 30m / 1h
+    direction = Column(String(10), nullable=False)          # 判断方向: long/short/hold
+    entry_price = Column(Float, nullable=True)              # 建议入场价
+    stop_loss = Column(Float, nullable=True)                # 止损位
+    reason = Column(Text, default="")                       # 判断理由
+    verify_after = Column(DateTime, nullable=True)          # 验证时间（3小时后）
+    verified = Column(Boolean, default=False)               # 是否已验证
+    price_at_verify = Column(Float, nullable=True)          # 验证时价格
+    result = Column(String(10), default="pending")          # 验证结果: correct/wrong/pending
+    created_at = Column(DateTime, server_default=func.now(), index=True)

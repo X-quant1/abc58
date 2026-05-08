@@ -1,6 +1,6 @@
 """量化机器人管理 API"""
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from sqlalchemy.orm import Session
@@ -10,6 +10,17 @@ from app.models import QuantRobot, RobotTrade
 from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/robots", tags=["robots"])
+
+
+async def get_current_user_optional(request: Request):
+    """可选认证：有 token 则解析，无 token 返回 None"""
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    try:
+        return get_current_user(type("C", (), {"credentials": auth_header[7:]})())
+    except:
+        return None
 
 
 # ─── Pydantic Schema ───
@@ -102,15 +113,15 @@ def robot_to_dict(r: QuantRobot, db: Session = None) -> dict:
 # ─── API 端点 ───
 
 @router.get("")
-def list_robots(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """获取所有机器人列表"""
+def list_robots(current_user: dict = Depends(get_current_user_optional), db: Session = Depends(get_db)):
+    """获取所有机器人列表（公开，可选认证）"""
     robots = db.query(QuantRobot).filter(QuantRobot.active == True).order_by(QuantRobot.sort_order, QuantRobot.id).all()
     return [robot_to_dict(r, db) for r in robots]
 
 
 @router.get("/{robot_id}")
-def get_robot(robot_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """获取单个机器人详情"""
+def get_robot(robot_id: int, current_user: dict = Depends(get_current_user_optional), db: Session = Depends(get_db)):
+    """获取单个机器人详情（公开，可选认证）"""
     robot = db.query(QuantRobot).filter(QuantRobot.id == robot_id, QuantRobot.active == True).first()
     if not robot:
         raise HTTPException(status_code=404, detail="机器人不存在")
@@ -196,8 +207,8 @@ def toggle_robot(robot_id: int, data: RobotToggle, current_user: dict = Depends(
 # ─── 交易记录 API ───
 
 @router.get("/{robot_id}/trades")
-def get_robot_trades(robot_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """获取机器人的交易记录"""
+def get_robot_trades(robot_id: int, current_user: dict = Depends(get_current_user_optional), db: Session = Depends(get_db)):
+    """获取机器人的交易记录（公开，可选认证）"""
     robot = db.query(QuantRobot).filter(QuantRobot.id == robot_id, QuantRobot.active == True).first()
     if not robot:
         raise HTTPException(status_code=404, detail="机器人不存在")

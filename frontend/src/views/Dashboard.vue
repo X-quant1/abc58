@@ -987,7 +987,7 @@ const formattedAnalysisTime = computed(() => {
 })
 
 // ─── AI分析室Logo水印 ───
-const siteLogo = ref('')
+const siteLogo = ref('/static/uploads/site-logo.jpg')
 const aiTeamLoading = ref(false)
 const nextAnalysisCountdown = ref('')
 const btcPrice = ref(null)
@@ -3753,6 +3753,20 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  position: relative;
+}
+/* Logo水印 - 绝对定位覆盖在内容最上层 */
+.ai-chat-window::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/static/uploads/site-logo.jpg') center/30% no-repeat;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 999;
 }
 
 .ai-models-bar {
@@ -4298,9 +4312,6 @@ onBeforeUnmount(() => {
 
 /* ─── AI 聊天室 ─── */
 .ai-chat-section {
-  background: 
-    linear-gradient(rgba(255,255,255,0.65), rgba(255,255,255,0.65)),
-    url(/static/uploads/site-logo.jpg) center/40% no-repeat;
   background-color: #ffffff;
   border: 1px solid var(--border-primary);
   border-radius: 12px;
@@ -4310,6 +4321,10 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+/* 暗色模式 */
+.app-container.dark .ai-chat-section {
+  background-color: #1e293b;
 }
 .ai-chat-section:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-color: rgba(99,102,241,0.2); }
 .ai-chat-icon { font-size: 18px; margin-right: 4px; }

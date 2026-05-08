@@ -559,12 +559,18 @@ async def get_activities(
     db: Session = Depends(get_db),
 ):
     """获取热门活动配置"""
-    banner = db.query(SiteConfig).filter(SiteConfig.key == "activity_banner_url").first()
-    banner_url = banner.value if banner else ""
+    banner = db.query(SiteConfig).filter(SiteConfig.key == "activity_banners").first()
+    banners = []
+    if banner and banner.value:
+        try:
+            import json
+            banners = json.loads(banner.value)
+        except:
+            banners = []
     
     activities = db.query(HotActivity).order_by(HotActivity.sort_order).all()
     return {
-        "banner_url": banner_url,
+        "banners": banners,
         "activities": [
             {
                 "id": a.id,
@@ -594,8 +600,13 @@ class ActivityCardData(BaseModel):
     active: bool = True
 
 
+class BannerItem(BaseModel):
+    url: str = ""
+    link: str = ""
+
+
 class SaveActivitiesRequest(BaseModel):
-    banner_url: str = ""
+    banners: list[BannerItem] = []
     activities: list[ActivityCardData]
 
 
@@ -606,13 +617,15 @@ async def save_activities(
     db: Session = Depends(get_db),
 ):
     """保存热门活动配置"""
-    # 保存横幅 URL
-    banner = db.query(SiteConfig).filter(SiteConfig.key == "activity_banner_url").first()
+    import json
+    # 保存横幅列表
+    banners_json = json.dumps([b.model_dump() for b in req.banners], ensure_ascii=False)
+    banner = db.query(SiteConfig).filter(SiteConfig.key == "activity_banners").first()
     if banner:
-        banner.value = req.banner_url
+        banner.value = banners_json
         banner.updated_at = datetime.now(timezone.utc)
     else:
-        db.add(SiteConfig(key="activity_banner_url", value=req.banner_url))
+        db.add(SiteConfig(key="activity_banners", value=banners_json))
 
     # 保存活动卡片
     for card_data in req.activities:

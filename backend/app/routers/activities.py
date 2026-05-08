@@ -1,4 +1,5 @@
 """热门活动公开接口（Dashboard 使用，无需认证）"""
+import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -12,15 +13,20 @@ router = APIRouter(prefix="/api/activities", tags=["activities"])
 @router.get("")
 async def get_public_activities(db: Session = Depends(get_db)):
     """获取热门活动（公开，无需认证）"""
-    config = db.query(SiteConfig).filter(SiteConfig.key == "activity_banner_url").first()
-    banner_url = config.value if config else ""
+    config = db.query(SiteConfig).filter(SiteConfig.key == "activity_banners").first()
+    banners = []
+    if config and config.value:
+        try:
+            banners = json.loads(config.value)
+        except:
+            banners = []
 
     activities = db.query(HotActivity).filter(
         HotActivity.active == True
     ).order_by(HotActivity.sort_order).all()
 
     return {
-        "banner_url": banner_url,
+        "banners": banners,
         "activities": [
             {
                 "id": a.id,

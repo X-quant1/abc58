@@ -21,12 +21,24 @@ async function getSubordinateUIDs() {
     console.log('已加载保存的 cookie');
   }
 
-  // 访问邀请页面
+  // 访问邀请页面（添加重试逻辑）
   console.log('访问 OKX 邀请页面...');
-  await page.goto('https://www.okx.com/zh-hans/affiliates/recruit', {
-    waitUntil: 'networkidle2',
-    timeout: 60000
-  });
+  let retryCount = 0;
+  const maxRetries = 3;
+  while (retryCount < maxRetries) {
+    try {
+      await page.goto('https://www.okx.com/zh-hans/affiliates/recruit', {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000
+      });
+      break; // 成功则跳出循环
+    } catch (e) {
+      retryCount++;
+      console.log(`导航失败 (尝试 ${retryCount}/${maxRetries}): ${e.message}`);
+      if (retryCount >= maxRetries) throw e;
+      await new Promise(r => setTimeout(r, 3000)); // 等待 3 秒后重试
+    }
+  }
 
   await new Promise(r => setTimeout(r, 5000));
 

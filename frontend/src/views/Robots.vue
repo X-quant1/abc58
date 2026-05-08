@@ -310,6 +310,23 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 错误提示对话框 -->
+    <el-dialog v-model="errorVisible" title="错误信息" width="500px">
+      <div class="error-content">
+        <p class="error-title">{{ errorMessage }}</p>
+        <el-input
+          v-model="errorDetail"
+          type="textarea"
+          :rows="8"
+          readonly
+          class="error-detail"
+        />
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="errorVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -323,11 +340,22 @@ const robots = ref([])
 const loading = ref(true)
 const strategyTemplates = ref([])
 
+// 错误状态
+const errorVisible = ref(false)
+const errorMessage = ref('')
+const errorDetail = ref('')
+
 // 详情弹窗
 const detailVisible = ref(false)
 const tradesLoading = ref(false)
 const trades = ref([])
 const currentRobot = ref(null)
+
+function showError(title, detail) {
+  errorMessage.value = title
+  errorDetail.value = detail
+  errorVisible.value = true
+}
 
 function formatNum(n, digits = 2) {
   if (n === null || n === undefined || isNaN(n)) return '--'
@@ -422,8 +450,11 @@ async function fetchRobots() {
   try {
     const res = await api.get('/robots')
     robots.value = Array.isArray(res) ? res : []
+    console.log('[Robots] Fetched:', robots.value.length, 'robots')
   } catch (e) {
     console.error('Failed to fetch robots:', e)
+    const detail = e?.response?.data?.detail || e?.message || JSON.stringify(e)
+    showError('获取机器人列表失败', detail)
   } finally {
     loading.value = false
   }
@@ -1108,6 +1139,11 @@ onMounted(() => {
 .reason-trailing { background: rgba(59, 130, 246, 0.08); color: #60a5fa; border-color: rgba(59, 130, 246, 0.15); }
 .reason-timeout { background: rgba(245, 158, 11, 0.08); color: #fbbf24; border-color: rgba(245, 158, 11, 0.15); }
 .reason-manual { background: rgba(148, 163, 184, 0.08); color: #94a3b8; border-color: rgba(148, 163, 184, 0.15); }
+
+/* 错误对话框 */
+.error-content { padding: 10px 0; }
+.error-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.error-detail { font-family: monospace; font-size: 12px; }
 
 /* 响应式 */
 @media (max-width: 768px) {

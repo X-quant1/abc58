@@ -19,6 +19,8 @@ from app.routers import auth as auth_router
 from app.routers import admin as admin_router
 from app.routers import activities as activities_router
 from app.routers import robots as robots_router
+from app.routers import user_api as user_api_router
+from app.routers import announcement as announcement_router
 from app.routers.ws import start_push_tasks, stop_push_tasks
 from app.services.strategy import strategy_runner, STRATEGY_REGISTRY
 from app.services.logger import sys_logger
@@ -124,6 +126,23 @@ async def lifespan(app: FastAPI):
     # WebSocket 推送任务 - 暂时禁用（同步OKX调用阻塞线程池导致全系统卡顿）
     # TODO: 改用纯异步 aiohttp 调用后恢复
     # await start_push_tasks()
+
+    # 初始化策略任务队列（后台线程异步执行交易信号）
+    try:
+        from app.services.strategy_queue import init_task_queue
+        init_task_queue(worker_count=4)
+        print("[OK] Task queue initialized (4 workers)")
+    except Exception as e:
+        print(f"[WARN] Task queue init failed (non-critical): {e}")
+
+    # 启动AI自动分析定时任务（每30分钟）
+    try:
+        from app.services.auto_analysis import start_auto_analysis
+        start_auto_analysis()
+        print("[OK] Auto AI analysis task started (every 30min)")
+    except Exception as e:
+        print(f"[WARN] Auto analysis init failed (non-critical): {e}")
+
     print("[LIFESPAN] Startup complete")
 
     yield
@@ -163,9 +182,21 @@ app.include_router(ws_router.router)
 app.include_router(notification_router.router)
 app.include_router(activities_router.router)
 app.include_router(robots_router.router)
+app.include_router(user_api_router.router)
+app.include_router(announcement_router.router)
 
 # 挂载静态文件服务（图片等）
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# 挂载前端构建产物（生产环境）
+FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    # 自动挂载 dist 下所有静态目录，避免遗漏
+    STATIC_DIR_NAMES = {"assets", "images", "avatars", "charting_library"}
+    for dir_name in STATIC_DIR_NAMES:
+        dir_path = FRONTEND_DIST / dir_name
+        if dir_path.exists():
+            app.mount(f"/{dir_name}", StaticFiles(directory=str(dir_path)), name=dir_name)
 
 
 # ─── API 认证中间件 ───
@@ -182,7 +213,14 @@ AUTH_WHITELIST = {
     "/api/dashboard/overview",  # 总览数据（公开市场数据）
     "/api/dashboard/platform_stats",  # 平台统计数据
     "/api/activities",                  # 热门活动（公开）
+    "/api/robots",                      # 机器人列表（公开展示）
     "/api/robots/dashboard/summary",   # 机器人摘要（公开展示）
+    "/api/announcements/active",        # 公告轮播（公开）
+    "/api/settings/site",               # 站点配置（公开）
+    "/api/dashboard/market_regime",     # 市场状态（公开）
+    "/api/dashboard/ai_analysis",      # AI分析（公开，端点内控制）
+    "/api/dashboard/ai_team_analysis", # AI团队分析（公开）
+    "/api/dashboard/ai_chat_history",  # AI聊天历史（公开）
     "/api/metrics",        # Prometheus指标
     "/api/metrics/summary", # 监控摘要
     "/api/metrics/cache",   # 缓存统计
@@ -194,10 +232,16 @@ def _is_auth_whitelisted(path: str) -> bool:
     # 精确匹配
     if path in AUTH_WHITELIST:
         return True
-    # 前缀匹配：/api/auth/* 和 /api/backtest/strategy/*/stats
+    # 前缀匹配：/api/auth/* 和 /api/backtest/strategy/*/stats 和 /api/robots/*
     if path.startswith("/api/auth/"):
         return True
     if path.startswith("/api/backtest/strategy/") and path.endswith("/stats"):
+        return True
+    if path.startswith("/api/robots"):
+        return True
+    # 支持带查询参数的路径
+    path_without_query = path.split('?')[0]
+    if path_without_query in AUTH_WHITELIST:
         return True
     return False
 
@@ -311,6 +355,16 @@ async def cache_stats():
         return {"error": str(e), "entries": 0}
 
 
+@app.get("/api/metrics/queue")
+async def queue_stats():
+    """任务队列统计信息"""
+    try:
+        from app.services.task_queue import get_queue_stats
+        return get_queue_stats()
+    except Exception as e:
+        return {"error": str(e), "running": False}
+
+
 @app.post("/api/metrics/cache/clear")
 async def cache_clear(current_user: dict = None):
     """清空缓存（需要认证）"""
@@ -360,3 +414,21 @@ async def runtime_error_handler(request: Request, exc: RuntimeError):
             "error": str(exc)[:300],
         },
     )
+
+
+# ─── 前端 SPA 路由（生产环境）───
+from fastapi.responses import FileResponse
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    """SPA fallback: 所有非API路由返回 index.html"""
+    # 跳过 API、静态资源、前端资源
+    skip_prefixes = ("api/", "static/", "assets/", "images/", "avatars/", "charting_library/")
+    if any(full_path.startswith(p) for p in skip_prefixes):
+        # 让 FastAPI 正常处理这些路由
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
+    idx = FRONTEND_DIST / "index.html"
+    if idx.exists():
+        return FileResponse(str(idx))
+    return JSONResponse(status_code=404, content={"detail": "Frontend not built"})

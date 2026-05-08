@@ -44,7 +44,7 @@ def get_current_user(
     """ FastAPI 依赖注入：从 Authorization header 解析当前用户
 
     Returns:
-        {"user_id": int, "username": str}
+        {"user_id": int, "username": str, "role": str}
 
     Raises:
         HTTPException 401: 无 token / token 无效 / token 过期
@@ -59,9 +59,22 @@ def get_current_user(
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="无效的登录凭证")
 
+    user_id = int(payload["sub"])
+    username = payload["username"]
+
+    # 从数据库查询用户角色
+    from app.models import User
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        role = user.role if user else "user"
+    finally:
+        db.close()
+
     return {
-        "user_id": int(payload["sub"]),
-        "username": payload["username"],
+        "user_id": user_id,
+        "username": username,
+        "role": role,
     }
 
 
