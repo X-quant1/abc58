@@ -210,6 +210,7 @@ AUTH_WHITELIST = {
     "/api/auth/reset-password",
     "/api/admin/strategies/templates/published",
     "/api/strategy/list",  # 可选认证（匿名用户只看已上架策略）
+    "/api/strategy/available",  # 可用策略（公开）
     "/api/dashboard/overview",  # 总览数据（公开市场数据）
     "/api/dashboard/platform_stats",  # 平台统计数据
     "/api/activities",                  # 热门活动（公开）
