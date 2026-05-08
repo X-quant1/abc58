@@ -1,8 +1,11 @@
 """设置路由 - OKX API 配置管理（加密持久化）"""
 import os
 import json
+import base64
+import uuid
+import shutil
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 
@@ -14,6 +17,8 @@ router = APIRouter(prefix="/api/settings", tags=["设置"])
 
 # 持久化配置文件路径
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "data" / "api_config.json"
+# 头像上传目录（backend/static/uploads/ai-avatars）
+AVATAR_DIR = Path(__file__).resolve().parent.parent.parent / "static" / "uploads" / "ai-avatars"
 
 
 def _load_config():
@@ -356,3 +361,257 @@ async def test_notify_email():
     if not result["success"]:
         raise HTTPException(status_code=502, detail=result["message"])
     return result
+
+
+# ═══════════════════════════════════════════════════════
+# 站点配置（名称、Logo）
+# ═══════════════════════════════════════════════════════
+
+class SiteSettingsRequest(BaseModel):
+    site_name: Optional[str] = None
+    site_logo: Optional[str] = None  # Base64 或 URL
+    site_slogan: Optional[str] = None  # 副标题
+
+
+@router.get("/site")
+async def get_site_settings():
+    """获取站点配置"""
+    from app.database import SessionLocal
+    from app.models import SiteConfig
+
+    db = SessionLocal()
+    try:
+        defaults = {
+            "site_name": "BTC Quant",
+            "site_logo": "",
+            "site_slogan": "量化交易系统"
+        }
+        result = dict(defaults)
+        for key in defaults:
+            row = db.query(SiteConfig).filter(SiteConfig.key == key).first()
+            if row and row.value:
+                result[key] = row.value
+        return result
+    finally:
+        db.close()
+
+
+@router.post("/site")
+async def save_site_settings(req: SiteSettingsRequest, current_user: dict = Depends(get_current_user)):
+    """保存站点配置（仅管理员）"""
+    from app.database import SessionLocal
+    from app.models import User, SiteConfig
+
+    db = SessionLocal()
+    try:
+        # 检查管理员权限
+        user = db.query(User).filter(User.id == current_user["user_id"]).first()
+        if not user or user.role != "admin":
+            raise HTTPException(status_code=403, detail="仅管理员可操作")
+
+        # 处理 Logo: 如果是 Base64 数据，保存为文件
+        logo_value = req.site_logo
+        if logo_value and logo_value.startswith("data:image/"):
+            # 解析 Base64 数据
+            try:
+                header, b64data = logo_value.split(",", 1)
+                ext = header.split("/")[1].split(";")[0]  # e.g. "png", "jpeg"
+                if ext == "jpeg": ext = "jpg"
+                logo_dir = Path(__file__).resolve().parent.parent / "static" / "uploads"
+                logo_dir.mkdir(parents=True, exist_ok=True)
+                # 删除旧 logo 文件
+                for f in logo_dir.glob("site-logo.*"):
+                    f.unlink()
+                # 保存新文件
+                filename = f"site-logo.{ext}"
+                filepath = logo_dir / filename
+                filepath.write_bytes(base64.b64decode(b64data))
+                logo_value = f"/static/uploads/{filename}"
+            except Exception as e:
+                print(f"Logo save error: {e}")
+
+        # 更新或创建配置
+        for key, value in [("site_name", req.site_name), ("site_logo", logo_value), ("site_slogan", req.site_slogan)]:
+            if value is not None:
+                row = db.query(SiteConfig).filter(SiteConfig.key == key).first()
+                if row:
+                    row.value = value
+                else:
+                    row = SiteConfig(key=key, value=value)
+                    db.add(row)
+        db.commit()
+        return {"message": "站点配置已保存", "site_logo": logo_value}
+    finally:
+        db.close()
+
+
+# ═══════════════════════════════════════════════════════
+# AI 模型配置（多模型协作）
+# ═══════════════════════════════════════════════════════
+
+@router.get("/ai")
+async def get_ai_config(current_user: dict = Depends(get_current_user)):
+    """获取AI配置（脱敏）"""
+    from app.services.ai_analysis import get_ai_config as _get_cfg
+    cfg = _get_cfg()
+
+    def _mask_key(k):
+        return k[:6] + "****" if len(k) > 6 else (k or "")
+
+    result = {
+        "analysts": {},
+        "judge": {},
+        "quick_analysis": {},
+        "configured_count": 0,
+    }
+
+    for key, a in cfg.get("analysts", {}).items():
+        result["analysts"][key] = {
+            "name": a.get("name", key),
+            "emoji": a.get("emoji", "🤖"),
+            "avatar_url": a.get("avatar_url", ""),
+            "role_desc": a.get("role_desc", ""),
+            "api_key": _mask_key(a.get("api_key", "")),
+            "base_url": a.get("base_url", ""),
+            "model": a.get("model", ""),
+            "configured": bool(a.get("api_key") and a.get("base_url") and a.get("model")),
+        }
+        if result["analysts"][key]["configured"]:
+            result["configured_count"] += 1
+
+    j = cfg.get("judge", {})
+    result["judge"] = {
+        "name": j.get("name", "裁决者"),
+        "emoji": j.get("emoji", "⚖️"),
+        "avatar_url": j.get("avatar_url", ""),
+        "role_desc": j.get("role_desc", ""),
+        "api_key": _mask_key(j.get("api_key", "")),
+        "base_url": j.get("base_url", ""),
+        "model": j.get("model", ""),
+        "configured": bool(j.get("api_key") and j.get("base_url") and j.get("model")),
+    }
+
+    # 快速分析配置
+    qa = cfg.get("quick_analysis", {})
+    result["quick_analysis"] = {
+        "name": qa.get("name", "快速分析"),
+        "role_desc": qa.get("role_desc", ""),
+        "api_key": _mask_key(qa.get("api_key", "")),
+        "base_url": qa.get("base_url", ""),
+        "model": qa.get("model", ""),
+        "configured": bool(qa.get("api_key") and qa.get("base_url") and qa.get("model")),
+    }
+
+    return result
+
+
+@router.post("/ai")
+async def save_ai_config(req: dict, current_user: dict = Depends(get_current_user)):
+    """保存AI配置（仅管理员）"""
+    from app.database import SessionLocal
+    from app.models import User
+    from app.services.ai_analysis import get_ai_config as _get_cfg, update_ai_config as _update_cfg
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user["user_id"]).first()
+        if not user or user.role != "admin":
+            raise HTTPException(status_code=403, detail="仅管理员可操作")
+
+        cfg = _get_cfg()
+
+        # 更新分析师配置
+        if "analysts" in req:
+            for key, a_cfg in req["analysts"].items():
+                if key in cfg["analysts"]:
+                    # 只更新有效的 api_key（不是脱敏值）
+                    ak = a_cfg.get("api_key", "")
+                    if ak and "****" not in ak and not ak.startswith("•"):
+                        cfg["analysts"][key]["api_key"] = ak
+                    if a_cfg.get("base_url"):
+                        cfg["analysts"][key]["base_url"] = a_cfg["base_url"]
+                    if a_cfg.get("model"):
+                        cfg["analysts"][key]["model"] = a_cfg["model"]
+                    # 更新 name 和 emoji
+                    if a_cfg.get("name"):
+                        cfg["analysts"][key]["name"] = a_cfg["name"]
+                    if a_cfg.get("emoji"):
+                        cfg["analysts"][key]["emoji"] = a_cfg["emoji"]
+                    if a_cfg.get("avatar_url"):
+                        cfg["analysts"][key]["avatar_url"] = a_cfg["avatar_url"]
+
+        # 更新裁决者配置
+        if "judge" in req:
+            j_cfg = req["judge"]
+            ak = j_cfg.get("api_key", "")
+            if ak and "****" not in ak and not ak.startswith("•"):
+                cfg["judge"]["api_key"] = ak
+            if j_cfg.get("base_url"):
+                cfg["judge"]["base_url"] = j_cfg["base_url"]
+            if j_cfg.get("model"):
+                cfg["judge"]["model"] = j_cfg["model"]
+            # 更新 name 和 emoji
+            if j_cfg.get("name"):
+                cfg["judge"]["name"] = j_cfg["name"]
+            if j_cfg.get("emoji"):
+                cfg["judge"]["emoji"] = j_cfg["emoji"]
+            if j_cfg.get("avatar_url"):
+                cfg["judge"]["avatar_url"] = j_cfg["avatar_url"]
+
+        # 更新快速分析配置
+        if "quick_analysis" in req:
+            qa_cfg = req["quick_analysis"]
+            ak = qa_cfg.get("api_key", "")
+            if ak and "****" not in ak and not ak.startswith("•"):
+                cfg["quick_analysis"]["api_key"] = ak
+            if qa_cfg.get("base_url"):
+                cfg["quick_analysis"]["base_url"] = qa_cfg["base_url"]
+            if qa_cfg.get("model"):
+                cfg["quick_analysis"]["model"] = qa_cfg["model"]
+            if qa_cfg.get("name"):
+                cfg["quick_analysis"]["name"] = qa_cfg["name"]
+            if qa_cfg.get("role_desc"):
+                cfg["quick_analysis"]["role_desc"] = qa_cfg["role_desc"]
+
+        _update_cfg(cfg)
+        return {"message": "AI 配置已保存"}
+    finally:
+        db.close()
+
+
+@router.post("/ai/avatar")
+async def upload_ai_avatar(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """上传AI分析师头像"""
+    from app.database import SessionLocal
+    from app.models import User
+    
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user["user_id"]).first()
+        if not user or user.role != "admin":
+            raise HTTPException(status_code=403, detail="仅管理员可操作")
+        
+        # 检查文件类型
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="只能上传图片文件")
+        
+        # 生成文件名
+        ext = file.filename.split(".")[-1] if "." in file.filename else "png"
+        filename = f"{uuid.uuid4().hex[:12]}.{ext}"
+        filepath = AVATAR_DIR / filename
+        
+        # 保存文件
+        AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+        with open(filepath, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        
+        return {"url": f"/static/uploads/ai-avatars/{filename}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"上传失败: {str(e)}")
+    finally:
+        db.close()
