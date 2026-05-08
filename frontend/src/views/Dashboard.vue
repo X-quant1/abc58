@@ -356,7 +356,7 @@
           </el-col>
 
           <el-col :span="15" style="display: flex;">
-            <div class="ai-chat-section" style="flex: 1;">
+            <div class="ai-chat-section" style="flex: 1;" :style="aiLogoBgStyle">
               <div class="panel-header" style="margin-bottom: 8px;">
                 <span class="panel-title">
                   <span class="ai-chat-icon">🤖</span>
@@ -985,6 +985,15 @@ const formattedAnalysisTime = computed(() => {
   // 去掉秒数，保留到分钟
   return aiTeamTimestamp.value.replace(/:\d{2}$/, '')
 })
+
+// ─── AI分析室Logo水印 ───
+const siteLogo = ref('')
+const aiLogoBgStyle = computed(() => {
+  if (!siteLogo.value) return {}
+  return {
+    '--ai-logo': `url(${siteLogo.value})`,
+  }
+})
 const aiTeamLoading = ref(false)
 const nextAnalysisCountdown = ref('')
 const btcPrice = ref(null)
@@ -1454,6 +1463,13 @@ function updateCountdown() {
   if (nM < 0) nM = 0
   nextAnalysisCountdown.value = `${nM}分${nS}秒`
   if (s % 30 === 0) fetchBtcPrice()
+}
+
+async function fetchSiteLogo() {
+  try {
+    const r = await api.get('/settings/site')
+    if (r.site_logo) siteLogo.value = r.site_logo
+  } catch (e) { /* ignore */ }
 }
 
 async function loadFeaturedStrategies() {
@@ -2133,6 +2149,9 @@ onMounted(async () => {
 
   // 初始化滚动条
   buildTickerDOM()
+
+  // 加载站点Logo（用于AI分析室水印）
+  fetchSiteLogo()
 
   // 以下全部并行执行，不互相等待，不阻塞页面
   fetchOverview()
@@ -4294,7 +4313,21 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
+.ai-chat-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--ai-logo);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 60%;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+.ai-chat-section > * { position: relative; z-index: 1; }
 .ai-chat-section:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-color: rgba(99,102,241,0.2); }
 .ai-chat-icon { font-size: 18px; margin-right: 4px; }
 .ai-subtitle { font-size: 11px; color: #666; margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 6px; line-height: 1.6; }
