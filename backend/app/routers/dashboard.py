@@ -22,7 +22,7 @@ _AVG_PROFIT_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "platform
 
 
 def _get_avg_profit() -> float:
-    """获取平均收益，每天0点自动浮动 -1~2%"""
+    """自动模式：每天在原数值上随机浮动 -1.5 到 2.5"""
     today = str(date.today())
     try:
         if os.path.exists(_AVG_PROFIT_FILE):
@@ -34,9 +34,8 @@ def _get_avg_profit() -> float:
         data = {"avg_profit": 5.0, "last_update": "2000-01-01"}
 
     if data.get("last_update") != today:
-        # 新的一天，随机浮动 -1 到 +2
         current = data.get("avg_profit", 5.0)
-        drift = round(random.uniform(-1, 2), 2)
+        drift = round(random.uniform(-1.5, 2.5), 2)
         current = round(current + drift, 2)
         data = {"avg_profit": current, "last_update": today}
         try:
@@ -215,28 +214,49 @@ async def get_recent_trades(limit: int = 10):
 @router.get("/platform_stats")
 async def get_platform_stats():
     """获取平台统计数据：策略总数、活跃用户、平均收益、胜率、运行中策略"""
-    db = SessionLocal()
+    from app.database import SessionLocal as DB
+    from app.models import User, SiteConfig, Strategy, Trade
+
+    db = DB()
     try:
-        from app.models import User
+        # 读取配置
+        def get_config(key, default=""):
+            row = db.query(SiteConfig).filter(SiteConfig.key == key).first()
+            return row.value if row and row.value else default
+
+        # 活跃用户
+        active_users_mode = get_config("active_users_mode", "real")
+        if active_users_mode == "custom":
+            active_users = int(get_config("active_users", "1"))
+        else:
+            active_users = db.query(User).count()
 
         # 策略总数
-        total_strategies = db.query(Strategy).count()
+        total_strategies_mode = get_config("total_strategies_mode", "real")
+        if total_strategies_mode == "custom":
+            total_strategies = int(get_config("total_strategies", "15"))
+        else:
+            total_strategies = db.query(Strategy).count()
 
         # 运行中的策略
         running_strategies = db.query(Strategy).filter(Strategy.enabled == True).count()
 
-        # 活跃用户数（总用户数）
-        active_users = db.query(User).count()
-
-        # 平均收益：模拟数据，每日0点随机浮动 -1~2%
-        avg_profit = _get_avg_profit()
-
-        # 胜率（从交易记录）
-        trades = db.query(Trade).filter(Trade.pnl.isnot(None), Trade.pnl != 0).all()
-        if trades:
-            winning_trades = sum(1 for t in trades if t.pnl and t.pnl > 0)
-            win_rate = (winning_trades / len(trades) * 100)
+        # 平均收益
+        avg_profit_mode = get_config("avg_profit_mode", "custom")
+        if avg_profit_mode == "custom":
+            avg_profit = float(get_config("avg_profit", "5.0"))
         else:
+            avg_profit = _get_avg_profit()
+
+        # 胜率
+        try:
+            trades = db.query(Trade).filter(Trade.pnl.isnot(None), Trade.pnl != 0).all()
+            if trades:
+                winning_trades = sum(1 for t in trades if t.pnl and t.pnl > 0)
+                win_rate = (winning_trades / len(trades) * 100)
+            else:
+                win_rate = 68.5
+        except:
             win_rate = 68.5
 
         return {
@@ -247,14 +267,8 @@ async def get_platform_stats():
             "running_strategies": running_strategies,
         }
     except Exception as e:
-        print(f"[Dashboard] Failed to get platform stats: {e}")
-        return {
-            "total_strategies": 15,
-            "active_users": 1,
-            "avg_profit": _get_avg_profit(),
-            "win_rate": 68.5,
-            "running_strategies": 0,
-        }
+        print(f"[Dashboard] platform_stats error: {e}")
+        raise
     finally:
         db.close()
 

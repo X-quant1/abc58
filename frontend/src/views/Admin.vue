@@ -227,12 +227,46 @@
               </el-form-item>
             </el-col>
           </el-row>
+
+          <h3 class="panel-title" style="margin-top: 24px">平台数据展示</h3>
           <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="活跃用户">
+                <el-radio-group v-model="siteConfig.active_users_mode" style="margin-bottom: 8px;">
+                  <el-radio label="real">真实数据</el-radio>
+                  <el-radio label="custom">自定义</el-radio>
+                </el-radio-group>
+                <el-input-number v-if="siteConfig.active_users_mode === 'custom'" v-model="siteConfig.active_users" :min="0" :max="100000" style="width: 100%;" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="策略总数">
+                <el-radio-group v-model="siteConfig.total_strategies_mode" style="margin-bottom: 8px;">
+                  <el-radio label="real">真实数据</el-radio>
+                  <el-radio label="custom">自定义</el-radio>
+                </el-radio-group>
+                <el-input-number v-if="siteConfig.total_strategies_mode === 'custom'" v-model="siteConfig.total_strategies" :min="0" :max="10000" style="width: 100%;" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="平均收益（%）">
+                <el-radio-group v-model="siteConfig.avg_profit_mode" style="margin-bottom: 8px;">
+                  <el-radio label="custom">自定义</el-radio>
+                  <el-radio label="auto">自动浮动</el-radio>
+                </el-radio-group>
+                <el-input-number v-if="siteConfig.avg_profit_mode === 'custom'" v-model="siteConfig.avg_profit" :min="-100" :max="1000" :precision="1" :step="0.5" style="width: 100%;" />
+                <div v-else style="color: var(--text-muted); font-size: 12px;">每天在原数值上随机浮动 -1.5 到 2.5</div>
+              </el-form-item>
+            </el-col>
             <el-col :span="12">
               <el-form-item label="品牌标题（登录页）">
                 <el-input v-model="siteConfig.brand_headline" />
               </el-form-item>
             </el-col>
+          </el-row>
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="品牌描述（登录页）">
                 <el-input v-model="siteConfig.brand_desc" />
@@ -1342,6 +1376,12 @@ const siteConfig = reactive({
   contact_email: '', contact_telegram: '',
   okx_register_url: '', bitget_register_url: '', htx_register_url: '',
   agreement_title: '', agreement_content: '',
+  avg_profit: 5.0,
+  avg_profit_mode: 'custom',
+  active_users: 1,
+  active_users_mode: 'real',
+  total_strategies: 15,
+  total_strategies_mode: 'real',
 })
 const configLoading = ref(false)
 const configSaving = ref(false)
@@ -1367,12 +1407,18 @@ async function loadConfig() {
     const data = await axios.get('/admin/config')
     Object.assign(siteConfig, data.configs)
   } catch { /* ignore */ }
-  // 加载站点配置中的 site_name、site_logo、site_slogan
+  // 加载站点配置
   try {
     const siteData = await axios.get('/settings/site')
     if (siteData.site_name) siteConfig.site_name = siteData.site_name
     if (siteData.site_logo) siteConfig.site_logo = siteData.site_logo
     if (siteData.site_slogan) siteConfig.site_slogan = siteData.site_slogan
+    if (siteData.avg_profit) siteConfig.avg_profit = parseFloat(siteData.avg_profit)
+    if (siteData.avg_profit_mode) siteConfig.avg_profit_mode = siteData.avg_profit_mode
+    if (siteData.active_users) siteConfig.active_users = parseInt(siteData.active_users)
+    if (siteData.active_users_mode) siteConfig.active_users_mode = siteData.active_users_mode
+    if (siteData.total_strategies) siteConfig.total_strategies = parseInt(siteData.total_strategies)
+    if (siteData.total_strategies_mode) siteConfig.total_strategies_mode = siteData.total_strategies_mode
   } catch { /* ignore */ }
   configLoading.value = false
 }
@@ -1381,31 +1427,36 @@ async function saveConfig() {
   configSaving.value = true
   configSaved.value = false
   try {
-    await axios.post('/admin/config', { configs: { ...siteConfig } })
-    // 同时保存站点名称、Logo、副标题到 /settings/site
-    try {
-      const siteRes = await axios.post('/settings/site', {
-        site_name: siteConfig.site_name,
-        site_logo: siteConfig.site_logo,
-        site_slogan: siteConfig.site_slogan
-      })
-      // 后端返回文件 URL，替换 Base64 为 URL
-      if (siteRes.site_logo) {
-        siteConfig.site_logo = siteRes.site_logo
-      }
-      // 更新缓存（URL 很小，不会造成延迟）
-      const cacheData = JSON.stringify({
-        site_name: siteConfig.site_name || 'BTC Quant',
-        site_logo: siteConfig.site_logo || '',
-        site_slogan: siteConfig.site_slogan || '量化交易系统',
-      })
-      localStorage.setItem('site_settings_cache', cacheData)
-    } catch { /* ignore */ }
+    // 保存到 /settings/site
+    const siteRes = await axios.post('/settings/site', {
+      site_name: siteConfig.site_name || '',
+      site_logo: siteConfig.site_logo || '',
+      site_slogan: siteConfig.site_slogan || '',
+      avg_profit: String(siteConfig.avg_profit ?? 5.0),
+      avg_profit_mode: siteConfig.avg_profit_mode || 'custom',
+      active_users: String(siteConfig.active_users ?? 1),
+      active_users_mode: siteConfig.active_users_mode || 'real',
+      total_strategies: String(siteConfig.total_strategies ?? 15),
+      total_strategies_mode: siteConfig.total_strategies_mode || 'real',
+    })
+    if (siteRes.site_logo) {
+      siteConfig.site_logo = siteRes.site_logo
+    }
+    // 保存其他配置到 /admin/config
+    const { avg_profit, avg_profit_mode, active_users, active_users_mode, total_strategies, total_strategies_mode, ...otherConfig } = siteConfig
+    await axios.post('/admin/config', { configs: otherConfig })
+
+    const cacheData = JSON.stringify({
+      site_name: siteConfig.site_name || 'BTC Quant',
+      site_logo: siteConfig.site_logo || '',
+      site_slogan: siteConfig.site_slogan || '量化交易系统',
+    })
+    localStorage.setItem('site_settings_cache', cacheData)
     ElMessage.success('配置已保存')
     configSaved.value = true
     setTimeout(() => { configSaved.value = false }, 3000)
-  } catch {
-    ElMessage.error('保存失败')
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e?.response?.data?.detail || e?.message || '未知错误'))
   }
   configSaving.value = false
 }

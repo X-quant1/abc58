@@ -371,6 +371,12 @@ class SiteSettingsRequest(BaseModel):
     site_name: Optional[str] = None
     site_logo: Optional[str] = None  # Base64 或 URL
     site_slogan: Optional[str] = None  # 副标题
+    avg_profit: Optional[str] = None  # 平均收益（百分比）
+    avg_profit_mode: Optional[str] = "custom"  # custom=自定义 / auto=自动浮动
+    active_users: Optional[str] = None  # 活跃用户数
+    active_users_mode: Optional[str] = "real"  # custom=自定义 / real=真实数据
+    total_strategies: Optional[str] = None  # 策略总数
+    total_strategies_mode: Optional[str] = "real"  # custom=自定义 / real=真实数据
 
 
 @router.get("/site")
@@ -384,7 +390,13 @@ async def get_site_settings():
         defaults = {
             "site_name": "BTC Quant",
             "site_logo": "",
-            "site_slogan": "量化交易系统"
+            "site_slogan": "量化交易系统",
+            "avg_profit": "5.0",
+            "avg_profit_mode": "custom",
+            "active_users": "1",
+            "active_users_mode": "real",
+            "total_strategies": "15",
+            "total_strategies_mode": "real",
         }
         result = dict(defaults)
         for key in defaults:
@@ -431,7 +443,18 @@ async def save_site_settings(req: SiteSettingsRequest, current_user: dict = Depe
                 print(f"Logo save error: {e}")
 
         # 更新或创建配置
-        for key, value in [("site_name", req.site_name), ("site_logo", logo_value), ("site_slogan", req.site_slogan)]:
+        config_items = [
+            ("site_name", req.site_name),
+            ("site_logo", logo_value),
+            ("site_slogan", req.site_slogan),
+            ("avg_profit", req.avg_profit),
+            ("avg_profit_mode", req.avg_profit_mode),
+            ("active_users", req.active_users),
+            ("active_users_mode", req.active_users_mode),
+            ("total_strategies", req.total_strategies),
+            ("total_strategies_mode", req.total_strategies_mode),
+        ]
+        for key, value in config_items:
             if value is not None:
                 row = db.query(SiteConfig).filter(SiteConfig.key == key).first()
                 if row:
