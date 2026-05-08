@@ -356,7 +356,8 @@
           </el-col>
 
           <el-col :span="15" style="display: flex;">
-            <div class="ai-chat-section" style="flex: 1;" :style="aiLogoBgStyle">
+            <div class="ai-chat-section" style="flex: 1;">
+              <img v-if="siteLogo" :src="siteLogo" class="ai-logo-watermark" />
               <div class="panel-header" style="margin-bottom: 8px;">
                 <span class="panel-title">
                   <span class="ai-chat-icon">🤖</span>
@@ -988,12 +989,6 @@ const formattedAnalysisTime = computed(() => {
 
 // ─── AI分析室Logo水印 ───
 const siteLogo = ref('')
-const aiLogoBgStyle = computed(() => {
-  if (!siteLogo.value) return {}
-  return {
-    '--ai-logo': `url(${siteLogo.value})`,
-  }
-})
 const aiTeamLoading = ref(false)
 const nextAnalysisCountdown = ref('')
 const btcPrice = ref(null)
@@ -4315,15 +4310,13 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow: hidden;
 }
-.ai-chat-section::before {
-  content: '';
+.ai-logo-watermark {
   position: absolute;
-  inset: 0;
-  background-image: var(--ai-logo);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 60%;
-  opacity: 0.06;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50%;
+  opacity: 0.10;
   pointer-events: none;
   z-index: 0;
 }
