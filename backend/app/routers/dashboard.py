@@ -525,17 +525,16 @@ async def ai_team_analysis():
 
 @router.post("/ai_quick_analysis")
 async def ai_quick_analysis():
-    """单分析师快速分析 - 根据当前市场行情给出简要判断"""
+    """快速分析 - 使用独立的快速分析API配置"""
     from app.services.ai_analysis import (
-        get_configured_analysts, call_analyst, build_market_prompt,
+        call_quick_analysis, get_ai_config,
     )
 
-    configured = get_configured_analysts()
-    if not configured:
-        return {"error": "未配置分析师，请先在管理后台配置"}
-
-    # 取第一个已配置的分析师
-    analyst_key = configured[0]
+    # 检查快速分析是否配置
+    cfg = get_ai_config()
+    qa = cfg.get("quick_analysis", {})
+    if not qa.get("api_key") or not qa.get("base_url") or not qa.get("model"):
+        return {"error": "快速分析API未配置，请先在管理后台配置"}
 
     # 获取市场数据
     regime_data = await get_market_regime()
@@ -575,7 +574,7 @@ ADX {adx:.1f}，波动率比 {vol_ratio:.2f}，资金费率 {funding*100:.4f}%�
 
 保持简短，不要超过80字。"""
 
-    result_holder = {"content": "", "analyst": analyst_key}
+    result_holder = {"content": "", "analyst": "quick_analysis"}
 
     async def _stream():
         import queue as q
@@ -585,7 +584,7 @@ ADX {adx:.1f}，波动率比 {vol_ratio:.2f}，资金费率 {funding*100:.4f}%�
 
         def _worker():
             try:
-                for chunk in call_analyst(analyst_key, quick_prompt, timeout=20.0):
+                for chunk in call_quick_analysis(quick_prompt, timeout=20.0):
                     buf.put(("chunk", chunk))
                 buf.put(("done", None))
             except Exception as e:

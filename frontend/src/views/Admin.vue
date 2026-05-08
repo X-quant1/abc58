@@ -507,6 +507,25 @@
               <el-input v-model="aiConfig.judge.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
               <el-input v-model="aiConfig.judge.model" placeholder="模型名称" size="small" />
             </div>
+
+            <!-- 快速分析API -->
+            <div class="ai-card ai-card--quick" v-if="aiConfig.quick_analysis">
+              <div class="ai-card-header">
+                <span class="ai-card-title">
+                  <span>⚡</span>
+                  {{ aiConfig.quick_analysis.name || '快速分析' }}
+                </span>
+                <el-tag v-if="aiConfig.quick_analysis.configured" type="success" size="small">已配置</el-tag>
+                <el-tag v-else type="warning" size="small">未配置</el-tag>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+                用于Dashboard「AI分析当前行情」按钮，独立于三分析师系统
+              </div>
+              <el-input v-model="aiConfig.quick_analysis.name" placeholder="名称" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.quick_analysis.api_key" placeholder="API Key" size="small" show-password style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.quick_analysis.base_url" placeholder="Base URL" size="small" style="margin-bottom:8px" />
+              <el-input v-model="aiConfig.quick_analysis.model" placeholder="模型名称" size="small" />
+            </div>
           </div>
 
           <div style="display: flex; gap: 10px; margin-top: 16px; align-items: center;">
