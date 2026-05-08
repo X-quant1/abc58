@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Node
+frontend/node_modules
+frontend/.vite
+
+# Python
+backend/__pycache__
+backend/**/__pycache__
+backend/**/*.pyc
+backend/.venv
+backend/venv
+*.egg-info
+
+# 数据库（保留结构，不保留数据）
+backend/data/*.db-shm
+backend/data/*.db-wal
+
+# 日志和临时文件
+*.log
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.gif
+.DS_Store
+Thumbs.db
+
+# Docker相关
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 其他
+.idea
+.vscode
+*.md
+test-results/
+ai_*.png
