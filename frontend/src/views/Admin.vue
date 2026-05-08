@@ -509,13 +509,13 @@
             </div>
 
             <!-- 快速分析API -->
-            <div class="ai-card ai-card--quick" v-if="aiConfig.quick_analysis">
+            <div class="ai-card ai-card--quick">
               <div class="ai-card-header">
                 <span class="ai-card-title">
                   <span>⚡</span>
-                  {{ aiConfig.quick_analysis.name || '快速分析' }}
+                  {{ aiConfig.quick_analysis?.name || '快速分析' }}
                 </span>
-                <el-tag v-if="aiConfig.quick_analysis.configured" type="success" size="small">已配置</el-tag>
+                <el-tag v-if="aiConfig.quick_analysis?.configured" type="success" size="small">已配置</el-tag>
                 <el-tag v-else type="warning" size="small">未配置</el-tag>
               </div>
               <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
