@@ -58,5 +58,5 @@ Thumbs.db
 check_*.py
 cancel_*.py
 add_*.py
-auto_*.py
-auto_*.js
+test_*.py
+temp_*.py
