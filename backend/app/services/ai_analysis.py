@@ -147,7 +147,7 @@ def call_llm_stream(
         "messages": messages,
         "stream": True,
         "temperature": 0.7,
-        "max_tokens": 512,
+        "max_tokens": 2048,  # 增加token限制支持完整输出
     }
 
     resp = requests.post(url, json=payload, headers=headers, stream=True, timeout=timeout)
@@ -165,9 +165,11 @@ def call_llm_stream(
             try:
                 chunk = json.loads(data_str)
                 delta = chunk.get("choices", [{}])[0].get("delta", {})
+                # 分别处理reasoning和content
+                reasoning = delta.get("reasoning_content", "")
                 content = delta.get("content", "")
-                if content:
-                    yield content
+                if reasoning or content:
+                    yield (reasoning, content)
             except (json.JSONDecodeError, IndexError, KeyError):
                 continue
 
@@ -208,8 +210,39 @@ def call_analyst(analyst_key: str, market_prompt: str, timeout: float = 25.0, ot
         messages.append({"role": "user", "content": debate_prompt})
 
     try:
+        # 收集完整响应
+        full_reasoning = ""
+        full_content = ""
+        found_format = False
+        format_buffer = ""
+
         for chunk in call_llm_stream(a["api_key"], a["base_url"], a["model"], messages, timeout):
-            yield chunk
+            # call_llm_stream现在返回(reasoning, content)元组
+            if isinstance(chunk, tuple):
+                reasoning, content = chunk
+                if reasoning:
+                    full_reasoning += reasoning
+                    # 在reasoning中检测格式化输出
+                    if "【观点】" in reasoning:
+                        found_format = True
+                    if found_format:
+                        format_buffer += reasoning
+                if content:
+                    full_content += content
+                    yield content
+            else:
+                # 兼容旧格式
+                full_content += chunk
+                yield chunk
+
+        # 如果content为空，但reasoning中有格式化输出，补充输出
+        if not full_content and format_buffer:
+            # 提取【观点】开始的格式化输出
+            import re
+            match = re.search(r'【观点】.*', format_buffer, re.DOTALL)
+            if match:
+                yield match.group(0)
+
     except Exception as e:
         yield f"[调用失败: {str(e)[:50]}]"
 

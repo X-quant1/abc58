@@ -280,6 +280,8 @@ function formatContent(text) {
   if (!text) return ''
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/【(入场|止损|止盈|信心|判断)】\s*\n/g, '【$1】')  // 去掉关键标签后的换行
+    .replace(/\n\s*\n/g, '\n')  // 合并所有空行为单个换行
     .replace(/\n/g, '<br>')
     .replace(/^(<br>\s*)+/, '')
     .replace(/(<br>\s*)+$/, '')
@@ -489,6 +491,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.ai-message-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .ai-avatar-name {
   font-size: 10px;
   color: var(--text-muted);
@@ -525,6 +533,8 @@ onUnmounted(() => {
   border-radius: 10px;
   padding: 10px 14px;
   border: 1px solid var(--border-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ai-message-content strong {

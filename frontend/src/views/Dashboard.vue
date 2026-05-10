@@ -624,6 +624,19 @@
             {{ aiAnalyzing ? 'AI 分析中...' : 'AI 分析当前行情' }}
           </el-button>
 
+          <!-- 分析中加载动画 -->
+          <div class="ai-loading-overlay" v-if="aiAnalyzing && !aiQuickText">
+            <div class="ai-loading-content">
+              <div class="ai-loading-spinner"></div>
+              <div class="ai-loading-text">AI 正在分析市场数据...</div>
+              <div class="ai-loading-tips">
+                <span>📊 读取K线数据</span>
+                <span>📈 计算技术指标</span>
+                <span>🤖 AI模型推理</span>
+              </div>
+            </div>
+          </div>
+
           <!-- 分析结果简要展示 -->
           <div class="ai-quick-result" v-if="aiQuickText" :class="{ 'result-streaming': aiAnalyzing }">
             <div class="quick-text" v-html="formatContent(aiQuickText)"></div>
@@ -2802,6 +2815,64 @@ onBeforeUnmount(() => {
 /* AI分析按钮 */
 .ai-analyze-section {
   margin-top: 16px;
+}
+
+/* AI分析加载动画 */
+.ai-loading-overlay {
+  margin-top: 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.ai-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-loading-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ai-loading-tips {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.ai-loading-tips span {
+  padding: 4px 8px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.ai-loading-tips span:nth-child(2) { animation-delay: 0.3s; }
+.ai-loading-tips span:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .ai-analyze-btn {

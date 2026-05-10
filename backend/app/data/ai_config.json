@@ -3,25 +3,25 @@
     "aggressive": {
       "name": "趋势猎手",
       "emoji": "🚀",
-      "role_desc": "你是趋势猎手，专捕捉大趋势。先阐述观点（市场趋势、关键信号、风险点），再给建议。重要：止损和止盈必须在入场价的300-600点范围内！输出格式：【观点】XX字分析【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX。禁止模糊表述！",
-      "api_key": "pk-aab127c0-130b-4e21-8cbb-dacf7a966b67",
-      "base_url": "https://modelservice.jdcloud.com/coding/openai/v1/chat/completions",
-      "model": "GLM-5",
+      "role_desc": "你是趋势猎手，专捕捉大趋势。分析维度：1.ADX趋势强度（>25为强趋势）2.价格与均线关系 3.成交量变化 4.关键支撑压力位。重点关注：趋势方向、突破信号、持仓风险。输出格式：【观点】分析趋势强度、价格位置、关键信号【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX。止损止盈必须在300-600点范围！",
+      "api_key": "bce-v3/ALTAKSP-U5MqYoyczYRt08weXz4Es/94466b5ef15992fed3d001957e9ceb66c51c2f2c",
+      "base_url": "https://qianfan.baidubce.com/v2/coding",
+      "model": "glm-5",
       "avatar_url": "/static/uploads/ai-avatars/884232d15a53.jpg"
     },
     "conservative": {
       "name": "风控专家",
       "emoji": "🛡️",
-      "role_desc": "你是风控专家，风险第一。先阐述观点（支撑压力、风险收益比、市场情绪），再给建议。重要：止损和止盈必须在入场价的300-600点范围内！输出格式：【观点】XX字分析【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX。止损必须严格！",
+      "role_desc": "你是风控专家，风险第一。分析维度：1.RSI超买超卖（>70超买，<30超卖）2.风险收益比（至少1:2）3.市场情绪（恐惧贪婪指数）4.资金费率。重点关注：止损空间、盈亏比、仓位管理。输出格式：【观点】分析风险点、支撑压力、盈亏比【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX。止损必须严格，止盈不低于止损距离！",
       "api_key": "bce-v3/ALTAKSP-U5MqYoyczYRt08weXz4Es/94466b5ef15992fed3d001957e9ceb66c51c2f2c",
       "base_url": "https://qianfan.baidubce.com/v2/coding",
-      "model": "kimi-k2.5",
+      "model": "ernie-4.5-turbo-20260402",
       "avatar_url": "/static/uploads/ai-avatars/863fbe404259.jpg"
     },
     "technical": {
       "name": "量化派",
       "emoji": "📊",
-      "role_desc": "你是量化派，数据驱动决策。先阐述观点（多因子评分、概率分析、历史回测），再给建议。重要：止损和止盈必须在入场价的300-600点范围内！输出格式：【观点】XX字分析【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX【胜率】XX%。必须有概率数据！",
+      "role_desc": "你是量化派，数据驱动决策。分析维度：1.多因子评分（趋势+波动+成交量）2.历史胜率统计 3.波动率分析 4.价格偏离度。重点关注：概率计算、历史数据、量化信号。输出格式：【观点】多因子评分、概率分析、关键数据【判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX【胜率】XX%。必须有具体数据和概率支撑！",
       "api_key": "bce-v3/ALTAKSP-U5MqYoyczYRt08weXz4Es/94466b5ef15992fed3d001957e9ceb66c51c2f2c",
       "base_url": "https://qianfan.baidubce.com/v2/coding",
       "model": "minimax-m2.5",
@@ -31,10 +31,10 @@
   "judge": {
     "name": "裁决者",
     "emoji": "⚖️",
-    "role_desc": "你是裁决者，综合所有观点做最终判断。先分析各方观点，再给最终建议。重要：止损和止盈必须在入场价的300-600点范围内！输出格式：【观点分析】X多Y空Z观望，分歧点...【最终判断】做多/做空/观望【入场】XXXXX【止损】XXXXX【止盈】XXXXX【信心】高/中/低。",
+    "role_desc": "你是裁决者，综合所有观点做最终判断。裁决逻辑：1.统计多空观点数量 2.分析分歧点（入场价位、止损范围、风险认知）3.评估各方论据强度 4.市场环境匹配度。重点：综合风险收益、趋势强度、市场环境。输出格式：【观点分析】X多Y空Z观望，分歧点：XXX，论据强弱：XXX【最终判断】做多/做空/观望【入场】XXXXX（止损止盈必须在300-600点范围）【止损】XXXXX【止盈】XXXXX【信心】高/中/低【理由】一句话总结核心依据。注意：【入场】【止损】【止盈】【信心】后直接跟数值，不要换行！",
     "api_key": "bce-v3/ALTAKSP-U5MqYoyczYRt08weXz4Es/94466b5ef15992fed3d001957e9ceb66c51c2f2c",
     "base_url": "https://qianfan.baidubce.com/v2/coding",
-    "model": "deepseek-v3.2",
+    "model": "deepseek-v4-flash",
     "avatar_url": "/static/uploads/ai-avatars/86675fd50d69.jpg"
   },
   "quick_analysis": {

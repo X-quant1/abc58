@@ -448,41 +448,22 @@ async def ai_team_analysis():
         # 存储各分析师完整观点
         opinions = {}
 
-        # 并行调用所有已配置的分析师
+        # 顺序调用每个分析师（避免并发闭包问题）
         for analyst_key in configured:
-            buf = q.Queue()
             opinions[analyst_key] = ""
+            print(f"[AI分析] 开始调用: {analyst_key}")
 
-            def _worker(key):
-                try:
-                    for chunk in call_analyst(key, market_prompt, timeout=25.0):
-                        buf.put(("chunk", key, chunk))
-                    buf.put(("done", key))
-                except Exception as e:
-                    buf.put(("error", key, str(e)))
-
-            t = threading.Thread(target=_worker, args=(analyst_key,), daemon=True)
-            t.start()
-
-            # 为每个分析师启动异步读取任务
-            async def _read_analyst(key, buffer):
-                while True:
-                    try:
-                        msg = buffer.get(timeout=30)
-                        if msg[0] == "chunk":
-                            _, k, chunk = msg
-                            opinions[k] = opinions.get(k, "") + chunk
-                            yield f"data: {json.dumps({'type': 'analyst', 'analyst': k, 'content': chunk}, ensure_ascii=False)}\n\n"
-                        elif msg[0] == "done":
-                            break
-                        elif msg[0] == "error":
-                            yield f"data: {json.dumps({'type': 'analyst', 'analyst': key, 'error': msg[2]}, ensure_ascii=False)}\n\n"
-                            break
-                    except Exception:
-                        break
-
-            async for item in _read_analyst(analyst_key, buf):
-                yield item
+            # 调用分析师
+            try:
+                chunk_count = 0
+                for chunk in call_analyst(analyst_key, market_prompt, timeout=35.0):
+                    opinions[analyst_key] += chunk
+                    chunk_count += 1
+                    yield f"data: {json.dumps({'type': 'analyst', 'analyst': analyst_key, 'content': chunk}, ensure_ascii=False)}\n\n"
+                print(f"[AI分析] {analyst_key} 完成，共{chunk_count}个chunk")
+            except Exception as e:
+                print(f"[AI分析] {analyst_key} 失败: {e}")
+                yield f"data: {json.dumps({'type': 'analyst', 'analyst': analyst_key, 'error': str(e)}, ensure_ascii=False)}\n\n"
 
         # 所有分析师完成后，调用裁决者
         yield f"data: {json.dumps({'type': 'judge_start'}, ensure_ascii=False)}\n\n"
