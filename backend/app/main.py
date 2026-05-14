@@ -109,19 +109,13 @@ async def lifespan(app: FastAPI):
     # 确保 static 目录存在
     (BASE_DIR / "static" / "uploads" / "activities").mkdir(parents=True, exist_ok=True)
 
-    # 启动时加载已保存的 API 配置到运行时
-    from app.routers.settings import _load_config, _apply_config
-    saved_config = _load_config()
+    # 启动时加载Bitget配置到运行时
+    from app.routers.settings import _load_bitget_config
+    saved_config = _load_bitget_config()
     if saved_config.get("key"):
-        _apply_config(saved_config)
-        # 重置 OKX 客户端和缓存服务单例，让后续请求使用新配置
-        from app.services.okx_client import reset_client
-        reset_client()
-        from app.services import cache as cache_module
-        cache_module._cached_market_service = None
-        from app.services import market_rest as market_module
-        market_module._market_service = None
-        print("[OK] API config loaded from file")
+        from app.services.bitget_client import init_client
+        init_client(saved_config["key"], saved_config.get("secret", ""), saved_config.get("passphrase", ""))
+        print("[OK] Bitget config loaded from file")
 
     # WebSocket 推送任务 - 暂时禁用（同步OKX调用阻塞线程池导致全系统卡顿）
     # TODO: 改用纯异步 aiohttp 调用后恢复

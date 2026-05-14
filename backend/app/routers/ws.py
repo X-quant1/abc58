@@ -117,15 +117,15 @@ async def _push_loop():
                 account_counter = 0
                 try:
                     from app import config
-                    if config.OKX_API_KEY:
-                        balance = await asyncio.to_thread(_get_ms().get_account_balance)
-                        await ws_manager.broadcast("account", balance)
-
-                        positions = await asyncio.to_thread(_get_ms().get_positions)
-                        await ws_manager.broadcast("position", {
-                            "positions": positions,
-                            "count": len(positions),
-                        })
+                    if _has_bitget_config():
+                        from app.services.bitget_client import get_client
+                        client = get_client()
+                        if client:
+                            balance = client.get_balance("USDT")
+                            await ws_manager.broadcast("account", {
+                                "account_balance": balance,
+                                "unrealized_pnl": 0,
+                            })
                 except Exception:
                     pass
 

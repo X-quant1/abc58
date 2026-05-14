@@ -1,203 +1,134 @@
-"""交易路由 - 合约交易 + 一键平仓（REST API版本）"""
+"""交易路由 - 合约交易（Bitget版本）"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from app.services.cache import get_cached_market_service, invalidate_account_cache
-from app.services.trade_rest import get_trade_service
+from app.routers.settings import _load_bitget_config, _has_bitget_config
+from app.services.bitget_client import BitgetClient, BitgetAPIError
+from app.services.trade_bitget import BitgetTradeService
 
 router = APIRouter(prefix="/api/trade", tags=["交易"])
+
+
+def _get_trade_service():
+    """获取已初始化的Bitget交易服务"""
+    if not _has_bitget_config():
+        raise HTTPException(status_code=403, detail="请先在个人中心绑定 Bitget API")
+    cfg = _load_bitget_config()
+    if not cfg.get("key"):
+        raise HTTPException(status_code=403, detail="Bitget API 未配置")
+    client = BitgetClient(cfg["key"], cfg["secret"], cfg["passphrase"])
+    return BitgetTradeService(client)
 
 
 # ─── 请求模型 ───
 
 class PlaceOrderRequest(BaseModel):
-    inst_id: str = "BTC-USDT-SWAP"
-    side: str                           # buy / sell
-    sz: str = "0.01"                    # 合约张数
-    ord_type: str = "market"            # market / limit
-    px: str = ""                        # 限价价格
-    lever: int = None                   # 杠杆（None=不设置）
-    td_mode: str = "cross"             # cross / isolated
-    pos_side: str = "net"              # net / long / short
+    symbol: str = "BTCUSDT"
+    side: str = "buy"                   # buy / sell
+    size: str = "1"                     # 张数
+    order_type: str = "market"          # market / limit
+    price: str = ""                     # 限价价格
+    hold_side: str = ""                 # long / short (双向持仓)
+    margin_mode: str = "crossed"        # crossed / fixed
     reduce_only: bool = False
-    tp_trigger_px: str = ""
-    sl_trigger_px: str = ""
-
 
 class ClosePositionRequest(BaseModel):
-    inst_id: str = "BTC-USDT-SWAP"
-    mgn_mode: str = "cross"
-    pos_side: str = "net"
-
-
-class SetLeverageRequest(BaseModel):
-    inst_id: str = "BTC-USDT-SWAP"
-    lever: int = 10
-    mgn_mode: str = "cross"
-    pos_side: str = ""
+    symbol: str = "BTCUSDT"
+    hold_side: str = ""                 # long / short，不传则全平
+    size: str = ""                      # 不传则全平
 
 
 # ─── 查询接口 ───
 
 @router.get("/balance")
 async def get_balance():
-    """获取账户余额"""
+    """获取合约账户余额"""
+    ts = _get_trade_service()
     try:
-        ms = get_cached_market_service()
-        return ms.get_account_balance()
-    except RuntimeError as e:
-        if "API Key" in str(e) or "credentials" in str(e):
-            raise HTTPException(status_code=403, detail="请先在设置中配置 OKX API Key")
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        acc = ts.client.get_mix_account()
+        return {"accountEquity": acc.get("accountEquity"), "available": acc.get("available")}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 @router.get("/positions")
 async def get_positions():
     """获取合约持仓"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        data = ts.get_swap_positions()
-        return {"positions": data}
-    except RuntimeError as e:
-        if "API Key" in str(e) or "credentials" in str(e):
-            raise HTTPException(status_code=403, detail="请先在设置中配置 OKX API Key")
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        return {"positions": ts.get_positions()}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 @router.get("/orders")
-async def get_pending_orders():
-    """获取合约未成交委托"""
+async def get_pending_orders(symbol: str = "BTCUSDT"):
+    """获取当前挂单"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        data = ts.get_swap_orders()
+        data = ts.client._request("GET", "/api/v2/mix/order/orders-pending",
+                                   params={"symbol": symbol, "productType": "USDT-FUTURES"})
         return {"orders": data}
-    except RuntimeError as e:
-        if "API Key" in str(e) or "credentials" in str(e):
-            raise HTTPException(status_code=403, detail="请先在设置中配置 OKX API Key")
-        raise HTTPException(status_code=502, detail=str(e)[:300])
-
-
-@router.get("/fills")
-async def get_fills(inst_id: str = ""):
-    """获取合约成交流水"""
-    try:
-        ts = get_trade_service()
-        data = ts.get_swap_fills(inst_id)
-        return {"fills": data}
-    except RuntimeError as e:
-        if "API Key" in str(e) or "credentials" in str(e):
-            raise HTTPException(status_code=403, detail="请先在设置中配置 OKX API Key")
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 # ─── 交易接口 ───
 
 @router.post("/open-long")
-async def open_long(
-    inst_id: str = "BTC-USDT-SWAP",
-    sz: str = "0.01",
-    lever: int = None,
-    td_mode: str = "cross",
-    tp_trigger_px: str = "",
-    sl_trigger_px: str = "",
-):
-    """开多单"""
+async def open_long(req: PlaceOrderRequest):
+    """开多"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        result = ts.open_long(
-            inst_id=inst_id, sz=sz, lever=lever, td_mode=td_mode,
-            tp_trigger_px=tp_trigger_px, sl_trigger_px=sl_trigger_px,
-        )
-        invalidate_account_cache()
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        result = ts.open_long(req.symbol, req.size, margin_mode=req.margin_mode)
+        return {"success": True, "data": result, "message": "开多成功"}
+    except BitgetAPIError as e:
+        detail = f"开多失败 [{e.code}]: {e.msg}"
+        raise HTTPException(status_code=400, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 @router.post("/open-short")
-async def open_short(
-    inst_id: str = "BTC-USDT-SWAP",
-    sz: str = "0.01",
-    lever: int = None,
-    td_mode: str = "cross",
-    tp_trigger_px: str = "",
-    sl_trigger_px: str = "",
-):
-    """开空单"""
+async def open_short(req: PlaceOrderRequest):
+    """开空"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        result = ts.open_short(
-            inst_id=inst_id, sz=sz, lever=lever, td_mode=td_mode,
-            tp_trigger_px=tp_trigger_px, sl_trigger_px=sl_trigger_px,
-        )
-        invalidate_account_cache()
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        result = ts.open_short(req.symbol, req.size, margin_mode=req.margin_mode)
+        return {"success": True, "data": result, "message": "开空成功"}
+    except BitgetAPIError as e:
+        detail = f"开空失败 [{e.code}]: {e.msg}"
+        raise HTTPException(status_code=400, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 @router.post("/close")
 async def close_position(req: ClosePositionRequest):
-    """平仓（单个合约）"""
+    """平仓"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        result = ts.close_position(
-            inst_id=req.inst_id,
-            mgn_mode=req.mgn_mode,
-            pos_side=req.pos_side,
-        )
-        invalidate_account_cache()
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        result = ts.close_position(req.symbol, req.hold_side, req.size)
+        return {"success": True, "data": result, "message": "平仓成功"}
+    except BitgetAPIError as e:
+        detail = f"平仓失败 [{e.code}]: {e.msg}"
+        raise HTTPException(status_code=400, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])
 
 
 @router.post("/close-all")
 async def close_all_positions():
-    """一键平仓 — 平掉所有合约持仓"""
+    """一键全平"""
+    ts = _get_trade_service()
     try:
-        ts = get_trade_service()
-        result = ts.close_all_positions()
-        invalidate_account_cache()
-        return {"ok": True, **result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
-
-
-@router.post("/cancel")
-async def cancel_order(inst_id: str, ord_id: str = "", cl_ord_id: str = ""):
-    """撤销合约订单"""
-    try:
-        ts = get_trade_service()
-        result = ts.cancel_order(inst_id, ord_id, cl_ord_id)
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
-
-
-@router.post("/leverage")
-async def set_leverage(req: SetLeverageRequest):
-    """设置杠杆"""
-    try:
-        ts = get_trade_service()
-        result = ts.set_leverage(
-            inst_id=req.inst_id,
-            lever=req.lever,
-            mgn_mode=req.mgn_mode,
-            pos_side=req.pos_side,
-        )
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
-
-
-@router.get("/leverage")
-async def get_leverage(inst_id: str = "BTC-USDT-SWAP", mgn_mode: str = "cross"):
-    """获取当前杠杆设置"""
-    try:
-        ts = get_trade_service()
-        result = ts.get_leverage(inst_id, mgn_mode)
-        return {"result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)[:300])
+        positions = ts.get_positions()
+        results = []
+        for pos in positions:
+            if float(pos.get("total", "0")) > 0:
+                result = ts.close_position(pos.get("symbol"), pos.get("holdSide"))
+                results.append(result)
+        return {"success": True, "closed": len(results), "message": f"已平 {len(results)} 个仓位"}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)[:200])

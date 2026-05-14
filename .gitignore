@@ -60,3 +60,4 @@ cancel_*.py
 add_*.py
 test_*.py
 temp_*.py
+backend/app/data/bitget_config.json

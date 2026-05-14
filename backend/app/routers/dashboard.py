@@ -12,6 +12,9 @@ from app import config
 from app.models import Strategy, Trade, User, AiChatHistory, AiJudgeRecord
 from app.database import SessionLocal
 
+# 预导入Bitget客户端
+from app.services.bitget_client import BitgetClient
+
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 # 获取带缓存的行情服务
@@ -47,70 +50,59 @@ def _get_avg_profit() -> float:
     return data["avg_profit"]
 
 
+# 从settings导入
+from app.routers.settings import _has_bitget_config
+
+
 @router.get("/overview")
 async def get_overview():
     """获取总览数据：多币种行情 + 账户信息 + 持仓"""
     import asyncio
+    from app.services.bitget_client import BitgetClient
 
-    symbols = ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "BNB-USDT-SWAP", "SOL-USDT-SWAP", "XRP-USDT-SWAP", "ADA-USDT-SWAP", "DOGE-USDT-SWAP", "DOT-USDT-SWAP"]
+    symbols_bg = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "DOTUSDT"]
 
-    def _fetch_all():
-        """所有数据在单个线程中按顺序获取"""
-        # 行情（合约价格）
-        prices = {}
-        try:
-            all_tickers = _ms().get_tickers("SWAP")
-            ticker_map = {t["symbol"]: t for t in all_tickers}
-            for s in symbols:
-                prices[s] = ticker_map.get(s, {"price": 0, "change_24h": 0})
-        except Exception:
-            prices = {s: {"price": 0, "change_24h": 0} for s in symbols}
+    prices = {}
+    account_info = {"account_balance": None, "unrealized_pnl": None, "currencies": []}
+    positions_info = []
+    funding_info = {"funding_balance": None, "funding_details": []}
 
-        # 账户
-        account_info = {"account_balance": None, "unrealized_pnl": None, "currencies": []}
-        if config.OKX_API_KEY:
-            try:
-                acc = _ms().get_account_balance()
-                account_info = {
-                    "account_balance": acc.get("total_equity"),
-                    "unrealized_pnl": acc.get("total_unrealized_pnl"),
-                    "currencies": acc.get("details", []),
-                }
-            except Exception:
-                pass
-
-        # 持仓
-        positions_info = []
-        if config.OKX_API_KEY:
-            try:
-                positions_info = _ms().get_positions()
-            except Exception:
-                pass
-
-        # 资金
-        funding_info = {"funding_balance": None, "funding_details": []}
-        if config.OKX_API_KEY:
-            try:
-                funding = _ms().get_funding_balance()
-                funding_info = {"funding_balance": funding.get("total_equity", 0), "funding_details": funding.get("details", [])}
-            except Exception:
-                pass
-
-        return prices, account_info, positions_info, funding_info
-
+    # 行情（Bitget）
     try:
-        prices, account_info, positions_info, funding_info = await asyncio.wait_for(
-            asyncio.to_thread(_fetch_all), timeout=15.0
-        )
-    except asyncio.TimeoutError:
-        prices = {s: {"price": 0, "change_24h": 0} for s in symbols}
-        account_info = {"account_balance": None, "unrealized_pnl": None, "currencies": []}
-        positions_info = []
-        funding_info = {"funding_balance": None, "funding_details": []}
+        from app.routers.settings import _load_bitget_config
+        bg_cfg = _load_bitget_config()
+        if bg_cfg.get("key"):
+            bg_client = BitgetClient(bg_cfg["key"], bg_cfg["secret"], bg_cfg["passphrase"])
+            all_tickers = bg_client.get_tickers()
+            ticker_map = {t["symbol"]: t for t in all_tickers}
+            for s in symbols_bg:
+                t = ticker_map.get(s, {})
+                prices[s] = {"price": float(t.get("lastPr", 0)), "change_24h": float(t.get("change24h", 0))}
+        else:
+            prices = {s: {"price": 0, "change_24h": 0} for s in symbols_bg}
+    except Exception:
+        prices = {s: {"price": 0, "change_24h": 0} for s in symbols_bg}
+
+    # Bitget合约账户余额
+    if _has_bitget_config():
+        try:
+            from app.routers.settings import _load_bitget_config
+            bg = _load_bitget_config()
+            if bg.get("key"):
+                bg_client = BitgetClient(bg["key"], bg["secret"], bg["passphrase"])
+                mix_acc = bg_client.get_mix_account()
+                if mix_acc:
+                    account_info = {
+                        "account_balance": float(mix_acc.get("accountEquity", 0)),
+                        "unrealized_pnl": float(mix_acc.get("unrealizedPL", 0)),
+                        "currencies": [],
+                    }
+        except Exception as e:
+            pass
 
     # 恐惧贪婪指数
     fear_greed = 50
-    btc_change = prices.get("BTC-USDT-SWAP", {}).get("change_24h", 0) if isinstance(prices, dict) else 0
+    btc_change = prices.get("BTCUSDT", {}).get("change_24h", 0)
     if btc_change > 5: fear_greed = 75
     elif btc_change > 2: fear_greed = 65
     elif btc_change > 0: fear_greed = 55
@@ -124,7 +116,6 @@ async def get_overview():
         db = SessionLocal()
         running = db.query(Strategy).filter(Strategy.enabled == True).all()
         strategy_stats["running_count"] = len(running)
-        # 计算所有交易的盈亏总和
         from sqlalchemy import func
         total_pnl = db.query(func.sum(Trade.pnl)).scalar()
         strategy_stats["total_profit"] = float(total_pnl) if total_pnl else 0.0
@@ -140,16 +131,14 @@ async def get_overview():
         **funding_info,
         "positions": positions_info,
         "position_count": len(positions_info),
-        "has_api_key": bool(config.OKX_API_KEY),
+        "has_api_key": _has_bitget_config(),
         "running_strategies": strategy_stats["running_count"],
         "total_strategy_profit": strategy_stats["total_profit"],
-        # 多币种价格
-        "btc_price": prices.get("BTC-USDT-SWAP", {}).get("price", 0),
-        "btc_change_24h": prices.get("BTC-USDT-SWAP", {}).get("change_24h", 0),
-        "eth_price": prices.get("ETH-USDT-SWAP", {}).get("price", 0),
-        "eth_change_24h": prices.get("ETH-USDT-SWAP", {}).get("change_24h", 0),
+        "btc_price": prices.get("BTCUSDT", {}).get("price", 0),
+        "btc_change_24h": prices.get("BTCUSDT", {}).get("change_24h", 0),
+        "eth_price": prices.get("ETHUSDT", {}).get("price", 0),
+        "eth_change_24h": prices.get("ETHUSDT", {}).get("change_24h", 0),
         "prices": prices,
-        # 恐惧贪婪指数
         "fear_greed_index": fear_greed,
     }
 
@@ -288,9 +277,26 @@ async def get_market_regime():
             "funding_rate": 0,
         }
         try:
-            # 1. 获取BTC 1h K线（需要至少100根用于分析）
-            klines = _ms().get_klines("BTC-USDT-SWAP", "1H", 100)
-            if klines and len(klines) > 60:
+            # 1. 获取BTC 1h K线（Bitget）
+            from app.routers.settings import _load_bitget_config
+            bg_cfg2 = _load_bitget_config()
+            if bg_cfg2.get("key"):
+                bg2 = BitgetClient(bg_cfg2["key"], bg_cfg2["secret"], bg_cfg2["passphrase"])
+                raw_klines = bg2.get_klines("BTCUSDT", "1H", 100)
+            else:
+                raw_klines = []
+            if raw_klines and len(raw_klines) > 60:
+                # 转换Bitget K线格式到dict格式
+                klines = []
+                for item in raw_klines:
+                    klines.append({
+                        "timestamp": int(item[0]),
+                        "open": float(item[1]),
+                        "high": float(item[2]),
+                        "low": float(item[3]),
+                        "close": float(item[4]),
+                        "volume": float(item[5]),
+                    })
                 from app.services.market_regime import market_regime_detector
                 regime_data = market_regime_detector.detect_with_score(klines)
                 result["regime"] = regime_data["regime"]
@@ -306,11 +312,17 @@ async def get_market_regime():
             print(f"[Dashboard] Market regime error: {e}")
 
         try:
-            # 2. BTC合约价格和涨跌幅
-            btc_ticker = _ms().get_ticker("BTC-USDT-SWAP")
-            if btc_ticker:
-                result["btc_price"] = btc_ticker.get("price", 0)
-                result["btc_change_24h"] = btc_ticker.get("change_24h", 0) or 0
+            # 2. BTC合约价格和涨跌幅（Bitget）
+            from app.routers.settings import _load_bitget_config
+            bg_cfg3 = _load_bitget_config()
+            if bg_cfg3.get("key"):
+                bg3 = BitgetClient(bg_cfg3["key"], bg_cfg3["secret"], bg_cfg3["passphrase"])
+                btc_ticker = bg3.get_ticker("BTCUSDT")
+                if btc_ticker:
+                    result["btc_price"] = float(btc_ticker.get("lastPr", 0))
+                    change_str = btc_ticker.get("change24h", "0")
+                    result["btc_change_24h"] = float(change_str) if change_str else 0
+                    result["funding_rate"] = float(btc_ticker.get("fundingRate", 0))
         except Exception:
             pass
 

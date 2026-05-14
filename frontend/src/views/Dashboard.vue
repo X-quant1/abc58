@@ -31,25 +31,25 @@
               </template>
               <div class="personal-center">
                 <!-- 交易所绑定卡片 -->
-                <div class="exchange-cards" :class="{ 'single-bound': okxBound }">
-                  <!-- OKX -->
-                  <div class="exchange-card" :class="{ 'exchange-card--bound': okxBound }">
+                <div class="exchange-cards" :class="{ 'single-bound': bitgetBound }">
+                  <!-- Bitget -->
+                  <div class="exchange-card" :class="{ 'exchange-card--bound': bitgetBound }">
                     <div class="exchange-header">
-                      <div class="exchange-logo okx-logo">
-                        <img :src="okxLogo" alt="OKX" class="exchange-logo-img" />
+                      <div class="exchange-logo bitget-logo">
+                        <span class="logo-text">BG</span>
                       </div>
                       <div class="exchange-info">
-                        <div class="exchange-name">OKX</div>
-                        <el-tag :type="okxBound ? 'success' : 'info'" size="small">
-                          {{ okxBound ? '已绑定' : '未绑定' }}
+                        <div class="exchange-name">Bitget</div>
+                        <el-tag :type="bitgetBound ? 'success' : 'info'" size="small">
+                          {{ bitgetBound ? '已绑定' : '未绑定' }}
                         </el-tag>
                       </div>
                     </div>
                     <!-- 已绑定：统计网格 -->
-                    <div v-if="okxBound" class="bound-stats">
+                    <div v-if="bitgetBound" class="bound-stats">
                       <div class="bound-stat">
                         <div class="bound-stat-label">UID</div>
-                        <div class="bound-stat-value">{{ apiConfig.okx_uid || '--' }}</div>
+                        <div class="bound-stat-value">{{ apiConfig.bitget_uid || '--' }}</div>
                       </div>
                       <div class="bound-stat">
                         <div class="bound-stat-label">账户余额</div>
@@ -66,54 +66,15 @@
                         </div>
                       </div>
                     </div>
-                    <div v-if="okxBound" class="bound-unbind" @click="unbindExchange('okx')">
+                    <div v-if="bitgetBound" class="bound-unbind" @click="unbindExchange('bitget')">
                       <span class="unbind-icon">❌</span>
                       <span class="unbind-text">解除绑定</span>
                     </div>
-                    <div v-if="!okxBound" class="exchange-actions">
-                      <a :href="registerUrls.okx || '#'" target="_blank" class="register-btn">注册</a>
-                      <el-button type="primary" size="small" @click="showBindDialog('okx')">绑定</el-button>
-                    </div>
-                  </div>
-
-                  <!-- Bitget & HTX: OKX未绑定时显示 -->
-                  <template v-if="!okxBound">
-                  <div class="exchange-card">
-                    <div class="exchange-header">
-                      <div class="exchange-logo bitget-logo">
-                        <span class="logo-text">BG</span>
-                      </div>
-                      <div class="exchange-info">
-                        <div class="exchange-name">Bitget</div>
-                        <el-tag type="info" size="small">未绑定</el-tag>
-                      </div>
-                    </div>
-                    <div class="exchange-actions">
+                    <div v-if="!bitgetBound" class="exchange-actions">
                       <a v-if="registerUrls.bitget" :href="registerUrls.bitget" target="_blank" class="register-btn">注册</a>
-                      <el-button type="primary" size="small" disabled>绑定</el-button>
+                      <el-button type="primary" size="small" @click="showBindDialog('bitget')">绑定</el-button>
                     </div>
                   </div>
-
-                  <div class="exchange-card">
-                    <div class="exchange-header">
-                      <div class="exchange-logo htx-logo">
-                        <span class="logo-text">HTX</span>
-                      </div>
-                      <div class="exchange-info">
-                        <div class="exchange-name">HTX</div>
-                        <el-tag type="info" size="small">未绑定</el-tag>
-                      </div>
-                    </div>
-                    <div class="exchange-actions">
-                      <a v-if="registerUrls.htx" :href="registerUrls.htx" target="_blank" class="register-btn">注册</a>
-                      <el-button type="primary" size="small" disabled>绑定</el-button>
-                    </div>
-                  </div>
-                </template>
-                </div>
-                <div v-if="!okxBound" class="exchange-tip">
-                  <img src="/images/warning.png" class="tip-icon" alt="⚠" />
-                  注意：以上三个交易所只能同时绑定一个
                 </div>
               </div>
             </el-card>
@@ -681,7 +642,7 @@
       <!-- 自定义标题 -->
       <template #header>
         <div class="bind-dialog-header">
-          <span class="bind-title">OKX API 登录</span>
+          <span class="bind-title">Bitget API 登录</span>
         </div>
       </template>
 
@@ -729,7 +690,7 @@
         </el-form>
         <!-- 教程链接 -->
         <div class="bind-tutorial">
-          <a href="https://www.okx.com/cn/account/my-api" target="_blank">不知道如何获取API? 查看教程</a>
+          <a href="https://www.bitget.com/zh-CN/account/newapi" target="_blank">不知道如何获取API? 查看教程</a>
         </div>
         <!-- 确认按钮 -->
         <el-button 
@@ -1253,7 +1214,7 @@ function useStrategy(s) {
     ElMessage.warning('请登录后再操作')
     return
   }
-  if (!okxBound.value) {
+  if (!bitgetBound.value) {
     ElMessage.warning('未检测到交易所绑定')
     return
   }
@@ -1493,9 +1454,9 @@ const judgeRecords = ref([])
 
 let pnlChart = null
 
-const hasApiKey = ref(localStorage.getItem('okx_bound') === '1')  // 先用 localStorage 快速渲染，防止闪烁
+const hasApiKey = ref(localStorage.getItem('bitget_bound') === '1')  // 先用 localStorage 快速渲染，防止闪烁
 const accountBalance = ref(null)
-const registerUrls = ref({ okx: '', bitget: '', htx: '' })
+const registerUrls = ref({ bitget: '' })
 const unrealizedPnl = ref(null)
 const fundingBalance = ref(0)
 const currencies = ref([])
@@ -1565,8 +1526,7 @@ const apiConfig = ref({
   key: '',
   secret: '',
   passphrase: '',
-  sandbox: true,
-  okx_uid: localStorage.getItem('okx_bound_uid') || '',
+  bitget_uid: localStorage.getItem('bitget_bound_uid') || '',
 })
 const savingApi = ref(false)
 const testingApi = ref(false)
@@ -1627,8 +1587,8 @@ const bindForm = ref({
   sandbox: false, // 强制使用实盘
 })
 
-// OKX 是否已绑定
-const okxBound = computed(() => {
+// Bitget 是否已绑定
+const bitgetBound = computed(() => {
   return hasApiKey.value === true
 })
 
@@ -1957,23 +1917,22 @@ async function loadApiConfig() {
     const res = await api.get('/settings/api')
     // 注册链接（无论是否绑定API都加载）
     registerUrls.value = {
-      okx: res.okx_register_url || '',
       bitget: res.bitget_register_url || '',
-      htx: res.htx_register_url || '',
     }
     if (res.key) {
       apiConfig.value.key = res.key
       apiConfig.value.secret = res.secret ? '••••••••' : ''
       apiConfig.value.passphrase = res.passphrase ? '••••••••' : ''
-      apiConfig.value.sandbox = res.sandbox
-      apiConfig.value.okx_uid = res.okx_uid || ''
+      apiConfig.value.bitget_uid = res.bitget_uid || ''
       hasApiKey.value = true
-      localStorage.setItem('okx_bound', '1')
-      localStorage.setItem('okx_bound_uid', apiConfig.value.okx_uid)
+      localStorage.setItem('bitget_bound', '1')
+      if (res.bitget_uid) {
+        localStorage.setItem('bitget_bound_uid', res.bitget_uid)
+      }
     } else {
       hasApiKey.value = false
-      localStorage.removeItem('okx_bound')
-      localStorage.removeItem('okx_bound_uid')
+      localStorage.removeItem('bitget_bound')
+      localStorage.removeItem('bitget_bound_uid')
     }
   } catch (e) {
     console.error('加载API配置失败:', e)
@@ -2041,7 +2000,7 @@ async function refreshUid() {
 async function unbindApi() {
   try {
     await ElMessageBox.confirm(
-      '确定要解除OKX API绑定吗？解除后需要重新配置API Key。',
+      '确定要解除Bitget API绑定吗？解除后需要重新配置API Key。',
       '确认解除绑定',
       {
         confirmButtonText: '确定',
@@ -2055,23 +2014,21 @@ async function unbindApi() {
       key: '',
       secret: '',
       passphrase: '',
-      sandbox: true,
-      okx_uid: '',
+      bitget_uid: '',
     }
     hasApiKey.value = false
-    localStorage.removeItem('okx_bound')
-    localStorage.removeItem('okx_bound_uid')
+    localStorage.removeItem('bitget_bound')
+    localStorage.removeItem('bitget_bound_uid')
     testResult.value = null
 
     // 调用后端清空配置
-    await api.post('/settings/api', {
+    await api.post('/settings/bitget_api', {
       key: '',
       secret: '',
       passphrase: '',
-      sandbox: true,
     })
 
-    ElMessage.success('已解除OKX API绑定')
+    ElMessage.success('已解除Bitget API绑定')
   } catch (e) {
     if (e !== 'cancel') {
       ElMessage.error('解除绑定失败: ' + (e.response?.data?.detail || e.message))
@@ -2087,12 +2044,11 @@ function showBindDialog(exchange) {
     ElMessage.warning('请登录后再操作')
     return
   }
-  if (exchange === 'okx') {
+  if (exchange === 'bitget') {
     bindForm.value = {
       key: '',
       secret: '',
       passphrase: '',
-      sandbox: false,
     }
     bindDialogVisible.value = true
   } else {
@@ -2108,42 +2064,49 @@ async function confirmBind() {
 
   bindLoading.value = true
   try {
-    const res = await api.post('/settings/api', {
+    const res = await api.post('/settings/bitget_api', {
       key: bindForm.value.key,
       secret: bindForm.value.secret,
       passphrase: bindForm.value.passphrase,
-      sandbox: bindForm.value.sandbox,
     })
 
     // 更新配置状态
     apiConfig.value.key = bindForm.value.key
     apiConfig.value.secret = '••••••••'
     apiConfig.value.passphrase = '••••••••'
-    apiConfig.value.sandbox = bindForm.value.sandbox
-    if (res.okx_uid) {
-      apiConfig.value.okx_uid = res.okx_uid
+    if (res.bitget_uid) {
+      apiConfig.value.bitget_uid = res.bitget_uid
     }
     hasApiKey.value = true
-    localStorage.setItem('okx_bound', '1')
-    localStorage.setItem('okx_bound_uid', apiConfig.value.okx_uid)
+    localStorage.setItem('bitget_bound', '1')
+    if (res.bitget_uid) {
+      localStorage.setItem('bitget_bound_uid', res.bitget_uid)
+    }
 
     bindDialogVisible.value = false
-    ElMessage.success('OKX API 绑定成功')
-    if (res.okx_uid) {
-      ElMessage.success(`OKX UID: ${res.okx_uid}`)
+    ElMessage.success('Bitget API 绑定成功')
+    if (res.bitget_uid) {
+      ElMessage.success(`Bitget UID: ${res.bitget_uid}`)
     }
 
     // 刷新账户数据
     await fetchOverview()
   } catch (e) {
-    ElMessage.error('绑定失败: ' + (e.response?.data?.detail || e.message))
+    console.error('Bitget绑定错误:', e)
+    const errorDetail = e.response?.data?.detail || e.message
+    const statusCode = e.response?.status || '未知'
+    const errorInfo = `状态码: ${statusCode}\n错误: ${errorDetail}\n请求URL: /api/settings/bitget_api\n请求方法: POST`
+    ElMessageBox.alert(errorInfo, '绑定失败详情', {
+      confirmButtonText: '确定',
+      type: 'error',
+    })
   } finally {
     bindLoading.value = false
   }
 }
 
 async function unbindExchange(exchange) {
-  if (exchange === 'okx') {
+  if (exchange === 'bitget') {
     await unbindApi()
   } else {
     ElMessage.info(`${exchange.toUpperCase()} 解绑功能即将上线`)
