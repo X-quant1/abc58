@@ -21,6 +21,7 @@ from app.routers import activities as activities_router
 from app.routers import robots as robots_router
 from app.routers import user_api as user_api_router
 from app.routers import announcement as announcement_router
+from app.routers import strategy_instance as strategy_instance_router
 from app.routers.ws import start_push_tasks, stop_push_tasks
 from app.services.strategy import strategy_runner, STRATEGY_REGISTRY
 from app.services.logger import sys_logger
@@ -129,6 +130,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[WARN] Task queue init failed (non-critical): {e}")
 
+    # 恢复运行中的策略（服务重启后自动恢复 enabled=True 的策略）
+    try:
+        from app.services.strategy import strategy_runner
+        strategy_runner.restore_running_strategies()
+        print("[OK] Strategy restore complete")
+    except Exception as e:
+        print(f"[WARN] Strategy restore failed: {e}")
+
     # 启动AI自动分析定时任务（每30分钟）
     try:
         from app.services.auto_analysis import start_auto_analysis
@@ -167,6 +176,7 @@ app.include_router(admin_router.router)
 app.include_router(dashboard.router)
 app.include_router(market.router)
 app.include_router(strategy.router)
+app.include_router(strategy_instance_router.router)
 app.include_router(backtest.router)
 app.include_router(trade.router)
 app.include_router(settings.router)
@@ -205,6 +215,7 @@ AUTH_WHITELIST = {
     "/api/admin/strategies/templates/published",
     "/api/strategy/list",  # 可选认证（匿名用户只看已上架策略）
     "/api/strategy/available",  # 可用策略（公开）
+    "/api/strategy-instance/list",  # 策略实例列表（公开）
     "/api/dashboard/overview",  # 总览数据（公开市场数据）
     "/api/dashboard/platform_stats",  # 平台统计数据
     "/api/activities",                  # 热门活动（公开）
@@ -227,12 +238,14 @@ def _is_auth_whitelisted(path: str) -> bool:
     # 精确匹配
     if path in AUTH_WHITELIST:
         return True
-    # 前缀匹配：/api/auth/* 和 /api/backtest/strategy/*/stats 和 /api/robots/*
+    # 前缀匹配：/api/auth/* 和 /api/backtest/strategy/*/stats 和 /api/robots/* 和 /api/strategy-instance/*
     if path.startswith("/api/auth/"):
         return True
     if path.startswith("/api/backtest/strategy/") and path.endswith("/stats"):
         return True
     if path.startswith("/api/robots"):
+        return True
+    if path.startswith("/api/strategy-instance"):
         return True
     # 支持带查询参数的路径
     path_without_query = path.split('?')[0]
@@ -290,7 +303,9 @@ async def auth_middleware(request: Request, call_next):
     path = request.url.path
 
     # 白名单跳过
-    if _is_auth_whitelisted(path):
+    is_whitelisted = _is_auth_whitelisted(path)
+    if is_whitelisted:
+        print(f"[AUTH] Whitelisted: {path}")
         return await call_next(request)
 
     # WebSocket 跳过（WS 有自己的认证逻辑）

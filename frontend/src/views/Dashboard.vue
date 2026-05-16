@@ -1788,7 +1788,13 @@ async function fetchOverview() {
     // 更新币种价格
     if (res.prices) {
       for (const [symbol, data] of Object.entries(res.prices)) {
-        const coinSymbol = symbol.replace('-USDT-SWAP', '').replace('-USDT', '')
+        // 后端返回 "BTCUSDT"，需要提取币种名（去掉 USDT 后缀）
+        let coinSymbol = symbol
+        if (symbol.endsWith('USDT')) {
+          coinSymbol = symbol.slice(0, -4) // "BTCUSDT" -> "BTC"
+        } else {
+          coinSymbol = symbol.replace('-USDT-SWAP', '').replace('-USDT', '')
+        }
         const coin = tickerCoins.find(c => c.symbol === coinSymbol)
         if (coin && data.price > 0) {
           coin.price = data.price

@@ -18,11 +18,12 @@ from typing import Optional
 from app.database import SessionLocal
 from app.models import Strategy, Trade
 from app.services.cache import get_cached_market_service as _get_market_service
-from app.services.trade_rest import get_trade_service as _get_trade_service
-from app.services.okx_client import OKXAPIError
+# 使用 Bitget 适配器替代 OKX trade_rest
+from app.services.trade_bitget_adapter import get_trade_service as _get_trade_service
+from app.services.bitget_client import BitgetAPIError
 
-# OKX API 错误码常量
-OKX_ERR_INSUFFICIENT_BALANCE = "51021"
+# Bitget API 错误码常量（暂无特定错误码，用通用处理）
+OKX_ERR_INSUFFICIENT_BALANCE = "40001"  # Bitget 余额不足错误码
 
 # 模块级延迟解析：旧代码中的 market_service / trade_service 引用自动走单例
 def __getattr__(name):
@@ -1849,6 +1850,7 @@ class StrategyRunner:
         self._running = {}      # strategy_id → thread
         self._stop_flags = {}   # strategy_id → bool
         self._loop_counts = {}  # strategy_id → int（每线程独立计数）
+        self._start_failures = {}  # strategy_id → int（连续启动失败次数）
         self._lock = threading.Lock()
         # ─── 合约级持仓锁 ───
         # inst_id → strategy_id: 记录每个合约当前被哪个策略持有
@@ -1861,7 +1863,15 @@ class StrategyRunner:
             # 如果已请求停止，返回False
             if self._stop_flags.get(strategy_id, False):
                 return False
-            return strategy_id in self._running and self._running[strategy_id].is_alive()
+            # 检查线程是否存活，清理已死线程引用
+            if strategy_id in self._running:
+                if self._running[strategy_id].is_alive():
+                    return True
+                else:
+                    # 线程已死，清理引用
+                    del self._running[strategy_id]
+                    return False
+            return False
 
     def get_running_status(self) -> dict:
         """获取所有运行中的策略状态"""
@@ -1875,13 +1885,19 @@ class StrategyRunner:
             return status
 
     def _sync_position_from_okx(self, inst_id: str) -> str:
-        """从 OKX API 同步持仓方向
+        """从 Bitget API 同步持仓方向
+
+        双向持仓模式：同时持有多空返回 "both"
 
         Returns:
-            "long" / "short" / "none"
+            "long" / "short" / "both" / "none"
         """
+        has_long = False
+        has_short = False
         try:
-            positions = trade_service.get_swap_positions(inst_id)
+            import app.services.strategy as _self_mod
+            _ts = _self_mod.trade_service
+            positions = _ts.get_swap_positions(inst_id)
             for pos in positions:
                 if pos.get("symbol", "") == inst_id:
                     raw_size = pos.get("size", "0")
@@ -1891,19 +1907,26 @@ class StrategyRunner:
                         sz = 0.0
                     if sz <= 0:
                         continue
-                    side = pos.get("side", "")
+                    side = pos.get("posSide", "")
                     if side == "long":
-                        return "long"
+                        has_long = True
                     elif side == "short":
-                        return "short"
+                        has_short = True
                     elif side == "net":
-                        # 单向持仓模式：size 为正=多，size 为负=空（sz 已安全转换）
+                        # 单向持仓模式：size 为正=多，size 为负=空
                         if sz > 0:
-                            return "long"
+                            has_long = True
                         elif sz < 0:
-                            return "short"
+                            has_short = True
         except Exception as e:
             sys_logger.warn("strategy", f"Sync position failed for {inst_id}: {e}")
+
+        if has_long and has_short:
+            return "both"
+        elif has_long:
+            return "long"
+        elif has_short:
+            return "short"
         return "none"
 
     def _get_db_position(self, strategy_id: int) -> str:
@@ -1932,6 +1955,13 @@ class StrategyRunner:
 
     def start(self, strategy_id: int) -> dict:
         """启动策略"""
+        # 清理旧的死线程引用（避免 _running 中残留已死线程）
+        with self._lock:
+            if strategy_id in self._running and not self._running[strategy_id].is_alive():
+                del self._running[strategy_id]
+            if self._stop_flags.get(strategy_id, False):
+                self._stop_flags[strategy_id] = False
+
         if self.is_running(strategy_id):
             return {"ok": False, "msg": "strategy already running"}
 
@@ -1979,6 +2009,7 @@ class StrategyRunner:
 
         with self._lock:
             self._running[strategy_id] = threads[0]  # 保持兼容性，记录第一个线程
+            self._start_failures[strategy_id] = 0  # 重置失败计数
 
         return {"ok": True, "msg": f"strategy {strategy_id} started on {len(timeframes)} timeframes"}
 
@@ -2054,6 +2085,25 @@ class StrategyRunner:
 
     def _run_loop(self, strategy_id: int, strategy_cls, params: dict, initial_position: str, timeframe: str = "1h"):
         """策略运行主循环"""
+        try:
+            self._run_loop_inner(strategy_id, strategy_cls, params, initial_position, timeframe)
+        except Exception as e:
+            import traceback
+            print(f"[Strategy] {strategy_id} thread CRASHED: {e}\n{traceback.format_exc()}")
+            sys_logger.error("strategy",
+                f"Strategy {strategy_id} thread crashed: {e}\n{traceback.format_exc()}")
+            # 清理运行状态，允许下次 start() 重新启动
+            with self._lock:
+                self._running.pop(strategy_id, None)
+                self._stop_flags.pop(strategy_id, None)
+                self._start_failures[strategy_id] = self._start_failures.get(strategy_id, 0) + 1
+
+    def _run_loop_inner(self, strategy_id: int, strategy_cls, params: dict, initial_position: str, timeframe: str = "1h"):
+        """策略运行主循环（内部实现）"""
+        # 显式获取模块级服务（daemon 线程内 __getattr__ 不可靠）
+        import app.services.strategy as _self_mod
+        self._market_svc = _self_mod.market_service
+        self._trade_svc = _self_mod.trade_service
         strategy = strategy_cls(params)
 
         # 根据K线周期决定轮询间隔
@@ -2085,9 +2135,9 @@ class StrategyRunner:
                 inst_id = params.get("inst_id", "BTC-USDT-SWAP")
                 # 现货格式的 symbol → 合约格式
                 symbol = inst_id.replace("-SWAP", "")
-                klines = market_service.get_klines(
+                klines = self._market_svc.get_klines(
                     symbol=symbol,
-                    timeframe=timeframe,
+                    interval=timeframe,
                     limit=strategy.get_required_klines_count(),
                 )
 
@@ -2183,16 +2233,24 @@ class StrategyRunner:
                                 del self._inst_position_owner[inst_id]
 
             except Exception as e:
+                import traceback
                 print(f"[Strategy] {strategy_id} error: {e}")
-                sys_logger.error("strategy", f"Strategy {strategy_id} error: {e}", {"error": str(e)})
+                sys_logger.error("strategy", f"Strategy {strategy_id} error: {e}\n{traceback.format_exc()}")
 
             # 5. 等待下一个周期
             time.sleep(interval)
 
     def _execute_signal(self, strategy_id: int, signal: str, params: dict,
-                        current_position: str):
-        """执行交易信号"""
-        # OKXAPIError 和 OKX_ERR_INSUFFICIENT_BALANCE 已在模块顶部导入
+                        current_position: str) -> dict:
+        """执行交易信号，返回执行结果 {"ok": bool, "msg": str, "order": ...}"""
+        # 确保线程内有服务引用（daemon 线程中 __getattr__ 不可靠）
+        if not hasattr(self, '_market_svc') or self._market_svc is None:
+            import app.services.strategy as _self_mod
+            self._market_svc = _self_mod.market_service
+            self._trade_svc = _self_mod.trade_service
+        _ms, _ts = self._market_svc, self._trade_svc
+
+        # BitgetAPIError 和 OKX_ERR_INSUFFICIENT_BALANCE 已在模块顶部导入
 
         inst_id = params.get("inst_id", "BTC-USDT-SWAP")
         lever = int(params.get("leverage", 10))
@@ -2200,22 +2258,24 @@ class StrategyRunner:
 
         # ─── 合约级持仓冲突检查 ───
         # 如果其他策略持有该合约，阻止开仓（避免多策略争抢同一合约）
-        if signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT) and current_position == "none":
+        # 双向持仓模式下，同方向可以叠加；仅在该策略无任何持仓时检查
+        if signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT) and current_position in ("none",):
             with self._inst_pos_lock:
                 owner = self._inst_position_owner.get(inst_id)
                 if owner and owner != strategy_id:
                     sys_logger.info("strategy",
                         f"#{strategy_id} signal={signal} BLOCKED: {inst_id} owned by #{owner}")
-                    return  # 不开仓，等待持有者平仓
+                    return {"ok": False, "msg": f"合约 {inst_id} 被策略 #{owner} 持有，无法开仓"}
 
         # 余额预检 — 开仓前检查是否有足够余额
         if signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT):
             try:
-                balance_info = market_service.get_account_balance("USDT")
-                avail = balance_info.get("total_equity", 0)
+                balance_info = _ms.get_account_balance("USDT")
+                # Bitget 返回 available 字段表示可用余额；total_equity 有时为 0
+                avail = balance_info.get("available", 0) or balance_info.get("total_equity", 0)
                 if avail <= 0:
                     sys_logger.warn("strategy", f"#{strategy_id} skip open: zero balance (avail={avail})")
-                    return
+                    return {"ok": False, "msg": f"账户余额不足 (可用: {avail} USDT)"}
             except Exception as e:
                 sys_logger.warn("strategy", f"#{strategy_id} balance check failed: {e}")
 
@@ -2226,156 +2286,192 @@ class StrategyRunner:
         else:
             sz = str(params.get("size", 1))
 
-        # 止损止盈
-        tp_pct = float(params.get("take_profit_pct", 0))  # 止盈百分比（杠杆收益）
-        sl_pct = float(params.get("stop_loss_pct", 0))     # 止损百分比（杠杆亏损）
-        leverage = int(params.get("leverage", 10))         # 杠杆倍数
+        # ─── 止盈止损参数 ───
+        # 模式: pct=百分比, points=点数
+        tp_mode = params.get("tp_mode", "pct")
+        sl_mode = params.get("sl_mode", "pct")
+        tp_pct = float(params.get("take_profit_pct", 0))      # 止盈百分比
+        tp_points = float(params.get("take_profit_points", 0))  # 止盈点数
+        sl_pct = float(params.get("stop_loss_pct", 0))        # 止损百分比
+        sl_points = float(params.get("stop_loss_points", 0))  # 止损点数
+        leverage = int(params.get("leverage", 10))
 
         # 移动止盈参数
-        trailing_stop_pct = float(params.get("trailing_stop_pct", 0))  # 移动止损回调比例（百分比模式）
-        trail_activate_pct = float(params.get("trail_activate_pct", 0))  # 移动止盈激活阈值（百分比）
-        trail_callback_points = float(params.get("trail_callback_points", 0))  # 移动止盈回调点数（点数模式）
+        trail_mode = params.get("trail_mode", "pct")
+        trail_activate_mode = params.get("trail_activate_mode", "pct")
+        trailing_stop_pct = float(params.get("trailing_stop_pct", 0))
+        trailing_stop_points = float(params.get("trailing_stop_points", 0))
+        trail_activate_pct = float(params.get("trail_activate_pct", 0))
+        trail_activate_points = float(params.get("trail_activate_points", 0))
+        trail_callback_points = float(params.get("trail_callback_points", 0))
 
         # 获取当前价格用于计算止盈止损价位
-        # 注意：止盈止损百分比是杠杆收益，需要除以杠杆倍数得到价格变动百分比
-        # 例如：100倍杠杆，5%收益 = 价格变动0.05%
         tp_trigger_px = ""
         sl_trigger_px = ""
-        if tp_pct > 0 or sl_pct > 0:
-            try:
-                ticker = market_service.get_ticker(inst_id.replace("-SWAP", ""))
-                current_price = ticker.get("price", 0)
-                if current_price > 0:
-                    if signal == SIGNAL_OPEN_LONG:
-                        if tp_pct > 0:
-                            # 多单止盈：价格上涨
-                            price_change_pct = tp_pct / leverage / 100
-                            tp_trigger_px = f"{current_price * (1 + price_change_pct):.2f}"
-                        if sl_pct > 0:
-                            # 多单止损：价格下跌
-                            price_change_pct = sl_pct / leverage / 100
-                            sl_trigger_px = f"{current_price * (1 - price_change_pct):.2f}"
-                    elif signal == SIGNAL_OPEN_SHORT:
-                        if tp_pct > 0:
-                            # 空单止盈：价格下跌
-                            price_change_pct = tp_pct / leverage / 100
-                            tp_trigger_px = f"{current_price * (1 - price_change_pct):.2f}"
-                        if sl_pct > 0:
-                            # 空单止损：价格上涨
-                            price_change_pct = sl_pct / leverage / 100
-                            sl_trigger_px = f"{current_price * (1 + price_change_pct):.2f}"
-            except Exception as e:
-                sys_logger.warn("strategy",
-                    f"#{strategy_id} TP/SL price calc failed, will trade without TP/SL: {e}")
+        current_price = 0
+        try:
+            ticker = _ms.get_ticker(inst_id.replace("-SWAP", ""))
+            current_price = ticker.get("price", 0)
+        except Exception as e:
+            sys_logger.warn("strategy", f"#{strategy_id} get ticker failed: {e}")
+
+        if current_price > 0:
+            # Bitget BTCUSDT 价格精度：0.1（1位小数）
+            price_fmt = lambda p: f"{round(p / 0.1) * 0.1:.1f}"
+
+            if signal == SIGNAL_OPEN_LONG:
+                # 止盈：开多→价格上涨
+                if tp_mode == "points" and tp_points > 0:
+                    tp_trigger_px = price_fmt(current_price + tp_points)
+                elif tp_pct > 0:
+                    price_change_pct = tp_pct / leverage / 100
+                    tp_trigger_px = price_fmt(current_price * (1 + price_change_pct))
+                # 止损：开多→价格下跌
+                if sl_mode == "points" and sl_points > 0:
+                    sl_trigger_px = price_fmt(current_price - sl_points)
+                elif sl_pct > 0:
+                    price_change_pct = sl_pct / leverage / 100
+                    sl_trigger_px = price_fmt(current_price * (1 - price_change_pct))
+
+            elif signal == SIGNAL_OPEN_SHORT:
+                # 止盈：开空→价格下跌
+                if tp_mode == "points" and tp_points > 0:
+                    tp_trigger_px = price_fmt(current_price - tp_points)
+                elif tp_pct > 0:
+                    price_change_pct = tp_pct / leverage / 100
+                    tp_trigger_px = price_fmt(current_price * (1 - price_change_pct))
+                # 止损：开空→价格上涨
+                if sl_mode == "points" and sl_points > 0:
+                    sl_trigger_px = price_fmt(current_price + sl_points)
+                elif sl_pct > 0:
+                    price_change_pct = sl_pct / leverage / 100
+                    sl_trigger_px = price_fmt(current_price * (1 + price_change_pct))
 
         order_result = None
 
-        if signal == SIGNAL_OPEN_LONG:
-            # 如果有空仓先平空
-            if current_position == "short":
-                try:
-                    trade_service.close_position(inst_id=inst_id, pos_side="short")
-                except Exception as e:
-                    sys_logger.error("strategy", f"Close short before open long failed: {e}")
+        # 开仓前设置杠杆
+        if signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT):
             try:
-                order_result = trade_service.open_long(
+                _ts.set_leverage(inst_id=inst_id, lever=lever, mgn_mode=td_mode)
+            except Exception as e:
+                sys_logger.warn("strategy", f"#{strategy_id} set leverage failed: {e}")
+
+        if signal == SIGNAL_OPEN_LONG:
+            # 双向持仓模式(hedge mode)：不需要先平空仓，直接开多
+            try:
+                order_result = _ts.open_long(
                     inst_id=inst_id, sz=sz, lever=lever, td_mode=td_mode,
                     tp_trigger_px=tp_trigger_px, sl_trigger_px=sl_trigger_px,
                 )
-            except OKXAPIError as e:
+            except BitgetAPIError as e:
                 if e.code == OKX_ERR_INSUFFICIENT_BALANCE:
-                    sys_logger.error("strategy",
-                        f"#{strategy_id} open long FAILED: insufficient balance (sz={sz})")
+                    msg = f"开多失败: 余额不足 (size={sz})"
+                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: insufficient balance (sz={sz})")
                 else:
-                    sys_logger.error("strategy",
-                        f"#{strategy_id} open long FAILED: [{e.code}] {e.msg}")
-                return
+                    msg = f"开多失败: [{e.code}] {e.msg}"
+                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: [{e.code}] {e.msg}")
+                return {"ok": False, "msg": msg}
             except Exception as e:
                 sys_logger.error("strategy", f"#{strategy_id} open long error: {e}")
-                return
+                return {"ok": False, "msg": f"开多失败: {e}"}
 
         elif signal == SIGNAL_OPEN_SHORT:
-            # 如果有多仓先平多
-            if current_position == "long":
-                try:
-                    trade_service.close_position(inst_id=inst_id, pos_side="long")
-                except Exception as e:
-                    sys_logger.error("strategy", f"Close long before open short failed: {e}")
+            # 双向持仓模式(hedge mode)：不需要先平多仓，直接开空
             try:
-                order_result = trade_service.open_short(
+                order_result = _ts.open_short(
                     inst_id=inst_id, sz=sz, lever=lever, td_mode=td_mode,
                     tp_trigger_px=tp_trigger_px, sl_trigger_px=sl_trigger_px,
                 )
-            except OKXAPIError as e:
+            except BitgetAPIError as e:
                 if e.code == OKX_ERR_INSUFFICIENT_BALANCE:
-                    sys_logger.error("strategy",
-                        f"#{strategy_id} open short FAILED: insufficient balance (sz={sz})")
+                    msg = f"开空失败: 余额不足 (size={sz})"
+                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: insufficient balance (sz={sz})")
                 else:
-                    sys_logger.error("strategy",
-                        f"#{strategy_id} open short FAILED: [{e.code}] {e.msg}")
-                return
+                    msg = f"开空失败: [{e.code}] {e.msg}"
+                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: [{e.code}] {e.msg}")
+                return {"ok": False, "msg": msg}
             except Exception as e:
                 sys_logger.error("strategy", f"#{strategy_id} open short error: {e}")
-                return
+                return {"ok": False, "msg": f"开空失败: {e}"}
 
         elif signal == SIGNAL_CLOSE_LONG:
             try:
-                order_result = trade_service.close_position(inst_id=inst_id, pos_side="long")
+                order_result = _ts.close_position(inst_id=inst_id, pos_side="long")
             except Exception as e:
                 sys_logger.error("strategy", f"#{strategy_id} close long error: {e}")
-                return
+                return {"ok": False, "msg": f"平多失败: {e}"}
 
         elif signal == SIGNAL_CLOSE_SHORT:
             try:
-                order_result = trade_service.close_position(inst_id=inst_id, pos_side="short")
+                order_result = _ts.close_position(inst_id=inst_id, pos_side="short")
             except Exception as e:
                 sys_logger.error("strategy", f"#{strategy_id} close short error: {e}")
-                return
+                return {"ok": False, "msg": f"平空失败: {e}"}
 
         # 开仓后设置移动止盈算法单
-        # 优先使用点数模式（trail_callback_points），其次使用百分比模式（trailing_stop_pct）
-        use_trailing = (trail_callback_points > 0 or trailing_stop_pct > 0) and signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT) and order_result
+        # 支持两种模式：百分比(trailing_stop_pct) 或 点数(trailing_stop_points)
+        use_trailing = (trailing_stop_pct > 0 or trailing_stop_points > 0 or trail_callback_points > 0) \
+            and signal in (SIGNAL_OPEN_LONG, SIGNAL_OPEN_SHORT) and order_result
         if use_trailing:
             try:
                 side = "sell" if signal == SIGNAL_OPEN_LONG else "buy"
                 algo_pos_side = "long" if signal == SIGNAL_OPEN_LONG else "short"
-                
-                # 计算激活价格（如果设置了激活阈值）
+
+                # 计算激活价格
                 activate_price = ""
-                if trail_activate_pct > 0:
+                # 重新获取当前价格（之前的变量可能已被使用）
+                if current_price <= 0:
                     try:
-                        ticker = market_service.get_ticker(inst_id.replace("-SWAP", ""))
+                        ticker = _ms.get_ticker(inst_id.replace("-SWAP", ""))
                         current_price = ticker.get("price", 0)
-                        if current_price > 0:
-                            # 激活价格 = 开仓价 * (1 + 激活阈值/100)
-                            # 例如：开仓价94000，激活阈值0.2%，激活价=94000*1.002=94188
-                            if signal == SIGNAL_OPEN_LONG:
-                                activate_price = f"{current_price * (1 + trail_activate_pct / 100):.2f}"
-                            else:  # SIGNAL_OPEN_SHORT
-                                activate_price = f"{current_price * (1 - trail_activate_pct / 100):.2f}"
                     except Exception as e:
-                        sys_logger.warn("strategy", f"Trailing activate price calc failed: {e}")
-                
+                        sys_logger.warn("strategy", f"Get ticker for activate price failed: {e}")
+
+                if current_price > 0:
+                    price_fmt = lambda p: f"{round(p / 0.1) * 0.1:.1f}"
+                    # 激活阈值：点数模式优先
+                    if trail_activate_mode == "points" and trail_activate_points > 0:
+                        if signal == SIGNAL_OPEN_LONG:
+                            activate_price = price_fmt(current_price + trail_activate_points)
+                        else:
+                            activate_price = price_fmt(current_price - trail_activate_points)
+                    elif trail_activate_pct > 0:
+                        if signal == SIGNAL_OPEN_LONG:
+                            activate_price = price_fmt(current_price * (1 + trail_activate_pct / 100))
+                        else:
+                            activate_price = price_fmt(current_price * (1 - trail_activate_pct / 100))
+
                 # 调用移动止盈API
-                if trail_callback_points > 0:
-                    # 点数模式：直接传递点数，由trade.py自动转换为比例
-                    try:
-                        trade_service.place_algo_trailing(
-                            inst_id=inst_id,
-                            side=side,
-                            sz=sz,
-                            callback_points=trail_callback_points,  # 直接传递点数
-                            activate_price=activate_price,
-                            pos_side=algo_pos_side,
-                            td_mode=td_mode,
-                        )
-                        sys_logger.info("strategy",
-                            f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trail_callback_points} points")
-                    except Exception as e:
-                        sys_logger.warn("strategy", f"Trailing stop (points mode) failed: {e}")
+                # 回调参数：点数模式优先，其次百分比模式
+                if trail_mode == "points" and trailing_stop_points > 0:
+                    # 点数模式
+                    _ts.place_algo_trailing(
+                        inst_id=inst_id,
+                        side=side,
+                        sz=sz,
+                        callback_points=trailing_stop_points,
+                        activate_price=activate_price,
+                        pos_side=algo_pos_side,
+                        td_mode=td_mode,
+                    )
+                    sys_logger.info("strategy",
+                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_points} points")
+                elif trail_callback_points > 0:
+                    # 兼容旧字段 trail_callback_points
+                    _ts.place_algo_trailing(
+                        inst_id=inst_id,
+                        side=side,
+                        sz=sz,
+                        callback_points=trail_callback_points,
+                        activate_price=activate_price,
+                        pos_side=algo_pos_side,
+                        td_mode=td_mode,
+                    )
+                    sys_logger.info("strategy",
+                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trail_callback_points} points")
                 else:
                     # 百分比模式
-                    trade_service.place_algo_trailing(
+                    _ts.place_algo_trailing(
                         inst_id=inst_id,
                         side=side,
                         sz=sz,
@@ -2384,7 +2480,7 @@ class StrategyRunner:
                         pos_side=algo_pos_side,
                         td_mode=td_mode,
                     )
-                    sys_logger.info("strategy", 
+                    sys_logger.info("strategy",
                         f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_pct}%")
             except Exception as e:
                 sys_logger.warn("strategy", f"Trailing stop failed for #{strategy_id}: {e}")
@@ -2393,43 +2489,71 @@ class StrategyRunner:
         if order_result is not None:
             self._record_trade(strategy_id, signal, inst_id, params, order_result, sz)
 
-    def _calc_size_by_pct(self, inst_id: str, leverage: int, size_pct: float) -> str:
-        """根据仓位百分比计算下单张数
+        # 更新持仓方向
+        # 双向持仓模式：支持同时持有多空仓位
+        new_position = current_position
+        if signal == SIGNAL_OPEN_LONG:
+            if current_position == "short":
+                new_position = "both"
+            elif current_position != "both":
+                new_position = "long"
+        elif signal == SIGNAL_OPEN_SHORT:
+            if current_position == "long":
+                new_position = "both"
+            elif current_position != "both":
+                new_position = "short"
+        elif signal == SIGNAL_CLOSE_LONG:
+            if current_position == "both":
+                new_position = "short"
+            else:
+                new_position = "none"
+        elif signal == SIGNAL_CLOSE_SHORT:
+            if current_position == "both":
+                new_position = "long"
+            else:
+                new_position = "none"
+        if new_position != current_position:
+            self._save_position(strategy_id, new_position)
 
-        公式: 张数 = (可用余额 * size_pct% * 杠杆) / (面值 * 当前价格)
-        BTC-USDT-SWAP 面值 = 0.01 BTC
-        ETH-USDT-SWAP 面值 = 0.1 ETH
-        SOL-USDT-SWAP 面值 = 1 SOL
+        # 广播策略状态
+        ws_manager.broadcast_sync("strategy_status", {
+            "strategy_id": strategy_id,
+            "signal": signal,
+            "position": new_position,
+            "running": True,
+            "enabled": True,
+        })
+
+        return {"ok": True, "msg": f"{signal} 执行成功", "order": order_result}
+
+    def _calc_size_by_pct(self, inst_id: str, leverage: int, size_pct: float) -> str:
+        """根据仓位百分比计算下单数量（BTC 数量）
+
+        公式: 数量 = (可用余额 * size_pct% * 杠杆) / 当前价格
+        返回 BTC 数量（如 "0.001"）
         """
         try:
             # 获取账户可用余额
-            balance_info = market_service.get_account_balance("USDT")
-            avail_usdt = balance_info.get("total_equity", 0)
+            balance_info = self._market_svc.get_account_balance("USDT")
+            avail_usdt = balance_info.get("available", 0) or balance_info.get("total_equity", 0)
             if avail_usdt <= 0:
-                return "1"
-
-            # 面值映射 (合约面值，即1张合约代表多少币)
-            face_value_map = {
-                "BTC-USDT-SWAP": 0.01,
-                "ETH-USDT-SWAP": 0.1,
-                "SOL-USDT-SWAP": 1,
-            }
-            face_value = face_value_map.get(inst_id, 0.01)
+                return "0.0001"
 
             # 获取当前价格
-            ticker = market_service.get_ticker(inst_id.replace("-SWAP", ""))
+            ticker = self._market_svc.get_ticker(inst_id.replace("-SWAP", ""))
             current_price = ticker.get("price", 0)
             if current_price <= 0:
-                return "1"
+                return "0.0001"
 
-            # 计算张数
+            # 计算数量（BTC）
             position_value = avail_usdt * (size_pct / 100) * leverage
-            sz = position_value / (face_value * current_price)
-            sz = max(1, int(sz))  # 至少1张，取整
-            return str(sz)
+            size = position_value / current_price
+            # 最小 0.0001 BTC，保留 4 位小数
+            size = max(0.0001, round(size, 4))
+            return str(size)
         except Exception as e:
             sys_logger.warn("strategy", f"Calc size by pct failed: {e}")
-            return "1"
+            return "0.0001"
 
     def _record_trade(self, strategy_id: int, signal: str, inst_id: str,
                       params: dict, order_result, sz: str = "1"):

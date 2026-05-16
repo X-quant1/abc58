@@ -1039,25 +1039,61 @@
         </el-form-item>
 
         <el-divider content-position="left">止盈止损</el-divider>
-        <el-form-item label="止盈比例">
+        <el-form-item label="固定止盈">
+          <el-radio-group v-model="createForm.tp_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="createForm.tp_mode === 'pct'" label="止盈比例">
           <el-input-number v-model="createForm.take_profit_pct" :min="0" :max="100" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不设止盈）</span>
         </el-form-item>
-        <el-form-item label="止损比例">
+        <el-form-item v-else label="止盈点数">
+          <el-input-number v-model="createForm.take_profit_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（如300点=价格+300）</span>
+        </el-form-item>
+        <el-form-item label="固定止损">
+          <el-radio-group v-model="createForm.sl_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="createForm.sl_mode === 'pct'" label="止损比例">
           <el-input-number v-model="createForm.stop_loss_pct" :min="0" :max="100" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不设止损）</span>
         </el-form-item>
+        <el-form-item v-else label="止损点数">
+          <el-input-number v-model="createForm.stop_loss_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（如200点=价格-200）</span>
+        </el-form-item>
         <el-form-item label="移动止盈">
+          <el-radio-group v-model="createForm.trail_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="createForm.trail_mode === 'pct'" label="移动止损比例">
           <el-input-number v-model="createForm.trailing_stop_pct" :min="0" :max="50" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不启用）</span>
         </el-form-item>
+        <el-form-item v-else label="移动止损点数">
+          <el-input-number v-model="createForm.trailing_stop_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（价格回撤此点数触发平仓）</span>
+        </el-form-item>
         <el-form-item label="移动激活阈值">
+          <el-radio-group v-model="createForm.trail_activate_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="createForm.trail_activate_mode === 'pct'" label="激活比例">
           <el-input-number v-model="createForm.trail_activate_pct" :min="0" :max="10" :step="0.1" :precision="2" />
           <span class="hint-label">%（盈利达到此比例激活移动止盈）</span>
         </el-form-item>
-        <el-form-item label="回调点数">
-          <el-input-number v-model="createForm.trail_callback_points" :min="0" :max="1000" :step="1" />
-          <span class="hint-label">点（价格回调此点数触发平仓）</span>
+        <el-form-item v-else label="激活点数">
+          <el-input-number v-model="createForm.trail_activate_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（价格涨跌此点数激活移动止盈）</span>
         </el-form-item>
         <el-form-item label="冷却时间">
           <el-input-number v-model="createForm.cooldown_minutes" :min="0" :max="1440" :step="5" />
@@ -1134,25 +1170,61 @@
         </el-form-item>
 
         <el-divider content-position="left">止盈止损</el-divider>
-        <el-form-item label="止盈比例">
+        <el-form-item label="固定止盈">
+          <el-radio-group v-model="editForm.tp_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="editForm.tp_mode === 'pct'" label="止盈比例">
           <el-input-number v-model="editForm.take_profit_pct" :min="0" :max="100" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不设止盈）</span>
         </el-form-item>
-        <el-form-item label="止损比例">
+        <el-form-item v-else label="止盈点数">
+          <el-input-number v-model="editForm.take_profit_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（如300点=价格+300）</span>
+        </el-form-item>
+        <el-form-item label="固定止损">
+          <el-radio-group v-model="editForm.sl_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="editForm.sl_mode === 'pct'" label="止损比例">
           <el-input-number v-model="editForm.stop_loss_pct" :min="0" :max="100" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不设止损）</span>
         </el-form-item>
-        <el-form-item label="移动止损">
+        <el-form-item v-else label="止损点数">
+          <el-input-number v-model="editForm.stop_loss_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（如200点=价格-200）</span>
+        </el-form-item>
+        <el-form-item label="移动止盈">
+          <el-radio-group v-model="editForm.trail_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="editForm.trail_mode === 'pct'" label="移动止损比例">
           <el-input-number v-model="editForm.trailing_stop_pct" :min="0" :max="50" :step="0.1" :precision="2" />
           <span class="hint-label">%（0=不启用）</span>
         </el-form-item>
+        <el-form-item v-else label="移动止损点数">
+          <el-input-number v-model="editForm.trailing_stop_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（价格回撤此点数触发平仓）</span>
+        </el-form-item>
         <el-form-item label="移动激活阈值">
+          <el-radio-group v-model="editForm.trail_activate_mode" size="small">
+            <el-radio value="pct">按百分比</el-radio>
+            <el-radio value="points">按点数</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="editForm.trail_activate_mode === 'pct'" label="激活比例">
           <el-input-number v-model="editForm.trail_activate_pct" :min="0" :max="10" :step="0.1" :precision="2" />
           <span class="hint-label">%（盈利达到此比例激活移动止盈）</span>
         </el-form-item>
-        <el-form-item label="回调点数">
-          <el-input-number v-model="editForm.trail_callback_points" :min="0" :max="1000" :step="1" />
-          <span class="hint-label">点（价格回调此点数触发平仓）</span>
+        <el-form-item v-else label="激活点数">
+          <el-input-number v-model="editForm.trail_activate_points" :min="0" :max="10000" :step="10" :precision="0" />
+          <span class="hint-label">点（价格涨跌此点数激活移动止盈）</span>
         </el-form-item>
         <el-form-item label="冷却时间">
           <el-input-number v-model="editForm.cooldown_minutes" :min="0" :max="1440" :step="5" />
@@ -1626,10 +1698,18 @@ const createForm = reactive({
   size: 1,
   size_pct: 10,
   leverage: 10,
+  tp_mode: 'pct',
   take_profit_pct: 0,
+  take_profit_points: 0,
+  sl_mode: 'pct',
   stop_loss_pct: 0,
+  stop_loss_points: 0,
+  trail_mode: 'pct',
   trailing_stop_pct: 0,
+  trailing_stop_points: 0,
+  trail_activate_mode: 'pct',
   trail_activate_pct: 0,
+  trail_activate_points: 0,
   trail_callback_points: 0,
   cooldown_minutes: 0,
   td_mode: 'cross',
@@ -1650,10 +1730,18 @@ const editForm = reactive({
   size: 1,
   size_pct: 10,
   leverage: 10,
+  tp_mode: 'pct',
   take_profit_pct: 0,
+  take_profit_points: 0,
+  sl_mode: 'pct',
   stop_loss_pct: 0,
+  stop_loss_points: 0,
+  trail_mode: 'pct',
   trailing_stop_pct: 0,
+  trailing_stop_points: 0,
+  trail_activate_mode: 'pct',
   trail_activate_pct: 0,
+  trail_activate_points: 0,
   trail_callback_points: 0,
   cooldown_minutes: 0,
   td_mode: 'cross',
@@ -1784,10 +1872,18 @@ function openCreateStrategyDialog() {
   createForm.size = 1
   createForm.size_pct = 10
   createForm.leverage = 10
+  createForm.tp_mode = 'pct'
   createForm.take_profit_pct = 0
+  createForm.take_profit_points = 0
+  createForm.sl_mode = 'pct'
   createForm.stop_loss_pct = 0
+  createForm.stop_loss_points = 0
+  createForm.trail_mode = 'pct'
   createForm.trailing_stop_pct = 0
+  createForm.trailing_stop_points = 0
+  createForm.trail_activate_mode = 'pct'
   createForm.trail_activate_pct = 0
+  createForm.trail_activate_points = 0
   createForm.trail_callback_points = 0
   createForm.cooldown_minutes = 0
   createForm.td_mode = 'cross'
@@ -1839,9 +1935,19 @@ async function createStrategy() {
       size: createForm.size,
       size_pct: createForm.size_pct,
       leverage: createForm.leverage,
+      tp_mode: createForm.tp_mode,
       take_profit_pct: createForm.take_profit_pct,
+      take_profit_points: createForm.take_profit_points,
+      sl_mode: createForm.sl_mode,
       stop_loss_pct: createForm.stop_loss_pct,
+      stop_loss_points: createForm.stop_loss_points,
+      trail_mode: createForm.trail_mode,
       trailing_stop_pct: createForm.trailing_stop_pct,
+      trailing_stop_points: createForm.trailing_stop_points,
+      trail_activate_mode: createForm.trail_activate_mode,
+      trail_activate_pct: createForm.trail_activate_pct,
+      trail_activate_points: createForm.trail_activate_points,
+      trail_callback_points: createForm.trail_callback_points,
       td_mode: createForm.td_mode,
       timeframes: createForm.timeframes,
       use_regime_filter: false,  // 已移除市场状态过滤
@@ -1867,10 +1973,18 @@ function openEditStrategyDialog(row) {
   editForm.size = row.params?.size ?? 1
   editForm.size_pct = row.params?.size_pct || 10
   editForm.leverage = row.params?.leverage || 10
+  editForm.tp_mode = row.params?.tp_mode || 'pct'
   editForm.take_profit_pct = row.params?.take_profit_pct || 0
+  editForm.take_profit_points = row.params?.take_profit_points || 0
+  editForm.sl_mode = row.params?.sl_mode || 'pct'
   editForm.stop_loss_pct = row.params?.stop_loss_pct || 0
+  editForm.stop_loss_points = row.params?.stop_loss_points || 0
+  editForm.trail_mode = row.params?.trail_mode || 'pct'
   editForm.trailing_stop_pct = row.params?.trailing_stop_pct || 0
+  editForm.trailing_stop_points = row.params?.trailing_stop_points || 0
+  editForm.trail_activate_mode = row.params?.trail_activate_mode || 'pct'
   editForm.trail_activate_pct = row.params?.trail_activate_pct || 0
+  editForm.trail_activate_points = row.params?.trail_activate_points || 0
   editForm.trail_callback_points = row.params?.trail_callback_points || 0
   editForm.cooldown_minutes = row.params?.cooldown_minutes || 0
   editForm.td_mode = row.params?.td_mode || 'cross'
@@ -1895,10 +2009,18 @@ async function saveEditStrategy() {
       size: editForm.size,
       size_pct: editForm.size_pct,
       leverage: editForm.leverage,
+      tp_mode: editForm.tp_mode,
       take_profit_pct: editForm.take_profit_pct,
+      take_profit_points: editForm.take_profit_points,
+      sl_mode: editForm.sl_mode,
       stop_loss_pct: editForm.stop_loss_pct,
+      stop_loss_points: editForm.stop_loss_points,
+      trail_mode: editForm.trail_mode,
       trailing_stop_pct: editForm.trailing_stop_pct,
+      trailing_stop_points: editForm.trailing_stop_points,
+      trail_activate_mode: editForm.trail_activate_mode,
       trail_activate_pct: editForm.trail_activate_pct,
+      trail_activate_points: editForm.trail_activate_points,
       trail_callback_points: editForm.trail_callback_points,
       cooldown_minutes: editForm.cooldown_minutes,
       td_mode: editForm.td_mode,

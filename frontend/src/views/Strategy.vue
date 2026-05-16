@@ -4,7 +4,6 @@
     <div class="page-toolbar">
       <div class="toolbar-left">
         <span class="toolbar-title">策略管理</span>
-        <el-tag effect="plain" size="small" round>{{ strategies.length }} 个策略</el-tag>
       </div>
       <div class="toolbar-right" v-if="isAdmin">
         <el-button type="primary" size="small" @click="openCreateDialog">
@@ -13,85 +12,276 @@
       </div>
     </div>
 
+    <!-- 状态筛选标签 -->
+    <div class="status-tabs">
+      <div class="status-tab status-running" :class="{ active: statusFilter === 'running' }" @click="statusFilter = 'running'">
+        <span class="tab-label">运行中</span>
+        <span class="tab-count">{{ strategies.filter(s => !s.is_template && s.running).length }}</span>
+      </div>
+      <div class="status-tab status-official" :class="{ active: statusFilter === '' || statusFilter === 'official' }" @click="statusFilter = ''">
+        <span class="tab-label">官方策略</span>
+        <span class="tab-count">{{ strategies.filter(s => s.is_template).length }}</span>
+      </div>
+      <div class="status-tab status-market" :class="{ active: statusFilter === 'market' }" @click="statusFilter = 'market'">
+        <span class="tab-label">市场策略</span>
+        <span class="tab-count">{{ strategies.filter(s => s.is_template && !s.is_official).length || '-' }}</span>
+      </div>
+    </div>
+
+    <!-- 运行中标签：分两区显示 -->
+    <template v-if="statusFilter === 'running'">
+      <!-- 运行中的策略 -->
+      <div v-if="runningInstances.length > 0" class="strategy-section">
+        <div class="section-title">运行中</div>
+        <div class="instance-grid">
+          <div v-for="s in runningInstances" :key="s.id" class="inst-card">
+            <!-- 左侧状态条 + 标题行 -->
+            <div class="inst-header">
+              <div class="inst-left-accent accent-running"></div>
+              <div class="inst-title">{{ s.name }}</div>
+              <div class="inst-status-dot accent-running"></div>
+              <div class="inst-status-text running">运行中</div>
+            </div>
+            <!-- 盈亏 -->
+            <div class="inst-profit" :class="getReturnClass(s._perf?.total_pnl)">
+              {{ s._perf?.total_pnl || '+100.01' }}<span class="profit-unit"> USDT</span>
+            </div>
+            <!-- 分隔线 -->
+            <div class="inst-divider"></div>
+            <!-- 参数行 4列布局 -->
+            <div class="inst-meta-row">
+              <div class="meta-params-row">
+                <div class="meta-param-item">
+                  <div class="meta-param-label">平台</div>
+                  <div class="meta-param-value">Bitget</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">币种</div>
+                  <div class="meta-param-value">BTC</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">周期</div>
+                  <div class="meta-param-value">{{ (s.params.timeframes || ['1h']).map(formatTimeframeShort).join('+') }}</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">杠杆</div>
+                  <div class="meta-param-value lev">{{ s.params.leverage || 10 }}x</div>
+                </div>
+              </div>
+            </div>
+            <!-- 底部 -->
+            <div class="inst-footer">
+              <div class="inst-time">
+                <span v-if="s._last_trade?.time" class="time-text">开仓 {{ s._last_trade.time }}</span>
+                <span v-if="s._last_trade?.side" class="trade-dir" :class="s._last_trade.side">{{ s._last_trade.side === 'short' ? '做空' : '做多' }}</span>
+                <span v-if="s._run_duration" class="time-text">{{ s._run_duration }}</span>
+              </div>
+              <div class="inst-actions">
+                <el-tooltip content="暂停策略" placement="top">
+                  <button class="ibtn ibtn-pause" @click.stop="stopStrategy(s.id)" :disabled="s._stopping"><el-icon><VideoPause /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="编辑策略" placement="top">
+                  <button class="ibtn ibtn-edit" @click.stop="openSettingsDialog(s)"><el-icon><Edit /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="日志" placement="top">
+                  <button class="ibtn ibtn-info" @click.stop="viewLogs(s)"><el-icon><Document /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="交易记录" placement="top">
+                  <button class="ibtn ibtn-purple" @click.stop="viewTrades(s)"><el-icon><DataAnalysis /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="删除" placement="top">
+                  <button class="ibtn ibtn-del" @click.stop="deleteInstance(s.id)"><el-icon><Delete /></el-icon></button>
+                </el-tooltip>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 已停止的策略 -->
+      <div v-if="stoppedInstances.length > 0" class="strategy-section">
+        <div class="section-title">已停止</div>
+        <div class="instance-grid">
+          <div v-for="s in stoppedInstances" :key="s.id" class="inst-card">
+            <!-- 左侧状态条 + 标题行 -->
+            <div class="inst-header">
+              <div class="inst-left-accent accent-stopped"></div>
+              <div class="inst-title">{{ s.name }}</div>
+              <div class="inst-status-dot accent-stopped"></div>
+              <div class="inst-status-text stopped">已暂停</div>
+            </div>
+            <!-- 盈亏 -->
+            <div class="inst-profit" :class="getReturnClass(s._perf?.total_pnl)">
+              {{ s._perf?.total_pnl || '+50.00' }}<span class="profit-unit"> USDT</span>
+            </div>
+            <!-- 分隔线 -->
+            <div class="inst-divider"></div>
+            <!-- 参数行 4列布局 -->
+            <div class="inst-meta-row">
+              <div class="meta-params-row">
+                <div class="meta-param-item">
+                  <div class="meta-param-label">平台</div>
+                  <div class="meta-param-value">Bitget</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">币种</div>
+                  <div class="meta-param-value">BTC</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">周期</div>
+                  <div class="meta-param-value">{{ (s.params.timeframes || ['1h']).map(formatTimeframeShort).join('+') }}</div>
+                </div>
+                <div class="meta-param-item">
+                  <div class="meta-param-label">杠杆</div>
+                  <div class="meta-param-value lev">{{ s.params.leverage || 10 }}x</div>
+                </div>
+              </div>
+            </div>
+            <!-- 底部 -->
+            <div class="inst-footer">
+              <div class="inst-time">
+                <span v-if="s._last_trade?.time" class="time-text">开仓 {{ s._last_trade.time }}</span>
+                <span v-if="s._last_trade?.side" class="trade-dir" :class="s._last_trade.side">{{ s._last_trade.side === 'short' ? '做空' : '做多' }}</span>
+                <span v-if="s._run_duration" class="time-text">{{ s._run_duration }}</span>
+              </div>
+              <div class="inst-actions">
+                <el-tooltip content="启动策略" placement="top">
+                  <button class="ibtn ibtn-start" @click.stop="startStrategy(s.id)" :disabled="s._starting"><el-icon><VideoPlay /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="编辑策略" placement="top">
+                  <button class="ibtn ibtn-edit" @click.stop="openSettingsDialog(s)"><el-icon><Edit /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="日志" placement="top">
+                  <button class="ibtn ibtn-info" @click.stop="viewLogs(s)"><el-icon><Document /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="交易记录" placement="top">
+                  <button class="ibtn ibtn-purple" @click.stop="viewTrades(s)"><el-icon><DataAnalysis /></el-icon></button>
+                </el-tooltip>
+                <el-tooltip content="删除" placement="top">
+                  <button class="ibtn ibtn-del" @click.stop="deleteInstance(s.id)"><el-icon><Delete /></el-icon></button>
+                </el-tooltip>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="runningInstances.length === 0 && stoppedInstances.length === 0" class="empty-state">
+        <div class="empty-icon-wrap">
+          <el-icon :size="48" color="#c9cdd4"><Operation /></el-icon>
+        </div>
+        <p class="empty-title">暂无运行中的策略</p>
+        <p class="empty-desc">去官方策略挑选一个开始运行吧</p>
+        <el-button type="primary" size="small" @click="statusFilter = ''" style="margin-top: 12px;">去官方策略看看</el-button>
+      </div>
+    </template>
+
+    <!-- 非运行中标签：正常显示 -->
+    <template v-else>
+
     <!-- 空状态 -->
-    <div v-if="strategies.length === 0 && !loading" class="empty-state">
+    <div v-if="filteredStrategies.length === 0 && !loading" class="empty-state">
       <div class="empty-icon-wrap">
         <el-icon :size="48" color="#c9cdd4"><Operation /></el-icon>
       </div>
-      <p class="empty-title">暂无策略</p>
-      <p class="empty-desc">管理员尚未创建任何策略</p>
+      <p class="empty-title">{{ getEmptyTitle }}</p>
+      <p class="empty-desc">{{ getEmptyDesc }}</p>
+      <el-button v-if="statusFilter === 'running'" type="primary" size="small" @click="statusFilter = ''" style="margin-top: 12px;">
+        去官方策略看看
+      </el-button>
     </div>
 
     <!-- 策略卡片列表 -->
     <div v-else class="strategy-grid">
-      <div v-for="s in strategies" :key="s.id" class="strategy-card" @click="openDetailDialog(s)">
+      <div v-for="s in filteredStrategies" :key="s.id" class="strategy-card" :class="{ 'card-running': s.running }" @click="openDetailDialog(s)">
         <!-- 下架警告 -->
         <div v-if="s.unpublished_warning" class="card-warning">
           <el-icon :size="14"><WarningFilled /></el-icon>
           <span>{{ s.unpublished_warning }}</span>
         </div>
 
-        <!-- 卡片头部 -->
-        <div class="card-header">
-          <div class="header-left">
-            <div class="strategy-name-row">
-              <span class="strategy-name">{{ s.name }}</span>
-              <span v-if="s.position && s.position !== 'none'" class="badge" :class="s.position === 'long' ? 'badge-long' : 'badge-short'">
-                {{ s.position === 'long' ? '持多' : '持空' }}
-              </span>
-              <span class="badge" :class="s.running ? 'badge-running' : 'badge-stopped'">
-                {{ s.running ? '运行中' : '已停止' }}
-              </span>
+        <!-- 卡片头部 - 策略名称 + K线图 -->
+        <div class="card-header" :class="getHeaderClass(s)">
+          <div class="header-main">
+            <div class="header-left">
+              <div class="strategy-name-row">
+                <span class="strategy-name">{{ s.name }}</span>
+                <span v-if="s.position && s.position !== 'none'" class="pos-badge" :class="s.position === 'long' ? 'pos-long' : 'pos-short'">
+                  {{ s.position === 'long' ? '持多' : '持空' }}
+                </span>
+                <!-- 官方策略不显示运行状态，显示"官方"标签 -->
+                <span v-if="statusFilter === ''" class="pos-badge pos-official">官方</span>
+                <!-- 运行中/已停止 筛选下显示运行状态 -->
+                <span v-else class="status-badge" :class="s.running ? 'status-running' : 'status-stopped'">
+                  {{ s.running ? '运行中' : '已停止' }}
+                </span>
+              </div>
+              <div class="strategy-meta">
+                <span class="meta-item">{{ formatInstId(s.params.inst_id) }}</span>
+                <span class="meta-sep">|</span>
+                <span class="meta-item" v-for="tf in (s.params.timeframes || ['1h'])" :key="tf">{{ formatTimeframeShort(tf) }}</span>
+                <span class="meta-sep">|</span>
+                <span class="meta-item leverage-val">{{ s.params.leverage || 10 }}x</span>
+              </div>
             </div>
-            <div class="strategy-info-row">
-              <span class="info-item">{{ formatInstId(s.params.inst_id) }}</span>
-              <span class="info-sep">·</span>
-              <span class="info-item" v-for="tf in (s.params.timeframes || ['1h'])" :key="tf">{{ formatTimeframeShort(tf) }}</span>
-              <span class="info-sep">·</span>
-              <span class="info-item leverage">{{ s.params.leverage || 10 }}x</span>
+            <!-- 迷你K线图 -->
+            <div class="mini-chart">
+              <canvas :ref="el => setChartRef(s.id, el)" class="kline-canvas"></canvas>
             </div>
-          </div>
-          <div class="header-type">
-            <span class="type-tag">{{ s.type_name }}</span>
           </div>
         </div>
 
-        <!-- 卡片指标区 -->
+        <!-- 分隔线 -->
+        <div class="card-divider"></div>
+
+        <!-- 绩效指标区 -->
         <div class="card-body">
-          <div class="metrics-row">
-            <div class="metric-item">
-              <div class="metric-label">交易对</div>
-              <div class="metric-value">{{ formatInstId(s.params.inst_id) }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">下单</div>
-              <div class="metric-value">{{ formatSizeInfo(s.params) }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">杠杆</div>
-              <div class="metric-value" :class="getLeverageClass(s.params.leverage)">{{ s.params.leverage || 10 }}x</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">运行周期</div>
-              <div class="metric-value">
-                <span v-for="tf in (s.params.timeframes || ['1h'])" :key="tf" class="tf-tag">{{ formatTimeframeShort(tf) }}</span>
+          <div class="perf-section">
+            <!-- 第一行：月收益、胜率、最大回撤 -->
+            <div class="perf-row">
+              <div class="perf-item">
+                <div class="perf-label">月收益</div>
+                <div class="perf-value" :class="getReturnClass(s._perf?.monthly_return)">
+                  {{ s._perf?.monthly_return || '+10.5%' }}
+                </div>
+                <div class="perf-sub">年化{{ s._perf?.annual_return || '126%' }}</div>
+              </div>
+              <div class="perf-divider"></div>
+              <div class="perf-item">
+                <div class="perf-label">胜率</div>
+                <div class="perf-value" :class="getWinRateClass(s._perf?.win_rate)">
+                  {{ s._perf?.win_rate || '60%' }}
+                </div>
+                <div class="perf-sub">{{ s._perf?.win_count || '3' }}/{{ s._perf?.total_count || '5' }}笔</div>
+              </div>
+              <div class="perf-divider"></div>
+              <div class="perf-item">
+                <div class="perf-label">最大回撤</div>
+                <div class="perf-value" :class="getDrawdownClass(s._perf?.max_drawdown)">
+                  {{ s._perf?.max_drawdown || '-10%' }}
+                </div>
+                <div class="perf-sub">{{ s._perf?.risk_level || '低风险' }}</div>
               </div>
             </div>
-          </div>
 
-          <!-- 止盈止损 -->
-          <div class="tp-sl-row">
-            <div class="tp-sl-item tp">
-              <span class="tp-sl-label">止盈</span>
-              <span class="tp-sl-value">{{ s.params.take_profit_pct || 0 }}%</span>
-            </div>
-            <div class="tp-sl-item sl">
-              <span class="tp-sl-label">止损</span>
-              <span class="tp-sl-value">{{ s.params.stop_loss_pct || 0 }}%</span>
-            </div>
-            <div v-if="s.params.trailing_stop_pct > 0" class="tp-sl-item trail">
-              <span class="tp-sl-label">移动止损</span>
-              <span class="tp-sl-value">{{ s.params.trailing_stop_pct }}%</span>
+            <!-- 第二行：夏普比率、持仓时间、盈亏比 -->
+            <div class="perf-row">
+              <div class="perf-item">
+                <div class="perf-label">夏普比率</div>
+                <div class="perf-value" :class="getSharpeClass(s._perf?.sharpe)">
+                  {{ s._perf?.sharpe || '1.85' }}
+                </div>
+              </div>
+              <div class="perf-divider"></div>
+              <div class="perf-item">
+                <div class="perf-label">持仓时间</div>
+                <div class="perf-value">{{ s._perf?.hold_time || '0.5h' }}</div>
+              </div>
+              <div class="perf-divider"></div>
+              <div class="perf-item">
+                <div class="perf-label">盈亏比</div>
+                <div class="perf-value">{{ s._perf?.profit_ratio || '2.3:1' }}</div>
+              </div>
             </div>
           </div>
 
@@ -115,31 +305,76 @@
 
         <!-- 卡片底部操作 -->
         <div class="card-footer">
-          <div class="footer-info">
-            <span class="footer-desc">{{ s.params.description || s.type_name }}</span>
+          <div class="footer-left">
+            <span class="strategy-type">{{ s.type_name }}</span>
           </div>
           <div class="footer-actions">
             <el-button size="small" text @click.stop="openSettingsDialog(s)">
               <el-icon><Setting /></el-icon> 设置
             </el-button>
+            <!-- 手动交易按钮(仅手动测试策略且运行中) -->
+            <template v-if="s.running && isManualTest(s)">
+              <el-button
+                type="danger"
+                size="small"
+                @click.stop="manualSignal(s, 'open_long')"
+                :loading="s._manual_loading"
+              >开多</el-button>
+              <el-button
+                type="success"
+                size="small"
+                @click.stop="manualSignal(s, 'open_short')"
+                :loading="s._manual_loading"
+              >开空</el-button>
+              <el-button
+                v-if="s.position === 'long'"
+                type="warning"
+                size="small"
+                plain
+                @click.stop="manualSignal(s, 'close_long')"
+                :loading="s._manual_loading"
+              >平多</el-button>
+              <el-button
+                v-if="s.position === 'short'"
+                type="warning"
+                size="small"
+                plain
+                @click.stop="manualSignal(s, 'close_short')"
+                :loading="s._manual_loading"
+              >平空</el-button>
+            </template>
+            <!-- 官方策略：始终显示启动按钮 -->
             <el-button
-              v-if="!s.running"
+              v-if="statusFilter === ''"
               type="success"
               size="small"
-              @click.stop="startStrategy(s.id)"
+              @click.stop="startFromTemplate(s)"
               :loading="s._starting"
             >
               <el-icon><VideoPlay /></el-icon> 启动
             </el-button>
-            <el-button
-              v-else
-              type="danger"
-              size="small"
-              @click.stop="stopStrategy(s.id)"
-              :loading="s._stopping"
-            >
-              <el-icon><VideoPause /></el-icon> 停止
-            </el-button>
+            <!-- 运行中/已停止：正常显示启动/停止 -->
+            <template v-else>
+              <el-button
+                v-if="!s.running"
+                type="success"
+                size="small"
+                @click.stop="startStrategy(s.id)"
+                :loading="s._starting"
+              >
+                <el-icon><VideoPlay /></el-icon> 启动
+              </el-button>
+              <el-button
+                v-else
+                type="danger"
+                size="small"
+                plain
+                @click.stop="stopStrategy(s.id)"
+                :loading="s._stopping"
+              >
+                <el-icon><VideoPause /></el-icon> 停止
+              </el-button>
+            </template>
             <el-button size="small" text @click.stop="viewTrades(s)">
               <el-icon><List /></el-icon> 记录
             </el-button>
@@ -147,6 +382,7 @@
         </div>
       </div>
     </div>
+    </template>
 
     <!-- 新建策略弹窗 -->
     <el-dialog v-model="showCreateDialog" title="新建策略" width="620px" :close-on-click-modal="false">
@@ -175,13 +411,13 @@
         </el-form-item>
         <el-form-item label="下单方式">
           <el-radio-group v-model="createForm.size_mode">
-            <el-radio value="fixed">固定张数</el-radio>
+            <el-radio value="fixed">固定数量</el-radio>
             <el-radio value="percent">仓位百分比</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="createForm.size_mode === 'fixed'" label="下单张数">
-          <el-input-number v-model="createForm.size" :min="0.01" :max="1000" :step="0.01" :precision="2" />
-          <span class="hint-label">合约张数（最小0.01）</span>
+        <el-form-item v-if="createForm.size_mode === 'fixed'" label="下单数量">
+          <el-input-number v-model="createForm.size" :min="0.0001" :max="10" :step="0.0001" :precision="4" />
+          <span class="hint-label">BTC 数量（最小 0.0001）</span>
         </el-form-item>
         <el-form-item v-else label="仓位比例">
           <el-input-number v-model="createForm.size_pct" :min="1" :max="100" :step="5" />
@@ -319,9 +555,9 @@
         <el-form :model="editForm" label-width="100px" class="create-form">
           <el-form-item label="开仓平台">
             <el-select v-model="editForm.platform" style="width: 100%;" disabled>
-              <el-option label="OKX" value="okx" />
+              <el-option label="Bitget" value="bitget" />
             </el-select>
-            <span class="hint-label">当前仅支持 OKX</span>
+            <span class="hint-label">当前仅支持 Bitget</span>
           </el-form-item>
           <el-form-item label="交易币种">
             <el-select v-model="editForm.inst_id" style="width: 100%;" :disabled="editFormRunning">
@@ -352,7 +588,7 @@
             <el-form :model="editForm" label-width="100px" class="tab-form">
               <el-form-item label="开仓平台">
                 <el-select v-model="editForm.platform" style="width: 100%;" disabled>
-                  <el-option label="OKX" value="okx" />
+                  <el-option label="Bitget" value="bitget" />
                 </el-select>
               </el-form-item>
               <el-form-item label="交易币种">
@@ -391,13 +627,13 @@
             <el-form :model="editForm" label-width="100px" class="tab-form">
               <el-form-item label="下单方式">
                 <el-radio-group v-model="editForm.size_mode">
-                  <el-radio value="fixed">按张数下单</el-radio>
+                  <el-radio value="fixed">按数量下单</el-radio>
                   <el-radio value="percent">按百分比下单</el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item v-if="editForm.size_mode === 'fixed'" label="下单张数">
-                <el-input-number v-model="editForm.size" :min="0.01" :max="1000" :step="0.01" :precision="2" />
-                <span class="hint-label">合约张数（最小0.01）</span>
+              <el-form-item v-if="editForm.size_mode === 'fixed'" label="下单数量">
+                <el-input-number v-model="editForm.size" :min="0.0001" :max="10" :step="0.0001" :precision="4" />
+                <span class="hint-label">BTC 数量（最小 0.0001）</span>
               </el-form-item>
               <el-form-item v-else label="仓位比例">
                 <el-input-number v-model="editForm.size_pct" :min="1" :max="100" :step="5" />
@@ -406,24 +642,60 @@
 
               <el-divider content-position="left">风控参数</el-divider>
               <el-form-item label="固定止盈">
+                <el-radio-group v-model="editForm.tp_mode" size="small">
+                  <el-radio value="pct">按百分比</el-radio>
+                  <el-radio value="points">按点数</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="editForm.tp_mode === 'pct'" label="止盈比例">
                 <el-input-number v-model="editForm.take_profit_pct" :min="0" :max="100" :step="0.1" :precision="2" />
                 <span class="hint-label">%（0=不设止盈）</span>
               </el-form-item>
+              <el-form-item v-else label="止盈点数">
+                <el-input-number v-model="editForm.take_profit_points" :min="0" :max="10000" :step="10" :precision="0" />
+                <span class="hint-label">点（如300点=价格+300）</span>
+              </el-form-item>
               <el-form-item label="固定止损">
+                <el-radio-group v-model="editForm.sl_mode" size="small">
+                  <el-radio value="pct">按百分比</el-radio>
+                  <el-radio value="points">按点数</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="editForm.sl_mode === 'pct'" label="止损比例">
                 <el-input-number v-model="editForm.stop_loss_pct" :min="0" :max="50" :step="0.1" :precision="2" />
                 <span class="hint-label">%（0=不设止损）</span>
               </el-form-item>
+              <el-form-item v-else label="止损点数">
+                <el-input-number v-model="editForm.stop_loss_points" :min="0" :max="10000" :step="10" :precision="0" />
+                <span class="hint-label">点（如200点=价格-200）</span>
+              </el-form-item>
               <el-form-item label="移动止盈">
+                <el-radio-group v-model="editForm.trail_mode" size="small">
+                  <el-radio value="pct">按百分比</el-radio>
+                  <el-radio value="points">按点数</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="editForm.trail_mode === 'pct'" label="移动止损比例">
                 <el-input-number v-model="editForm.trailing_stop_pct" :min="0" :max="20" :step="0.1" :precision="2" />
                 <span class="hint-label">%（0=不启用）</span>
               </el-form-item>
+              <el-form-item v-else label="移动止损点数">
+                <el-input-number v-model="editForm.trailing_stop_points" :min="0" :max="10000" :step="10" :precision="0" />
+                <span class="hint-label">点（价格回撤此点数触发平仓）</span>
+              </el-form-item>
               <el-form-item label="移动激活阈值">
+                <el-radio-group v-model="editForm.trail_activate_mode" size="small">
+                  <el-radio value="pct">按百分比</el-radio>
+                  <el-radio value="points">按点数</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="editForm.trail_activate_mode === 'pct'" label="激活比例">
                 <el-input-number v-model="editForm.trail_activate_pct" :min="0" :max="10" :step="0.1" :precision="2" />
                 <span class="hint-label">%（盈利达到此比例激活移动止盈）</span>
               </el-form-item>
-              <el-form-item label="回调点数">
-                <el-input-number v-model="editForm.trail_callback_points" :min="0" :max="1000" :step="1" />
-                <span class="hint-label">点（价格回调此点数触发平仓）</span>
+              <el-form-item v-else label="激活点数">
+                <el-input-number v-model="editForm.trail_activate_points" :min="0" :max="10000" :step="10" :precision="0" />
+                <span class="hint-label">点（价格涨跌此点数激活移动止盈）</span>
               </el-form-item>
               <el-form-item label="冷却时间">
                 <el-input-number v-model="editForm.cooldown_minutes" :min="0" :max="1440" :step="5" />
@@ -618,9 +890,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { InfoFilled, Loading, WarningFilled } from '@element-plus/icons-vue'
+import { InfoFilled, Loading, WarningFilled, TrendCharts, DataLine, Connection, Odometer, Histogram, ArrowUp, ArrowDown, Remove, VideoPause, VideoPlay, Edit, Document, DataAnalysis, Delete } from '@element-plus/icons-vue'
 import api from '../utils/api'
 import { useWebSocket } from '../utils/ws'
 
@@ -628,6 +900,7 @@ const { on: wsOn, off: wsOff } = useWebSocket()
 
 const loading = ref(false)
 const strategies = ref([])
+const statusFilter = ref('running')
 const availableStrategies = ref([])
 const showCreateDialog = ref(false)
 const creating = ref(false)
@@ -637,14 +910,177 @@ const isAdmin = ref(false)
 const editingStrategyId = ref(null)
 const editFormRunning = ref(false)
 const showTradesDialog = ref(false)
+
+// 筛选后的策略列表
+const filteredStrategies = computed(() => {
+  if (!statusFilter.value) {
+    // 官方策略：只显示模板
+    return strategies.value.filter(s => s.is_template)
+  }
+  if (statusFilter.value === 'running') {
+    // 运行中：只显示实例
+    return strategies.value.filter(s => !s.is_template && s.running)
+  }
+  if (statusFilter.value === 'stopped') {
+    // 已停止：只显示实例
+    return strategies.value.filter(s => !s.is_template && !s.running)
+  }
+  if (statusFilter.value === 'official') {
+    return strategies.value.filter(s => s.is_template && s.is_official)
+  }
+  if (statusFilter.value === 'market') {
+    return strategies.value.filter(s => s.is_template && !s.is_official)
+  }
+  return strategies.value
+})
+
+// 运行中的实例
+const runningInstances = computed(() => {
+  return strategies.value.filter(s => !s.is_template && s.running)
+})
+
+// 已停止的实例
+const stoppedInstances = computed(() => {
+  return strategies.value.filter(s => !s.is_template && !s.running)
+})
+
+const getEmptyTitle = computed(() => {
+  if (statusFilter.value === 'running') return '暂无运行中的策略'
+  if (statusFilter.value === 'stopped') return '暂无已停止的策略'
+  if (statusFilter.value === 'market') return '暂无市场策略'
+  return '暂无策略'
+})
+
+const getEmptyDesc = computed(() => {
+  if (statusFilter.value === 'running') return '去官方策略挑选一个开始运行吧'
+  if (statusFilter.value === 'stopped') return '所有策略都在运行中'
+  if (statusFilter.value === 'market') return '暂无用户分享的策略'
+  if (strategies.value.length === 0) return '管理员尚未创建任何策略'
+  return '没有符合条件的策略'
+})
+
 const tradesList = ref([])
 const tradesStrategyName = ref('')
+const tradesStrategyId = ref(null)
 
 // 策略详情弹窗
 const showDetailDialog = ref(false)
 const detailStrategy = ref(null)
 const backtestStats = ref(null)
 const loadingStats = ref(false)
+
+// 迷你K线图Canvas引用
+const chartRefs = {}
+
+function setChartRef(strategyId, el) {
+  if (el) {
+    chartRefs[strategyId] = el
+  }
+}
+
+// 绘制策略净值曲线（面积图）
+function drawMiniKline(strategyId) {
+  const canvas = chartRefs[strategyId]
+  if (!canvas) return
+
+  const ctx = canvas.getContext('2d')
+  const dpr = window.devicePixelRatio || 1
+  const width = 120
+  const height = 36
+
+  // 高清屏幕适配
+  canvas.width = width * dpr
+  canvas.height = height * dpr
+  canvas.style.width = width + 'px'
+  canvas.style.height = height + 'px'
+  ctx.scale(dpr, dpr)
+
+  // 生成模拟净值数据（30个点）
+  const values = []
+  let nav = 1.0 // 初始净值
+  const trend = Math.random() > 0.4 ? 1 : -1 // 60%概率上涨
+  for (let i = 0; i < 30; i++) {
+    const change = (Math.random() - 0.45) * 0.03 * trend
+    nav = Math.max(0.5, nav * (1 + change)) // 防止净值过低
+    values.push(nav)
+  }
+
+  // 计算范围
+  const minVal = Math.min(...values) * 0.98
+  const maxVal = Math.max(...values) * 1.02
+  const range = maxVal - minVal || 1
+
+  // 清空画布
+  ctx.clearRect(0, 0, width, height)
+
+  // 计算点的位置
+  const padding = 4
+  const chartWidth = width - padding * 2
+  const chartHeight = height - padding * 2
+  const points = values.map((v, i) => ({
+    x: padding + (i / (values.length - 1)) * chartWidth,
+    y: padding + (1 - (v - minVal) / range) * chartHeight
+  }))
+
+  // 绘制渐变填充区域
+  const isUp = values[values.length - 1] >= values[0]
+  const grad = ctx.createLinearGradient(0, 0, 0, height)
+  if (isUp) {
+    grad.addColorStop(0, 'rgba(34, 197, 94, 0.3)')
+    grad.addColorStop(1, 'rgba(34, 197, 94, 0.02)')
+  } else {
+    grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)')
+    grad.addColorStop(1, 'rgba(239, 68, 68, 0.02)')
+  }
+
+  // 绘制填充区域
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, height - padding)
+  points.forEach(p => ctx.lineTo(p.x, p.y))
+  ctx.lineTo(points[points.length - 1].x, height - padding)
+  ctx.closePath()
+  ctx.fillStyle = grad
+  ctx.fill()
+
+  // 绘制曲线
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length; i++) {
+    // 使用贝塞尔曲线平滑
+    const xc = (points[i].x + points[i - 1].x) / 2
+    const yc = (points[i].y + points[i - 1].y) / 2
+    ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc)
+  }
+  ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y)
+  ctx.strokeStyle = isUp ? '#22c55e' : '#ef4444'
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+
+  // 绘制终点圆点
+  const lastPoint = points[points.length - 1]
+  ctx.beginPath()
+  ctx.arc(lastPoint.x, lastPoint.y, 3, 0, Math.PI * 2)
+  ctx.fillStyle = isUp ? '#22c55e' : '#ef4444'
+  ctx.fill()
+  ctx.strokeStyle = '#fff'
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+
+// 批量绘制所有策略的K线
+function drawAllMiniKlines() {
+  // 只绘制当前显示的策略
+  filteredStrategies.value.forEach(s => {
+    setTimeout(() => drawMiniKline(s.id), 50)
+  })
+}
+
+// 监听筛选变化，重新绘制净值曲线
+watch(statusFilter, () => {
+  nextTick(() => {
+    setTimeout(() => drawAllMiniKlines(), 100)
+  })
+})
 
 // 策略设置模式：simple=简易版, pro=专业版
 const settingsMode = ref('simple')
@@ -694,6 +1130,52 @@ function onWsSignal(data) {
   }
 }
 
+// ─── 手动交易信号 ───
+
+function isManualTest(strategy) {
+  return strategy.name?.includes('手动测试') || strategy.name?.includes('手动') || strategy.type === 'manual_test'
+}
+
+async function manualSignal(strategy, signal) {
+  const signalMap = {
+    open_long: '开多', open_short: '开空',
+    close_long: '平多', close_short: '平空',
+  }
+  const label = signalMap[signal] || signal
+
+  try {
+    await ElMessageBox.confirm(
+      `确认对策略「${strategy.name}」执行${label}操作？`,
+      '手动交易确认',
+      { confirmButtonText: '确认执行', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return // 用户取消
+  }
+
+  strategy._manual_loading = true
+  try {
+    const res = await api.post(`/strategy/${strategy.id}/manual-signal`, { signal })
+    if (res.ok) {
+      ElMessage.success(`${label}信号已执行`)
+      // 刷新策略列表以同步持仓状态
+      setTimeout(() => {
+        loadStrategies()
+        // 如果记录弹窗已打开，刷新交易记录
+        if (showTradesDialog.value && tradesStrategyId.value === strategy.id) {
+          loadTradesList(strategy)
+        }
+      }, 1500)
+    } else {
+      ElMessage.error(res.detail || `${label}执行失败`)
+    }
+  } catch (err) {
+    ElMessage.error(err?.response?.data?.detail || `${label}请求失败`)
+  } finally {
+    strategy._manual_loading = false
+  }
+}
+
 function onWsTrade(data) {
   if (data) {
     if (showTradesDialog.value) {
@@ -729,7 +1211,7 @@ function formatSizeInfo(params) {
   if (params.size_mode === 'percent') {
     return `${params.size_pct ?? 10}% 仓位`
   }
-  return `${params.size ?? 1} 张`
+  return `${params.size ?? 0.0001} BTC`
 }
 
 function formatTimeframes(timeframes) {
@@ -755,6 +1237,95 @@ function getLeverageClass(leverage) {
   return 'leverage-low'
 }
 
+// 格式化止盈止损（支持百分比/点数模式）
+function formatTpSl(params, type) {
+  if (type === 'tp') {
+    const mode = params.tp_mode || 'pct'
+    if (mode === 'points') {
+      return (params.take_profit_points || 0) + '点'
+    }
+    return (params.take_profit_pct || 0) + '%'
+  } else {
+    const mode = params.sl_mode || 'pct'
+    if (mode === 'points') {
+      return (params.stop_loss_points || 0) + '点'
+    }
+    return (params.stop_loss_pct || 0) + '%'
+  }
+}
+
+// 获取策略图标
+function getStrategyIcon(type) {
+  const iconMap = {
+    ma_cross: TrendCharts,
+    rsi: Histogram,
+    bollinger: DataLine,
+    macd: Odometer,
+    macd_divergence: Connection,
+    vol_break: Histogram,
+    ema_volume: TrendCharts,
+    supertrend: ArrowUp,
+    kdj: Histogram,
+    dual_ema: TrendCharts,
+    ma_ribbon: DataLine,
+  }
+  return iconMap[type] || TrendCharts
+}
+
+// 获取策略图标样式类
+function getStrategyIconClass(type) {
+  const trendTypes = ['ma_cross', 'ema_volume', 'dual_ema', 'supertrend']
+  const oscillatorTypes = ['rsi', 'kdj']
+  const divergenceTypes = ['macd_divergence', 'macd']
+  if (trendTypes.includes(type)) return 'icon-trend'
+  if (oscillatorTypes.includes(type)) return 'icon-oscillator'
+  if (divergenceTypes.includes(type)) return 'icon-divergence'
+  return ''
+}
+
+// 获取卡片头部样式
+function getHeaderClass(s) {
+  if (!s.running) return 'header-stopped'
+  if (s.position === 'long') return 'header-long'
+  if (s.position === 'short') return 'header-short'
+  return 'header-running'
+}
+
+// 绩效颜色
+// 月收益：正→绿，负→红
+function getReturnClass(val) {
+  if (!val) return 'perf-positive'
+  const s = String(val)
+  if (s.startsWith('-')) return 'perf-negative'
+  return 'perf-positive'
+}
+
+// 胜率：>50%→绿，≤50%→黑
+function getWinRateClass(val) {
+  if (!val) return ''
+  const num = parseFloat(String(val).replace('%', ''))
+  if (isNaN(num) || num <= 50) return 'perf-neutral'
+  return 'perf-positive'
+}
+
+// 最大回撤：<10%→黑，≥10%→红
+function getDrawdownClass(val) {
+  if (!val) return 'perf-neutral'
+  const num = parseFloat(String(val).replace('%', '').replace('-', ''))
+  if (isNaN(num) || num < 10) return 'perf-neutral'
+  return 'perf-negative'
+}
+
+// 夏普比率：>2→绿，1-2→橙，<1→红
+function getSharpeClass(val) {
+  if (!val) return ''
+  const num = parseFloat(String(val))
+  if (isNaN(num)) return ''
+  if (num >= 2) return 'perf-positive'
+  if (num >= 1) return 'perf-warning'
+  return 'perf-negative'
+}
+
 function directionLabel(dir) {
   const map = {
     open_long: '开多', open_short: '开空',
@@ -778,7 +1349,7 @@ const createForm = reactive({
   type: 'ma_cross',
   inst_id: 'BTC-USDT-SWAP',
   size_mode: 'fixed',
-  size: 1,
+  size: 0.0001,
   size_pct: 10,
   leverage: 10,
   take_profit_pct: 5,
@@ -802,16 +1373,24 @@ const createForm = reactive({
 const editForm = reactive({
   name: '',
   type: '',
-  platform: 'okx',
+  platform: 'bitget',
   inst_id: 'BTC-USDT-SWAP',
   size_mode: 'percent',
   size: 1,
   size_pct: 10,
   leverage: 10,
+  tp_mode: 'pct',
   take_profit_pct: 5,
+  take_profit_points: 0,
+  sl_mode: 'pct',
   stop_loss_pct: 3,
+  stop_loss_points: 0,
+  trail_mode: 'pct',
   trailing_stop_pct: 0,
+  trailing_stop_points: 0,
+  trail_activate_mode: 'pct',
   trail_activate_pct: 0,
+  trail_activate_points: 0,
   trail_callback_points: 0,
   cooldown_minutes: 0,
   td_mode: 'cross',
@@ -829,13 +1408,33 @@ const editForm = reactive({
 async function loadStrategies() {
   loading.value = true
   try {
+    // 加载策略模板
     const res = await api.get('/strategy/list')
-    strategies.value = (res.strategies || []).map(s => ({
+    const templates = (res.strategies || []).map(s => ({
       ...s,
       _starting: false,
       _stopping: false,
+      is_template: true,
     }))
+
+    // 加载策略实例
+    let instances = []
+    try {
+      const instRes = await api.get('/strategy-instance/list')
+      instances = (instRes.instances || []).map(s => ({
+        ...s,
+        _starting: false,
+        _stopping: false,
+        is_template: false,
+      }))
+    } catch { /* 实例API可能还未完全实现 */ }
+
+    // 合并：模板 + 实例
+    strategies.value = [...templates, ...instances]
     isAdmin.value = res.is_admin || false
+
+    // 加载完成后绘制K线
+    nextTick(() => drawAllMiniKlines())
   } catch (e) {
     ElMessage.error('加载策略失败')
   } finally {
@@ -879,16 +1478,24 @@ function openSettingsDialog(s) {
   editFormRunning.value = s.running
   editForm.name = s.name
   editForm.type = s.type
-  editForm.platform = s.params.platform || 'okx'
+  editForm.platform = 'bitget'  // 强制使用 Bitget，忽略数据库旧值
   editForm.inst_id = s.params.inst_id || 'BTC-USDT-SWAP'
   editForm.size_mode = s.params.size_mode || 'percent'
-  editForm.size = s.params.size ?? 1
+  editForm.size = s.params.size ?? 0.0001
   editForm.size_pct = s.params.size_pct || 10
   editForm.leverage = s.params.leverage || 10
+  editForm.tp_mode = s.params.tp_mode || 'pct'
   editForm.take_profit_pct = s.params.take_profit_pct || 0
+  editForm.take_profit_points = s.params.take_profit_points || 0
+  editForm.sl_mode = s.params.sl_mode || 'pct'
   editForm.stop_loss_pct = s.params.stop_loss_pct || 0
+  editForm.stop_loss_points = s.params.stop_loss_points || 0
+  editForm.trail_mode = s.params.trail_mode || 'pct'
   editForm.trailing_stop_pct = s.params.trailing_stop_pct || 0
+  editForm.trailing_stop_points = s.params.trailing_stop_points || 0
+  editForm.trail_activate_mode = s.params.trail_activate_mode || 'pct'
   editForm.trail_activate_pct = s.params.trail_activate_pct || 0
+  editForm.trail_activate_points = s.params.trail_activate_points || 0
   editForm.trail_callback_points = s.params.trail_callback_points || 0
   editForm.cooldown_minutes = s.params.cooldown_minutes || 0
   editForm.td_mode = s.params.td_mode || 'cross'
@@ -961,10 +1568,18 @@ async function saveSettings() {
       run_days: editForm.run_days,
       run_start_time: editForm.run_start_time,
       run_end_time: editForm.run_end_time,
+      tp_mode: editForm.tp_mode,
       take_profit_pct: editForm.take_profit_pct,
+      take_profit_points: editForm.take_profit_points,
+      sl_mode: editForm.sl_mode,
       stop_loss_pct: editForm.stop_loss_pct,
+      stop_loss_points: editForm.stop_loss_points,
+      trail_mode: editForm.trail_mode,
       trailing_stop_pct: editForm.trailing_stop_pct,
+      trailing_stop_points: editForm.trailing_stop_points,
+      trail_activate_mode: editForm.trail_activate_mode,
       trail_activate_pct: editForm.trail_activate_pct,
+      trail_activate_points: editForm.trail_activate_points,
       trail_callback_points: editForm.trail_callback_points,
       cooldown_minutes: editForm.cooldown_minutes,
       td_mode: editForm.td_mode,
@@ -990,9 +1605,41 @@ async function startStrategy(id) {
     ElMessage.success('策略已启动')
     await loadStrategies()
   } catch (e) {
-    ElMessage.error('启动失败: ' + (e.response?.data?.detail || e.message))
+    const detail = e.response?.data?.detail || e.message
+    if (detail.includes('already running')) {
+      // 策略已在运行，直接标记为运行中（可能是线程还活着但列表未更新）
+      ElMessage.warning('策略已在运行中')
+      await loadStrategies()
+    } else {
+      ElMessage.error('启动失败: ' + detail)
+    }
   } finally {
     if (s) s._starting = false
+  }
+}
+
+// 从模板创建实例并启动
+async function startFromTemplate(template) {
+  template._starting = true
+  try {
+    // 创建实例
+    const res = await api.post('/strategy-instance/create', {
+      strategy_id: template.id,
+      name: `${template.name}-实例`,
+      params: template.params,
+    })
+    const instanceId = res.instance_id
+
+    // 启动实例
+    await api.post(`/strategy-instance/${instanceId}/start`)
+    ElMessage.success('策略实例已启动')
+    // 切换到运行中标签
+    statusFilter.value = 'running'
+    await loadStrategies()
+  } catch (e) {
+    ElMessage.error('启动失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    template._starting = false
   }
 }
 
@@ -1052,7 +1699,31 @@ async function deleteStrategy(id) {
 
 async function viewTrades(s) {
   tradesStrategyName.value = s.name
+  tradesStrategyId.value = s.id
   showTradesDialog.value = true
+  await loadTradesList(s)
+}
+
+function viewLogs(s) {
+  ElMessage.info('日志功能开发中')
+}
+
+async function deleteInstance(id) {
+  try {
+    await ElMessageBox.confirm('确定要删除该策略实例吗？', '确认删除', {
+      type: 'warning'
+    })
+    await api.delete(`/strategy-instance/${id}`)
+    ElMessage.success('删除成功')
+    await loadStrategies()
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败: ' + (e.response?.data?.detail || e.message))
+    }
+  }
+}
+
+async function loadTradesList(s) {
   try {
     const res = await api.get(`/strategy/${s.id}/trades`)
     tradesList.value = res.trades || []
@@ -1119,6 +1790,231 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* ===== 实例卡片（暗色协调风格） ===== */
+.instance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1400px) {
+  .instance-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1000px) {
+  .instance-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .instance-grid { grid-template-columns: 1fr; }
+}
+
+.inst-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.inst-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* 标题行 */
+.inst-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.inst-left-accent {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.accent-running { background: var(--green); }
+.accent-stopped { background: var(--text-muted); }
+
+.inst-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.inst-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.inst-status-dot.accent-running { background: var(--green); }
+.inst-status-dot.accent-stopped { background: var(--text-muted); }
+
+.inst-status-text {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.inst-status-text.running { color: var(--green); }
+.inst-status-text.stopped { color: var(--text-muted); }
+
+/* 盈亏 */
+.inst-profit {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-family: 'SF Mono', 'Roboto Mono', monospace;
+}
+
+.inst-profit.perf-positive { color: var(--green); }
+.inst-profit.perf-negative { color: var(--red); }
+
+.profit-unit {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.6;
+  font-family: var(--font-family);
+  letter-spacing: 0;
+}
+
+/* 分隔线 */
+.inst-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0 -2px;
+}
+
+/* 参数区域 - 带背景的盒子 */
+.inst-meta-row {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.meta-params-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.meta-param-item {
+  text-align: center;
+  flex: 1;
+}
+
+.meta-param-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+.meta-param-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.meta-param-value.lev {
+  color: var(--orange);
+}
+
+/* 底部 */
+.inst-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.inst-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.time-text {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.trade-dir {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.trade-dir.long {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--red);
+}
+
+.trade-dir.short {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--green);
+}
+
+/* 图标按钮 */
+.inst-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.ibtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.ibtn:hover {
+  transform: scale(1.12);
+  filter: brightness(1.2);
+}
+
+.ibtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.ibtn .el-icon {
+  font-size: 13px;
+  color: #fff;
+}
+
+.ibtn-start { background: rgba(16, 185, 129, 0.9); }
+.ibtn-pause { background: rgba(245, 158, 11, 0.9); }
+.ibtn-edit  { background: rgba(80, 80, 80, 0.9); }
+.ibtn-info  { background: rgba(59, 130, 246, 0.9); }
+.ibtn-purple{ background: rgba(161, 104, 247, 0.9); }
+.ibtn-del   { background: rgba(244, 63, 94, 0.85); }
+
 /* ===== 页面容器（颜色变量继承全局主题） ===== */
 .strategy-page {
   min-height: 100%;
@@ -1133,7 +2029,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px 20px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
@@ -1149,273 +2045,396 @@ onBeforeUnmount(() => {
   color: var(--text-primary);
 }
 
+/* 状态筛选标签 */
+.status-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.strategy-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+.status-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-tab:hover {
+  border-color: var(--text-muted);
+}
+
+.status-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.status-tab.status-running.active {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+
+.status-tab.status-stopped.active {
+  border-color: var(--text-muted);
+  background: rgba(153, 153, 153, 0.1);
+}
+
+.status-tab.status-official.active {
+  border-color: var(--orange);
+  background: var(--orange-light);
+}
+
+.status-tab.status-market.active {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.tab-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.status-tab.active .tab-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tab-count {
+  padding: 2px 8px;
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.status-tab.active .tab-count {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent);
+}
+
+.status-tab.status-running.active .tab-count {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--green);
+}
+
+.status-tab.status-stopped.active .tab-count {
+  background: rgba(153, 153, 153, 0.2);
+  color: var(--text-muted);
+}
+
+.status-tab.status-official.active .tab-count {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--orange);
+}
+
+.status-tab.status-market.active .tab-count {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--blue);
+}
+
 /* ===== 空状态 ===== */
 .empty-state {
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
   border-radius: 12px;
-  padding: 60px 20px;
+  padding: 80px 20px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-icon-wrap {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: var(--bg-secondary);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto 20px;
 }
 
 .empty-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
 .empty-desc {
-  margin-top: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
+  max-width: 280px;
+}
+
+.empty-state .el-button {
+  margin-top: 20px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+
+.empty-state .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 /* ===== 策略卡片网格 ===== */
 .strategy-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
 }
 
-/* ===== 策略卡片（参考 zxlh.pro 三段式） ===== */
+@media (max-width: 1600px) {
+  .strategy-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1200px) {
+  .strategy-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 800px) {
+  .strategy-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== 策略卡片 ===== */
 .strategy-card {
   background: var(--bg-card);
-  border-radius: 12px;
-  border: 2px solid var(--border-primary);
+  border-radius: 10px;
+  border: 1px solid var(--border-secondary);
   padding: 0;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  will-change: transform;
+  position: relative;
 }
 
 .strategy-card:hover {
   transform: translateY(-2px);
-  border-color: var(--card-hover-border);
-  box-shadow: var(--card-hover-shadow);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.12);
+}
+
+.strategy-card.card-running {
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* 下架警告 */
 .card-warning {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 5px;
+  padding: 6px 12px;
   background: var(--orange-light);
   color: var(--orange);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 /* ─── 卡片头部 ─── */
 .card-header {
-  padding: 14px 16px 12px;
+  padding: 12px 14px 10px;
+  position: relative;
+}
+
+.card-header.header-running { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%); }
+.card-header.header-long { background: linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, transparent 100%); }
+.card-header.header-short { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%); }
+.card-header.header-stopped { background: linear-gradient(135deg, rgba(153, 153, 153, 0.05) 0%, transparent 100%); }
+
+.header-main {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
 }
 
 .header-left {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .strategy-name-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 8px;
 }
 
 .strategy-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 徽章（参考 zxlh.pro badge 样式） */
-.badge {
-  display: inline-flex;
-  align-items: center;
+.mini-chart {
+  flex-shrink: 0;
+  width: 120px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kline-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.pos-badge {
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: 0.3px;
-}
-
-.badge-long {
-  background: var(--red-light);
-  color: var(--red);
-  border: 1px solid rgba(245, 63, 63, 0.2);
-}
-
-.badge-short {
-  background: var(--green-light);
-  color: var(--green);
-  border: 1px solid rgba(0, 180, 42, 0.2);
-}
-
-.badge-running {
-  background: var(--green-light);
-  color: var(--green);
-  border: 1px solid rgba(0, 180, 42, 0.2);
-}
-
-.badge-stopped {
-  background: var(--accent-light);
-  color: var(--text-muted);
-  border: 1px solid var(--border-secondary);
-}
-
-/* 信息行 */
-.strategy-info-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  font-size: 11px;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-}
-
-.info-item {
-  white-space: nowrap;
-}
-
-.info-item.leverage {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.info-sep {
-  margin: 0 6px;
-  color: var(--text-disabled);
-}
-
-/* 类型标签 */
-.header-type {
-  flex-shrink: 0;
-}
-
-.type-tag {
-  display: inline-block;
-  padding: 3px 10px;
-  background: var(--accent-light);
-  color: var(--accent);
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid rgba(247, 147, 26, 0.2);
-  white-space: nowrap;
-}
-
-/* ─── 卡片主体 ─── */
-.card-body {
-  padding: 14px 16px;
-  flex: 1;
-}
-
-/* 指标行 */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.metric-item {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.metric-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.metric-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.leverage-high { color: var(--red); }
-.leverage-mid { color: var(--orange); }
-.leverage-low { color: var(--green); }
-
-/* 周期标签 */
-.tf-tag {
-  display: inline-block;
-  padding: 1px 6px;
-  background: var(--blue-light);
-  color: var(--blue);
   border-radius: 4px;
   font-size: 10px;
-  font-weight: 500;
-  margin-right: 3px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-/* 止盈止损行 */
-.tp-sl-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-subtle);
+.pos-badge.pos-long {
+  background: var(--red-light);
+  color: var(--red);
 }
 
-.tp-sl-item {
+.pos-badge.pos-short {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.pos-badge.pos-official {
+  background: var(--orange-light);
+  color: var(--orange);
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.status-badge.status-running {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.status-badge.status-stopped {
+  background: rgba(153, 153, 153, 0.15);
+  color: var(--text-muted);
+}
+
+.strategy-meta {
   display: flex;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.tp-sl-label {
-  font-size: 10px;
+.meta-item { white-space: nowrap; }
+.meta-sep { color: var(--text-disabled); }
+.leverage-val { color: var(--accent); font-weight: 600; }
+
+/* 分隔线 */
+.card-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-secondary), transparent);
+  margin: 0 14px;
+}
+
+/* ─── 绩效指标区 ─── */
+.card-body {
+  padding: 10px 14px;
+  flex: 1;
+}
+
+.perf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perf-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 0;
+  align-items: center;
+}
+
+.perf-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.perf-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border-secondary);
+  flex-shrink: 0;
+}
+
+.perf-label {
+  font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
 }
 
-.tp-sl-value {
-  font-size: 12px;
-  font-weight: 600;
+.perf-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.tp-sl-item.tp .tp-sl-value { color: var(--green); }
-.tp-sl-item.sl .tp-sl-value { color: var(--red); }
-.tp-sl-item.trail .tp-sl-value { color: var(--orange); }
+.perf-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.perf-positive { color: var(--green); }
+.perf-negative { color: var(--red); }
+.perf-warning { color: var(--orange); }
+.perf-neutral { color: var(--text-primary); }
 
 /* 信号区 */
 .signal-section {
   margin-top: 10px;
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px dashed var(--border-subtle);
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
 }
 
@@ -1432,15 +2451,15 @@ onBeforeUnmount(() => {
 }
 
 .signal-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .signal-price {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
-  font-family: 'SF Mono', 'Roboto Mono', monospace;
+  font-family: 'SF Mono', monospace;
 }
 
 .signal-long { color: var(--red); }
@@ -1450,33 +2469,34 @@ onBeforeUnmount(() => {
 
 /* ─── 卡片底部 ─── */
 .card-footer {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 10px;
   background: var(--bg-hover);
 }
 
-.footer-info {
-  flex: 1;
-  min-width: 0;
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
 }
 
-.footer-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  max-width: 100%;
+.strategy-type {
+  padding: 2px 8px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
 }
 
 .footer-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
 }
 

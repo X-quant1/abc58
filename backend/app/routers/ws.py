@@ -121,7 +121,7 @@ async def _push_loop():
                         from app.services.bitget_client import get_client
                         client = get_client()
                         if client:
-                            balance = client.get_balance("USDT")
+                            balance = await client.get_balance("USDT")
                             await ws_manager.broadcast("account", {
                                 "account_balance": balance,
                                 "unrealized_pnl": 0,

@@ -1,6 +1,6 @@
 """行情数据缓存层
 
-支持内存缓存 + TTL过期，减少OKX API调用。
+支持内存缓存 + TTL过期，减少 Bitget API 调用。
 支持缓存预热、自动刷新、命中率统计。
 
 缓存策略：
@@ -255,14 +255,14 @@ class CachedMarketService:
         cached = self._cache.get("ticker", symbol)
         if cached is not None:
             return cached
-        
+
         try:
             result = self._service.get_ticker(symbol)
             self._cache.set("ticker", result, symbol)
             return result
         except Exception:
-            # OKX API 不可达时返回兜底数据，不阻塞页面
-            return {"instId": symbol, "last": "0", "bidPx": "0", "askPx": "0"}
+            # Bitget API 不可达时返回兜底数据，不阻塞页面
+            return {"symbol": symbol, "price": 0, "last": "0", "bidPx": "0", "askPx": "0"}
     
     def get_klines(self, symbol: str = "BTC-USDT-SWAP", interval: str = "1H", limit: int = 100) -> list:
         """获取K线（带缓存）"""
@@ -409,7 +409,7 @@ _cached_market_service: Optional[CachedMarketService] = None
 
 def get_cached_market_service(user_key: str = "") -> CachedMarketService:
     """获取带缓存的行情服务实例
-    
+
     Args:
         user_key: 用户API Key的哈希值（用于私有数据缓存隔离）
                   为空时全局共享（单用户模式/公开数据）
@@ -418,13 +418,13 @@ def get_cached_market_service(user_key: str = "") -> CachedMarketService:
     if user_key:
         # 多用户模式：每个用户独立的缓存实例
         if _cached_market_service is None or _cached_market_service._user_key != user_key:
-            from app.services.market_rest import get_market_service
-            _cached_market_service = CachedMarketService(get_market_service(), user_key=user_key)
+            from app.services.market_bitget import get_bitget_market_service
+            _cached_market_service = CachedMarketService(get_bitget_market_service(), user_key=user_key)
     else:
         # 单用户模式：全局单例
         if _cached_market_service is None:
-            from app.services.market_rest import get_market_service
-            _cached_market_service = CachedMarketService(get_market_service())
+            from app.services.market_bitget import get_bitget_market_service
+            _cached_market_service = CachedMarketService(get_bitget_market_service())
     return _cached_market_service
 
 

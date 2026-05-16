@@ -1,5 +1,9 @@
 /* ===== BTC Quant 暗色主题 - 模仿 zxlh.pro 配色系统 ===== */
 :root {
+  /* 字体 - 更清晰的无衬线字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+
   /* 背景色 - 纯黑体系 */
   --bg-primary: #000000;
   --bg-secondary: #0a0a0a;
@@ -235,3 +239,17 @@ body[data-theme="light"] .el-message-box__title { color: #1e293b !important; }
 body[data-theme="light"] .el-message-box__content { color: #475569 !important; }
 body[data-theme="light"] .el-message-box__headerbtn .el-message-box__close { color: #94a3b8 !important; }
 body[data-theme="light"] .el-overlay { background-color: rgba(0, 0, 0, 0.5) !important; }
+
+/* 全局字体设置 */
+body {
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 策略页面字体增强 */
+.strategy-card {
+  font-family: var(--font-family);
+}

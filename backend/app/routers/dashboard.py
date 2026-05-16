@@ -73,7 +73,7 @@ async def get_overview():
         bg_cfg = _load_bitget_config()
         if bg_cfg.get("key"):
             bg_client = BitgetClient(bg_cfg["key"], bg_cfg["secret"], bg_cfg["passphrase"])
-            all_tickers = bg_client.get_tickers()
+            all_tickers = await bg_client.get_tickers()
             ticker_map = {t["symbol"]: t for t in all_tickers}
             for s in symbols_bg:
                 t = ticker_map.get(s, {})
@@ -90,7 +90,7 @@ async def get_overview():
             bg = _load_bitget_config()
             if bg.get("key"):
                 bg_client = BitgetClient(bg["key"], bg["secret"], bg["passphrase"])
-                mix_acc = bg_client.get_mix_account()
+                mix_acc = await bg_client.get_mix_account()
                 if mix_acc:
                     account_info = {
                         "account_balance": float(mix_acc.get("accountEquity", 0)),
@@ -267,7 +267,7 @@ async def get_market_regime():
     """获取市场状态仪表盘数据"""
     import asyncio
 
-    def _fetch():
+    async def _fetch():
         result = {
             "regime": "ranging",
             "score": 0,
@@ -282,7 +282,7 @@ async def get_market_regime():
             bg_cfg2 = _load_bitget_config()
             if bg_cfg2.get("key"):
                 bg2 = BitgetClient(bg_cfg2["key"], bg_cfg2["secret"], bg_cfg2["passphrase"])
-                raw_klines = bg2.get_klines("BTCUSDT", "1H", 100)
+                raw_klines = await bg2.get_klines("BTCUSDT", "1H", 100)
             else:
                 raw_klines = []
             if raw_klines and len(raw_klines) > 60:
@@ -317,7 +317,7 @@ async def get_market_regime():
             bg_cfg3 = _load_bitget_config()
             if bg_cfg3.get("key"):
                 bg3 = BitgetClient(bg_cfg3["key"], bg_cfg3["secret"], bg_cfg3["passphrase"])
-                btc_ticker = bg3.get_ticker("BTCUSDT")
+                btc_ticker = await bg3.get_ticker("BTCUSDT")
                 if btc_ticker:
                     result["btc_price"] = float(btc_ticker.get("lastPr", 0))
                     change_str = btc_ticker.get("change24h", "0")
@@ -351,7 +351,7 @@ async def get_market_regime():
         return result
 
     try:
-        data = await asyncio.wait_for(asyncio.to_thread(_fetch), timeout=10.0)
+        data = await asyncio.wait_for(_fetch(), timeout=10.0)
     except asyncio.TimeoutError:
         data = {"regime": "ranging", "score": 0, "details": {}, "btc_price": 0, "btc_change_24h": 0, "funding_rate": 0, "fear_greed": 50}
 

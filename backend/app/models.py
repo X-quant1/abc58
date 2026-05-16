@@ -204,6 +204,21 @@ class StrategyTemplate(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class StrategyInstance(Base):
+    """策略实例 - 用户基于策略模板启动的实例"""
+    __tablename__ = "strategy_instances"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False)  # 关联策略模板
+    user_id = Column(Integer, nullable=True)                                    # 用户ID（预留）
+    name = Column(String(50), nullable=False)                                    # 实例名称
+    params = Column(Text, nullable=False)                                        # JSON 参数（可能覆盖模板参数）
+    enabled = Column(Boolean, default=False)                                     # 是否运行中
+    position = Column(String(10), default="none")                                # 当前持仓方向
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class RiskControl(Base):
     """风控规则"""
     __tablename__ = "risk_controls"
