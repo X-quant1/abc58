@@ -32,6 +32,8 @@ class Strategy(Base):
     enabled = Column(Boolean, default=False)
     position = Column(String(10), default="none")                 # 当前持仓方向: none/long/short（持久化）
     published = Column(Boolean, default=True, index=True)         # 是否上架（管理员控制）
+    is_official = Column(Boolean, default=True, index=True)       # 是否官方策略（官方/市场）
+    is_template = Column(Boolean, default=True, index=True)       # 是否为模板（True=模板，False=用户实例）
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -67,6 +69,7 @@ class SystemLog(Base):
     module = Column(String(30), nullable=False)                     # strategy/trade/market/system
     message = Column(Text, nullable=False)
     detail = Column(Text)                                           # JSON 详情
+    strategy_id = Column(Integer, nullable=True, index=True)       # 关联策略实例ID
     created_at = Column(DateTime, server_default=func.now(), index=True)
 
 
@@ -215,6 +218,9 @@ class StrategyInstance(Base):
     params = Column(Text, nullable=False)                                        # JSON 参数（可能覆盖模板参数）
     enabled = Column(Boolean, default=False)                                     # 是否运行中
     position = Column(String(10), default="none")                                # 当前持仓方向
+    started_at = Column(DateTime, nullable=True)                                 # 最近一次启动时间
+    is_template = Column(Boolean, default=False, index=True)                     # 是否为模板（实例始终为False）
+    version = Column(String(10), nullable=True)                                   # 版本：simple/pro
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

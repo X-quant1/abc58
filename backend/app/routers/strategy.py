@@ -1,16 +1,18 @@
 """策略管理路由"""
 import json
-from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, HTTPException, Depends, Query
+from sqlalchemy import desc
 from pydantic import BaseModel
 from typing import Optional, List
 
 from app.database import SessionLocal
-from app.models import Strategy, Trade, StrategyTemplate, User
+from app.models import Strategy, Trade, StrategyTemplate, User, StrategyInstance, SystemLog
 from app.services.strategy import (
     strategy_runner, list_available_strategies, get_strategy_class,
     STRATEGY_REGISTRY,
 )
+from app.services.logger import sys_logger
 from app.auth import get_current_user_optional, get_current_user
 
 router = APIRouter(prefix="/api/strategy", tags=["策略"])
@@ -21,6 +23,7 @@ router = APIRouter(prefix="/api/strategy", tags=["策略"])
 class CreateStrategyRequest(BaseModel):
     name: str
     type: str                           # ma_cross / rsi / bollinger
+    is_official: bool = True            # 策略分类：True=官方策略，False=市场策略
     params: dict = {}
     inst_id: str = "BTC-USDT-SWAP"      # 交易对
     size_mode: str = "fixed"             # fixed=固定数量 / percent=仓位百分比
@@ -49,6 +52,7 @@ class CreateStrategyRequest(BaseModel):
 
 class UpdateStrategyRequest(BaseModel):
     name: Optional[str] = None
+    is_official: Optional[bool] = None   # 策略分类：True=官方策略，False=市场策略
     params: Optional[dict] = None
     inst_id: Optional[str] = None
     size_mode: Optional[str] = None
@@ -109,8 +113,9 @@ async def list_strategies(current_user: dict | None = Depends(get_current_user_o
     """获取策略列表
     
     规则：
-    - 已上架的策略：所有用户可见
-    - 已下架的策略：仅对已启用/运行该策略的用户可见，并显示警告提示
+    - 已上架的策略模板：所有用户可见
+    - 已下架的策略模板：仅对已启用/运行该策略的用户可见，并显示警告提示
+    - 用户运行的策略实例：显示在"运行中"/"已停止"标签
     - 管理员在 Strategy 页面也遵循相同规则（Admin 页面有专门的策略管理）
     """
     db = SessionLocal()
@@ -123,17 +128,22 @@ async def list_strategies(current_user: dict | None = Depends(get_current_user_o
             is_admin = user and user.role == "admin"
             user_id = current_user["user_id"]
 
-        # 查询所有策略
+        # 查询所有策略模板
         strategies = db.query(Strategy).order_by(Strategy.id.desc()).all()
 
         result = []
         for s in strategies:
-            # 跳过下架策略的判断逻辑（管理员和普通用户规则一致）
-            if not s.published:
-                # 只有已启用或运行中的策略才可见
+            # 过滤逻辑：
+            # 1. 用户测试策略(is_official=0): 始终显示给用户
+            # 2. 官方策略(is_official=1): 需要published=1或已启用/运行中
+            if s.is_official == 0:
+                # 用户测试策略：始终显示
+                pass
+            elif not s.published:
+                # 官方下架策略：只有已启用或运行中的策略才可见
                 is_running = strategy_runner.is_running(s.id)
                 if not s.enabled and not is_running:
-                    continue  # 跳过未启用且未运行的下架策略
+                    continue  # 跳过未启用且未运行的官方下架策略
 
             params = json.loads(s.params) if s.params else {}
             # 获取策略类型信息
@@ -164,6 +174,8 @@ async def list_strategies(current_user: dict | None = Depends(get_current_user_o
                     except Exception as e:
                         print(f"[Strategy] Auto-restore #{s.id} error: {e}")
 
+            # is_official: 数据库字段，True=官方策略，False=市场策略
+            is_official_val = s.is_official if s.is_official is not None else True
             result.append({
                 "id": s.id,
                 "name": s.name,
@@ -175,9 +187,49 @@ async def list_strategies(current_user: dict | None = Depends(get_current_user_o
                 "running": is_running,
                 "position": s.position or "none",
                 "published": s.published,
+                "is_official": is_official_val,
+                "is_template": True,  # 策略模板
                 "unpublished_warning": unpublished_warning,
                 "created_at": s.created_at.isoformat() if s.created_at else "",
                 "updated_at": s.updated_at.isoformat() if s.updated_at else "",
+            })
+        
+        # 查询用户运行的策略实例
+        instances = db.query(StrategyInstance).order_by(StrategyInstance.id.desc()).all()
+        for inst in instances:
+            # 查询关联的策略模板
+            template = db.query(Strategy).filter(Strategy.id == inst.strategy_id).first()
+            if not template:
+                continue
+            
+            # 获取策略类型信息
+            cls = get_strategy_class(template.type)
+            type_name = cls.strategy_name if cls else template.type
+            type_desc = cls.strategy_desc if cls else ""
+            
+            params = json.loads(inst.params) if inst.params else {}
+            
+            # 检查运行状态
+            is_running = strategy_runner.is_running(inst.id)
+
+            result.append({
+                "id": inst.id,
+                "name": inst.name,
+                "type": template.type,
+                "type_name": type_name,
+                "type_desc": type_desc,
+                "params": params,
+                "enabled": inst.enabled,
+                "running": is_running,
+                "position": inst.position or "none",
+                "published": True,  # 实例始终可见
+                "is_official": template.is_official if template.is_official is not None else True,  # 继承模板的分类
+                "is_template": False,  # 策略实例
+                "strategy_id": inst.strategy_id,  # 关联的模板ID
+                "version": inst.version or "simple",  # 版本：simple/pro
+                "started_at": inst.started_at.isoformat() if inst.started_at else "",
+                "created_at": inst.created_at.isoformat() if inst.created_at else "",
+                "updated_at": inst.updated_at.isoformat() if inst.updated_at else "",
             })
         
         # 排序：运行中的策略在前，未启动的在后
@@ -237,6 +289,7 @@ async def create_strategy(req: CreateStrategyRequest, current_user: dict = Depen
         strategy = Strategy(
             name=req.name,
             type=req.type,
+            is_official=req.is_official,  # 保存策略分类
             params=json.dumps(full_params),
             enabled=False,
             position="none",
@@ -268,6 +321,8 @@ async def update_strategy(strategy_id: int, req: UpdateStrategyRequest):
 
         if req.name is not None:
             strategy.name = req.name
+        if req.is_official is not None:
+            strategy.is_official = req.is_official  # 更新策略分类
         if req.params is not None:
             params.update(req.params)
         if req.inst_id is not None:
@@ -332,19 +387,25 @@ async def update_strategy(strategy_id: int, req: UpdateStrategyRequest):
 
 
 @router.delete("/{strategy_id}")
-async def delete_strategy(strategy_id: int):
-    """删除策略"""
-    if strategy_runner.is_running(strategy_id):
-        raise HTTPException(status_code=400, detail="cannot delete running strategy, stop it first")
-
+async def delete_strategy(strategy_id: int, current_user: dict = Depends(get_current_user)):
+    """删除策略模板（仅管理员）"""
+    # 权限检查：只有管理员可以删除策略模板
     db = SessionLocal()
     try:
+        user = db.query(User).filter(User.id == current_user["user_id"]).first()
+        if not user or user.role != "admin":
+            raise HTTPException(status_code=403, detail="只有管理员可以删除策略模板")
+
+        if strategy_runner.is_running(strategy_id):
+            raise HTTPException(status_code=400, detail="无法删除运行中的策略，请先停止")
+
         strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
         if not strategy:
-            raise HTTPException(status_code=404, detail="strategy not found")
+            raise HTTPException(status_code=404, detail="策略不存在")
+
         db.delete(strategy)
         db.commit()
-        return {"ok": True, "msg": "strategy deleted"}
+        return {"ok": True, "msg": "策略模板已删除"}
     finally:
         db.close()
 
@@ -352,40 +413,121 @@ async def delete_strategy(strategy_id: int):
 # ─── 策略运行控制 ───
 
 @router.post("/{strategy_id}/start")
-async def start_strategy(strategy_id: int):
-    """启动策略"""
-    result = strategy_runner.start(strategy_id)
-    if not result["ok"]:
-        raise HTTPException(status_code=400, detail=result["msg"])
-    return result
+async def start_strategy(strategy_id: int, version: str = "simple"):
+    """启动策略
+
+    始终创建实例并启动，模板本身不运行
+    version: simple=简易版, pro=专业版
+    """
+    if version not in ("simple", "pro"):
+        raise HTTPException(status_code=400, detail="version 必须是 simple 或 pro")
+
+    db = SessionLocal()
+    try:
+        # 支持实例ID和模板ID：先查实例表，再查模板表
+        instance = db.query(StrategyInstance).filter(StrategyInstance.id == strategy_id).first()
+        if instance:
+            # 已有实例，直接重启
+            result = strategy_runner.start(strategy_id)
+            if not result["ok"]:
+                raise HTTPException(status_code=400, detail=result["msg"])
+            instance.enabled = True
+            instance.started_at = datetime.now()
+            db.commit()
+            version = instance.version or "simple"
+            version_label = "简易版" if version == "simple" else "专业版"
+            sys_logger.info("strategy", f"策略已重新启动: {instance.name}（{version_label}）", strategy_id=strategy_id)
+            return {
+                "ok": True,
+                "msg": f"策略已重新启动：{instance.name}（{version_label}）",
+                "instance_id": instance.id,
+                "instance_name": instance.name,
+                "version": version,
+                "is_instance": True
+            }
+
+        strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
+        if not strategy:
+            raise HTTPException(status_code=404, detail="策略不存在")
+
+        # 查询该策略已有的实例数量（用于自动编号）
+        instance_count = db.query(StrategyInstance).filter(
+            StrategyInstance.strategy_id == strategy_id
+        ).count()
+
+        # 创建新实例（继承模板参数）
+        # 命名规则：策略名 #1, #2, #3...
+        instance_number = instance_count + 1
+        instance_name = f"{strategy.name} #{instance_number}"
+
+        new_instance = StrategyInstance(
+            strategy_id=strategy_id,
+            name=instance_name,
+            params=strategy.params,  # 继承模板参数
+            enabled=False,
+            position="none",
+            version=version
+        )
+        db.add(new_instance)
+        db.commit()
+        db.refresh(new_instance)
+
+        # 用实例ID启动
+        result = strategy_runner.start(new_instance.id)
+        if not result["ok"]:
+            # 启动失败，删除实例
+            db.delete(new_instance)
+            db.commit()
+            raise HTTPException(status_code=400, detail=result["msg"])
+
+        # 标记实例为启用
+        new_instance.enabled = True
+        new_instance.started_at = datetime.now()
+        db.commit()
+
+        version_label = "简易版" if version == "simple" else "专业版"
+        sys_logger.info("strategy", f"策略已创建并启动: {instance_name}（{version_label}）", strategy_id=new_instance.id)
+        return {
+            "ok": True,
+            "msg": f"策略实例已创建并启动：{instance_name}（{version_label}）",
+            "instance_id": new_instance.id,
+            "instance_name": instance_name,
+            "version": version,
+            "is_instance": True
+        }
+    finally:
+        db.close()
 
 
 @router.post("/{strategy_id}/stop")
 async def stop_strategy(strategy_id: int):
-    """停止策略"""
+    """停止策略（停止实例）"""
     result = strategy_runner.stop(strategy_id)
     if not result["ok"]:
         raise HTTPException(status_code=400, detail=result["msg"])
-    
-    # WebSocket推送策略状态更新
-    from app.services.ws_manager import ws_manager
-    from app.database import SessionLocal
-    from app.models import Strategy
-    
+
+    # 更新实例状态
     db = SessionLocal()
     try:
-        strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
-        if strategy:
-            ws_manager.broadcast_sync("strategy_status", {
-                "strategy_id": strategy_id,
-                "running": False,
-                "enabled": False,
-                "published": strategy.published,
-                "position": strategy.position,
-            })
+        # 检查是否是实例
+        instance = db.query(StrategyInstance).filter(StrategyInstance.id == strategy_id).first()
+        if instance:
+            instance.enabled = False
+            instance.started_at = None
+            db.commit()
+            sys_logger.info("strategy", f"策略已停止: {instance.name}", strategy_id=strategy_id)
+
+        # WebSocket推送策略状态更新
+        from app.services.ws_manager import ws_manager
+        ws_manager.broadcast_sync("strategy_status", {
+            "strategy_id": strategy_id,
+            "running": False,
+            "enabled": False,
+            "is_instance": instance is not None,
+        })
     finally:
         db.close()
-    
+
     return result
 
 
@@ -420,6 +562,50 @@ async def get_strategy_trades(strategy_id: int, limit: int = 50):
                 "created_at": t.created_at.isoformat() if t.created_at else "",
             })
         return {"trades": result}
+    finally:
+        db.close()
+
+
+# ─── 策略运行日志 ───
+
+@router.get("/{strategy_id}/logs")
+async def get_strategy_logs(
+    strategy_id: int,
+    hours: int = Query(24, ge=1, le=720, description="最近N小时"),
+    level: str = Query("", description="info/warn/error"),
+    page: int = Query(1, ge=1),
+    size: int = Query(50, ge=1, le=200),
+):
+    """获取策略的运行日志"""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    db = SessionLocal()
+    try:
+        q = db.query(SystemLog).filter(
+            SystemLog.strategy_id == strategy_id,
+            SystemLog.created_at >= since,
+        )
+        if level:
+            q = q.filter(SystemLog.level == level)
+
+        total = q.count()
+        logs = q.order_by(desc(SystemLog.created_at)).offset((page - 1) * size).limit(size).all()
+
+        return {
+            "total": total,
+            "page": page,
+            "size": size,
+            "logs": [
+                {
+                    "id": log.id,
+                    "level": log.level,
+                    "module": log.module,
+                    "message": log.message,
+                    "detail": log.detail,
+                    "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else "",
+                }
+                for log in logs
+            ],
+        }
     finally:
         db.close()
 
@@ -471,3 +657,36 @@ async def manual_signal(strategy_id: int, req: ManualSignalRequest):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+
+# ─── 策略实例管理 ───
+
+@router.delete("/instance/{instance_id}")
+async def delete_strategy_instance(instance_id: int, current_user: dict = Depends(get_current_user)):
+    """删除策略实例（用户删除自己的实例）"""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user["user_id"]).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="用户不存在")
+
+        # 查询实例
+        instance = db.query(StrategyInstance).filter(StrategyInstance.id == instance_id).first()
+        if not instance:
+            raise HTTPException(status_code=404, detail="策略实例不存在")
+
+        # 权限检查：管理员可以删除任何实例，普通用户只能删除自己的实例
+        if user.role != "admin" and instance.user_id != current_user["user_id"]:
+            raise HTTPException(status_code=403, detail="无权删除他人的策略实例")
+
+        # 检查是否运行中
+        if strategy_runner.is_running(instance_id):
+            raise HTTPException(status_code=400, detail="无法删除运行中的实例，请先停止")
+
+        # 删除实例
+        db.delete(instance)
+        db.commit()
+        return {"ok": True, "msg": "策略实例已删除"}
+    finally:
+        db.close()
+

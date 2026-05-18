@@ -1919,7 +1919,7 @@ class StrategyRunner:
                         elif sz < 0:
                             has_short = True
         except Exception as e:
-            sys_logger.warn("strategy", f"Sync position failed for {inst_id}: {e}")
+            sys_logger.warn("strategy", f"Strategy {strategy_id}: Sync position failed for {inst_id}: {e}", strategy_id=strategy_id)
 
         if has_long and has_short:
             return "both"
@@ -1965,19 +1965,39 @@ class StrategyRunner:
         if self.is_running(strategy_id):
             return {"ok": False, "msg": "strategy already running"}
 
-        # 从数据库读取策略配置
+        # 从数据库读取策略配置（支持实例和模板）
         db = SessionLocal()
         try:
-            strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
-            if not strategy:
-                return {"ok": False, "msg": "strategy not found"}
-            if not strategy.enabled:
-                strategy.enabled = True
-                db.commit()
+            # 先尝试从实例表读取
+            from app.models import StrategyInstance
+            instance = db.query(StrategyInstance).filter(StrategyInstance.id == strategy_id).first()
 
-            strategy_type = strategy.type
-            params = json.loads(strategy.params) if strategy.params else {}
-            db_position = strategy.position or "none"
+            if instance:
+                # 这是策略实例
+                strategy = db.query(Strategy).filter(Strategy.id == instance.strategy_id).first()
+                if not strategy:
+                    return {"ok": False, "msg": "parent strategy not found"}
+
+                strategy_type = strategy.type
+                params = json.loads(instance.params) if instance.params else {}
+                db_position = instance.position or "none"
+
+                # 标记实例为启用
+                if not instance.enabled:
+                    instance.enabled = True
+                    db.commit()
+            else:
+                # 这是策略模板
+                strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
+                if not strategy:
+                    return {"ok": False, "msg": "strategy not found"}
+                if not strategy.enabled:
+                    strategy.enabled = True
+                    db.commit()
+
+                strategy_type = strategy.type
+                params = json.loads(strategy.params) if strategy.params else {}
+                db_position = strategy.position or "none"
         finally:
             db.close()
 
@@ -2005,7 +2025,7 @@ class StrategyRunner:
             )
             threads.append(thread)
             thread.start()
-            sys_logger.info("strategy", f"Strategy {strategy_id} ({strategy_type}) started on {tf}")
+            sys_logger.info("strategy", f"Strategy {strategy_id} ({strategy_type}) started on {tf}", strategy_id=strategy_id)
 
         with self._lock:
             self._running[strategy_id] = threads[0]  # 保持兼容性，记录第一个线程
@@ -2027,22 +2047,40 @@ class StrategyRunner:
                 if self._inst_position_owner[inst_id] == strategy_id:
                     del self._inst_position_owner[inst_id]
 
-        # 更新数据库（从OKX同步真实持仓）
+        # 更新数据库（支持实例和模板）
         published = True
         db = SessionLocal()
         try:
-            strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
-            if strategy:
-                strategy.enabled = False
-                published = strategy.published
-                
+            # 先尝试从实例表读取
+            from app.models import StrategyInstance
+            instance = db.query(StrategyInstance).filter(StrategyInstance.id == strategy_id).first()
+
+            if instance:
+                # 这是策略实例
+                instance.enabled = False
+                published = False  # 实例不需要published字段
+
                 # 从OKX同步真实持仓状态
-                params = json.loads(strategy.params) if strategy.params else {}
+                params = json.loads(instance.params) if instance.params else {}
                 inst_id = params.get("inst_id", "BTC-USDT-SWAP")
                 okx_position = self._sync_position_from_okx(inst_id)
-                strategy.position = okx_position
-                
+                instance.position = okx_position
+
                 db.commit()
+            else:
+                # 这是策略模板
+                strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
+                if strategy:
+                    strategy.enabled = False
+                    published = strategy.published
+
+                    # 从OKX同步真实持仓状态
+                    params = json.loads(strategy.params) if strategy.params else {}
+                    inst_id = params.get("inst_id", "BTC-USDT-SWAP")
+                    okx_position = self._sync_position_from_okx(inst_id)
+                    strategy.position = okx_position
+
+                    db.commit()
         finally:
             db.close()
 
@@ -2091,7 +2129,7 @@ class StrategyRunner:
             import traceback
             print(f"[Strategy] {strategy_id} thread CRASHED: {e}\n{traceback.format_exc()}")
             sys_logger.error("strategy",
-                f"Strategy {strategy_id} thread crashed: {e}\n{traceback.format_exc()}")
+                f"Strategy {strategy_id} thread crashed: {e}\n{traceback.format_exc()}", strategy_id=strategy_id)
             # 清理运行状态，允许下次 start() 重新启动
             with self._lock:
                 self._running.pop(strategy_id, None)
@@ -2118,7 +2156,7 @@ class StrategyRunner:
         print(f"[Strategy {strategy_id}] Thread name: {threading.current_thread().name}")
         print(f"[Strategy {strategy_id}] Poll interval: {interval}s")
         print(f"{'='*60}\n")
-        sys_logger.info("strategy", f"Strategy {strategy_id} loop started, timeframe={timeframe}")
+        sys_logger.info("strategy", f"Strategy {strategy_id} loop started, timeframe={timeframe}", strategy_id=strategy_id)
 
         # 当前持仓方向（从数据库 + OKX 同步的初始值）
         current_position = initial_position
@@ -2162,7 +2200,7 @@ class StrategyRunner:
                         # 高波动无方向 → 不开新仓（但可以收紧止损）
                         sys_logger.info("strategy",
                             f"Strategy {strategy_id}: signal={signal} BLOCKED by regime={regime}, "
-                            f"score={regime_result.get('score', 0)}")
+                            f"score={regime_result.get('score', 0)}", strategy_id=strategy_id)
                         signal = SIGNAL_HOLD
                     # ranging 和 weak_trend 允许开仓（方案C：只拦截volatile）
 
@@ -2222,7 +2260,7 @@ class StrategyRunner:
                     okx_pos = self._sync_position_from_okx(inst_id)
                     if okx_pos != current_position:
                         print(f"[Strategy] {strategy_id}: position mismatch! memory={current_position}, okx={okx_pos}")
-                        sys_logger.warn("strategy", f"Position mismatch for #{strategy_id}: memory={current_position}, okx={okx_pos}")
+                        sys_logger.warn("strategy", f"Position mismatch for #{strategy_id}: memory={current_position}, okx={okx_pos}", strategy_id=strategy_id)
                         current_position = okx_pos
                         self._save_position(strategy_id, current_position)
                         # 同步合约级持仓锁
@@ -2235,7 +2273,7 @@ class StrategyRunner:
             except Exception as e:
                 import traceback
                 print(f"[Strategy] {strategy_id} error: {e}")
-                sys_logger.error("strategy", f"Strategy {strategy_id} error: {e}\n{traceback.format_exc()}")
+                sys_logger.error("strategy", f"Strategy {strategy_id} error: {e}\n{traceback.format_exc()}", strategy_id=strategy_id)
 
             # 5. 等待下一个周期
             time.sleep(interval)
@@ -2264,7 +2302,7 @@ class StrategyRunner:
                 owner = self._inst_position_owner.get(inst_id)
                 if owner and owner != strategy_id:
                     sys_logger.info("strategy",
-                        f"#{strategy_id} signal={signal} BLOCKED: {inst_id} owned by #{owner}")
+                        f"#{strategy_id} signal={signal} BLOCKED: {inst_id} owned by #{owner}", strategy_id=strategy_id)
                     return {"ok": False, "msg": f"合约 {inst_id} 被策略 #{owner} 持有，无法开仓"}
 
         # 余额预检 — 开仓前检查是否有足够余额
@@ -2274,10 +2312,10 @@ class StrategyRunner:
                 # Bitget 返回 available 字段表示可用余额；total_equity 有时为 0
                 avail = balance_info.get("available", 0) or balance_info.get("total_equity", 0)
                 if avail <= 0:
-                    sys_logger.warn("strategy", f"#{strategy_id} skip open: zero balance (avail={avail})")
+                    sys_logger.warn("strategy", f"#{strategy_id} skip open: zero balance (avail={avail})", strategy_id=strategy_id)
                     return {"ok": False, "msg": f"账户余额不足 (可用: {avail} USDT)"}
             except Exception as e:
-                sys_logger.warn("strategy", f"#{strategy_id} balance check failed: {e}")
+                sys_logger.warn("strategy", f"#{strategy_id} balance check failed: {e}", strategy_id=strategy_id)
 
         # 下单张数：支持固定张数和仓位百分比两种模式
         size_mode = params.get("size_mode", "fixed")
@@ -2313,7 +2351,7 @@ class StrategyRunner:
             ticker = _ms.get_ticker(inst_id.replace("-SWAP", ""))
             current_price = ticker.get("price", 0)
         except Exception as e:
-            sys_logger.warn("strategy", f"#{strategy_id} get ticker failed: {e}")
+            sys_logger.warn("strategy", f"#{strategy_id} get ticker failed: {e}", strategy_id=strategy_id)
 
         if current_price > 0:
             # Bitget BTCUSDT 价格精度：0.1（1位小数）
@@ -2354,7 +2392,7 @@ class StrategyRunner:
             try:
                 _ts.set_leverage(inst_id=inst_id, lever=lever, mgn_mode=td_mode)
             except Exception as e:
-                sys_logger.warn("strategy", f"#{strategy_id} set leverage failed: {e}")
+                sys_logger.warn("strategy", f"#{strategy_id} set leverage failed: {e}", strategy_id=strategy_id)
 
         if signal == SIGNAL_OPEN_LONG:
             # 双向持仓模式(hedge mode)：不需要先平空仓，直接开多
@@ -2366,13 +2404,13 @@ class StrategyRunner:
             except BitgetAPIError as e:
                 if e.code == OKX_ERR_INSUFFICIENT_BALANCE:
                     msg = f"开多失败: 余额不足 (size={sz})"
-                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: insufficient balance (sz={sz})")
+                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: insufficient balance (sz={sz})", strategy_id=strategy_id)
                 else:
                     msg = f"开多失败: [{e.code}] {e.msg}"
-                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: [{e.code}] {e.msg}")
+                    sys_logger.error("strategy", f"#{strategy_id} open long FAILED: [{e.code}] {e.msg}", strategy_id=strategy_id)
                 return {"ok": False, "msg": msg}
             except Exception as e:
-                sys_logger.error("strategy", f"#{strategy_id} open long error: {e}")
+                sys_logger.error("strategy", f"#{strategy_id} open long error: {e}", strategy_id=strategy_id)
                 return {"ok": False, "msg": f"开多失败: {e}"}
 
         elif signal == SIGNAL_OPEN_SHORT:
@@ -2385,27 +2423,27 @@ class StrategyRunner:
             except BitgetAPIError as e:
                 if e.code == OKX_ERR_INSUFFICIENT_BALANCE:
                     msg = f"开空失败: 余额不足 (size={sz})"
-                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: insufficient balance (sz={sz})")
+                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: insufficient balance (sz={sz})", strategy_id=strategy_id)
                 else:
                     msg = f"开空失败: [{e.code}] {e.msg}"
-                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: [{e.code}] {e.msg}")
+                    sys_logger.error("strategy", f"#{strategy_id} open short FAILED: [{e.code}] {e.msg}", strategy_id=strategy_id)
                 return {"ok": False, "msg": msg}
             except Exception as e:
-                sys_logger.error("strategy", f"#{strategy_id} open short error: {e}")
+                sys_logger.error("strategy", f"#{strategy_id} open short error: {e}", strategy_id=strategy_id)
                 return {"ok": False, "msg": f"开空失败: {e}"}
 
         elif signal == SIGNAL_CLOSE_LONG:
             try:
                 order_result = _ts.close_position(inst_id=inst_id, pos_side="long")
             except Exception as e:
-                sys_logger.error("strategy", f"#{strategy_id} close long error: {e}")
+                sys_logger.error("strategy", f"#{strategy_id} close long error: {e}", strategy_id=strategy_id)
                 return {"ok": False, "msg": f"平多失败: {e}"}
 
         elif signal == SIGNAL_CLOSE_SHORT:
             try:
                 order_result = _ts.close_position(inst_id=inst_id, pos_side="short")
             except Exception as e:
-                sys_logger.error("strategy", f"#{strategy_id} close short error: {e}")
+                sys_logger.error("strategy", f"#{strategy_id} close short error: {e}", strategy_id=strategy_id)
                 return {"ok": False, "msg": f"平空失败: {e}"}
 
         # 开仓后设置移动止盈算法单
@@ -2425,7 +2463,7 @@ class StrategyRunner:
                         ticker = _ms.get_ticker(inst_id.replace("-SWAP", ""))
                         current_price = ticker.get("price", 0)
                     except Exception as e:
-                        sys_logger.warn("strategy", f"Get ticker for activate price failed: {e}")
+                        sys_logger.warn("strategy", f"Get ticker for activate price failed: {e}", strategy_id=strategy_id)
 
                 if current_price > 0:
                     price_fmt = lambda p: f"{round(p / 0.1) * 0.1:.1f}"
@@ -2455,7 +2493,7 @@ class StrategyRunner:
                         td_mode=td_mode,
                     )
                     sys_logger.info("strategy",
-                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_points} points")
+                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_points} points", strategy_id=strategy_id)
                 elif trail_callback_points > 0:
                     # 兼容旧字段 trail_callback_points
                     _ts.place_algo_trailing(
@@ -2468,7 +2506,7 @@ class StrategyRunner:
                         td_mode=td_mode,
                     )
                     sys_logger.info("strategy",
-                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trail_callback_points} points")
+                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trail_callback_points} points", strategy_id=strategy_id)
                 else:
                     # 百分比模式
                     _ts.place_algo_trailing(
@@ -2481,9 +2519,9 @@ class StrategyRunner:
                         td_mode=td_mode,
                     )
                     sys_logger.info("strategy",
-                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_pct}%")
+                        f"#{strategy_id} trailing stop set: activate={activate_price}, callback={trailing_stop_pct}%", strategy_id=strategy_id)
             except Exception as e:
-                sys_logger.warn("strategy", f"Trailing stop failed for #{strategy_id}: {e}")
+                sys_logger.warn("strategy", f"Trailing stop failed for #{strategy_id}: {e}", strategy_id=strategy_id)
 
         # 记录交易到数据库
         if order_result is not None:
@@ -2607,7 +2645,7 @@ class StrategyRunner:
                 "order_id": order_id,
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             })
-            sys_logger.info("trade", f"Signal={signal} symbol={inst_id} price={price} amount={amount}")
+            sys_logger.info("trade", f"Signal={signal} symbol={inst_id} price={price} amount={amount}", strategy_id=strategy_id)
 
             # ─── 发送交易通知 ───
             try:

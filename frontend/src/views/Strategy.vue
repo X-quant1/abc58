@@ -16,15 +16,15 @@
     <div class="status-tabs">
       <div class="status-tab status-running" :class="{ active: statusFilter === 'running' }" @click="statusFilter = 'running'">
         <span class="tab-label">运行中</span>
-        <span class="tab-count">{{ strategies.filter(s => !s.is_template && s.running).length }}</span>
+        <span class="tab-count">{{ strategies.filter(s => s.running).length }}</span>
       </div>
       <div class="status-tab status-official" :class="{ active: statusFilter === '' || statusFilter === 'official' }" @click="statusFilter = ''">
         <span class="tab-label">官方策略</span>
-        <span class="tab-count">{{ strategies.filter(s => s.is_template).length }}</span>
+        <span class="tab-count">{{ strategies.filter(s => s.is_template && s.is_official !== false).length }}</span>
       </div>
       <div class="status-tab status-market" :class="{ active: statusFilter === 'market' }" @click="statusFilter = 'market'">
         <span class="tab-label">市场策略</span>
-        <span class="tab-count">{{ strategies.filter(s => s.is_template && !s.is_official).length || '-' }}</span>
+        <span class="tab-count">{{ strategies.filter(s => s.is_template && !s.is_official).length }}</span>
       </div>
     </div>
 
@@ -39,12 +39,19 @@
             <div class="inst-header">
               <div class="inst-left-accent accent-running"></div>
               <div class="inst-title">{{ s.name }}</div>
+              <span v-if="s.version === 'pro'" class="version-badge version-pro">专业版</span>
+              <span v-else class="version-badge version-simple">简易版</span>
               <div class="inst-status-dot accent-running"></div>
               <div class="inst-status-text running">运行中</div>
             </div>
-            <!-- 盈亏 -->
-            <div class="inst-profit" :class="getReturnClass(s._perf?.total_pnl)">
-              {{ s._perf?.total_pnl || '+100.01' }}<span class="profit-unit"> USDT</span>
+            <!-- 盈亏区域 -->
+            <div class="inst-pnl-row">
+              <div class="pnl-label">累计盈亏</div>
+              <div class="pnl-value" :class="getReturnClass(s._perf?.total_pnl)">
+                <span class="pnl-sign" v-if="s._perf?.total_pnl">{{ s._perf?.total_pnl >= 0 ? '+' : '' }}</span>
+                <span class="pnl-num">{{ s._perf?.total_pnl || '+100.01' }}</span>
+                <span class="pnl-currency">USDT</span>
+              </div>
             </div>
             <!-- 分隔线 -->
             <div class="inst-divider"></div>
@@ -69,29 +76,27 @@
                 </div>
               </div>
             </div>
-            <!-- 底部 -->
-            <div class="inst-footer">
-              <div class="inst-time">
-                <span v-if="s._last_trade?.time" class="time-text">开仓 {{ s._last_trade.time }}</span>
-                <span v-if="s._last_trade?.side" class="trade-dir" :class="s._last_trade.side">{{ s._last_trade.side === 'short' ? '做空' : '做多' }}</span>
-                <span v-if="s._run_duration" class="time-text">{{ s._run_duration }}</span>
+            <!-- 底部：运行时间 + 操作按钮 -->
+            <div class="inst-bottom-bar">
+              <div class="run-time-tag">
+                <span class="run-time-dot"></span>
+                <span class="run-time-label">运行</span>
+                <span class="run-time-val">{{ formatRunDuration(s.started_at || s.created_at) }}</span>
               </div>
-              <div class="inst-actions">
-                <el-tooltip content="暂停策略" placement="top">
-                  <button class="ibtn ibtn-pause" @click.stop="stopStrategy(s.id)" :disabled="s._stopping"><el-icon><VideoPause /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="编辑策略" placement="top">
-                  <button class="ibtn ibtn-edit" @click.stop="openSettingsDialog(s)"><el-icon><Edit /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="日志" placement="top">
-                  <button class="ibtn ibtn-info" @click.stop="viewLogs(s)"><el-icon><Document /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="交易记录" placement="top">
-                  <button class="ibtn ibtn-purple" @click.stop="viewTrades(s)"><el-icon><DataAnalysis /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="删除" placement="top">
-                  <button class="ibtn ibtn-del" @click.stop="deleteInstance(s.id)"><el-icon><Delete /></el-icon></button>
-                </el-tooltip>
+              <div class="inst-actions-bar">
+                <button class="act-btn act-pause" @click.stop="stopStrategy(s.id)" :disabled="s._stopping" title="暂停">
+                  <el-icon><VideoPause /></el-icon>
+                </button>
+                <button class="act-btn act-edit" @click.stop="openSettingsDialog(s)" title="编辑">
+                  <el-icon><Edit /></el-icon>
+                </button>
+                <button class="act-btn act-log" @click.stop="viewLogs(s)" title="日志">
+                  <el-icon><Document /></el-icon>
+                </button>
+                <button class="act-btn act-trade" @click.stop="viewTrades(s)" title="交易">
+                  <el-icon><DataAnalysis /></el-icon>
+                </button>
+                <!-- 运行中的策略不显示删除按钮 -->
               </div>
             </div>
           </div>
@@ -109,9 +114,14 @@
               <div class="inst-status-dot accent-stopped"></div>
               <div class="inst-status-text stopped">已暂停</div>
             </div>
-            <!-- 盈亏 -->
-            <div class="inst-profit" :class="getReturnClass(s._perf?.total_pnl)">
-              {{ s._perf?.total_pnl || '+50.00' }}<span class="profit-unit"> USDT</span>
+            <!-- 盈亏区域 -->
+            <div class="inst-pnl-row">
+              <div class="pnl-label">累计盈亏</div>
+              <div class="pnl-value" :class="getReturnClass(s._perf?.total_pnl)">
+                <span class="pnl-sign" v-if="s._perf?.total_pnl">{{ s._perf?.total_pnl >= 0 ? '+' : '' }}</span>
+                <span class="pnl-num">{{ s._perf?.total_pnl || '+50.00' }}</span>
+                <span class="pnl-currency">USDT</span>
+              </div>
             </div>
             <!-- 分隔线 -->
             <div class="inst-divider"></div>
@@ -136,42 +146,41 @@
                 </div>
               </div>
             </div>
-            <!-- 底部 -->
-            <div class="inst-footer">
-              <div class="inst-time">
-                <span v-if="s._last_trade?.time" class="time-text">开仓 {{ s._last_trade.time }}</span>
-                <span v-if="s._last_trade?.side" class="trade-dir" :class="s._last_trade.side">{{ s._last_trade.side === 'short' ? '做空' : '做多' }}</span>
-                <span v-if="s._run_duration" class="time-text">{{ s._run_duration }}</span>
+            <!-- 底部：运行时间 + 操作按钮 -->
+            <div class="inst-bottom-bar">
+              <div class="run-time-tag stopped-tag">
+                <span class="run-time-dot"></span>
+                <span class="run-time-label">已暂停</span>
               </div>
-              <div class="inst-actions">
-                <el-tooltip content="启动策略" placement="top">
-                  <button class="ibtn ibtn-start" @click.stop="startStrategy(s.id)" :disabled="s._starting"><el-icon><VideoPlay /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="编辑策略" placement="top">
-                  <button class="ibtn ibtn-edit" @click.stop="openSettingsDialog(s)"><el-icon><Edit /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="日志" placement="top">
-                  <button class="ibtn ibtn-info" @click.stop="viewLogs(s)"><el-icon><Document /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="交易记录" placement="top">
-                  <button class="ibtn ibtn-purple" @click.stop="viewTrades(s)"><el-icon><DataAnalysis /></el-icon></button>
-                </el-tooltip>
-                <el-tooltip content="删除" placement="top">
-                  <button class="ibtn ibtn-del" @click.stop="deleteInstance(s.id)"><el-icon><Delete /></el-icon></button>
-                </el-tooltip>
+              <div class="inst-actions-bar">
+                <button class="act-btn act-start" @click.stop="startStrategy(s.id)" :disabled="s._starting" title="启动">
+                  <el-icon><VideoPlay /></el-icon>
+                </button>
+                <button class="act-btn act-edit" @click.stop="openSettingsDialog(s)" title="编辑">
+                  <el-icon><Edit /></el-icon>
+                </button>
+                <button class="act-btn act-log" @click.stop="viewLogs(s)" title="日志">
+                  <el-icon><Document /></el-icon>
+                </button>
+                <button class="act-btn act-trade" @click.stop="viewTrades(s)" title="交易">
+                  <el-icon><DataAnalysis /></el-icon>
+                </button>
+                <button class="act-btn act-del" @click.stop="deleteInstance(s.id)" title="删除">
+                  <el-icon><Delete /></el-icon>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 空状态 -->
-      <div v-if="runningInstances.length === 0 && stoppedInstances.length === 0" class="empty-state">
+      <!-- 已停止标签下的空状态提示 -->
+      <div v-if="stoppedInstances.length === 0 && runningInstances.length === 0" class="empty-state">
         <div class="empty-icon-wrap">
           <el-icon :size="48" color="#c9cdd4"><Operation /></el-icon>
         </div>
-        <p class="empty-title">暂无运行中的策略</p>
-        <p class="empty-desc">去官方策略挑选一个开始运行吧</p>
+        <p class="empty-title">暂无运行中的策略实例</p>
+        <p class="empty-desc">您还没有启动过任何策略，去官方策略挑选一个开始运行吧</p>
         <el-button type="primary" size="small" @click="statusFilter = ''" style="margin-top: 12px;">去官方策略看看</el-button>
       </div>
     </template>
@@ -187,6 +196,9 @@
       <p class="empty-title">{{ getEmptyTitle }}</p>
       <p class="empty-desc">{{ getEmptyDesc }}</p>
       <el-button v-if="statusFilter === 'running'" type="primary" size="small" @click="statusFilter = ''" style="margin-top: 12px;">
+        去官方策略看看
+      </el-button>
+      <el-button v-if="statusFilter === 'market'" type="primary" size="small" @click="statusFilter = ''" style="margin-top: 12px;">
         去官方策略看看
       </el-button>
     </div>
@@ -309,9 +321,28 @@
             <span class="strategy-type">{{ s.type_name }}</span>
           </div>
           <div class="footer-actions">
-            <el-button size="small" text @click.stop="openSettingsDialog(s)">
-              <el-icon><Setting /></el-icon> 设置
-            </el-button>
+            <!-- 官方策略：只显示启动按钮 -->
+            <template v-if="statusFilter === ''">
+              <el-button
+                type="primary"
+                size="small"
+                @click.stop="openSettingsDialog(s)"
+              >
+                <el-icon><VideoPlay /></el-icon> 启动
+              </el-button>
+            </template>
+            <!-- 运行中/已停止：显示编辑、日志、交易记录 -->
+            <template v-else>
+              <el-button size="small" text @click.stop="openSettingsDialog(s)">
+                <el-icon><Edit /></el-icon> 编辑
+              </el-button>
+              <el-button size="small" text @click.stop="viewLogs(s)">
+                <el-icon><Document /></el-icon> 日志
+              </el-button>
+              <el-button size="small" text @click.stop="viewTrades(s)">
+                <el-icon><List /></el-icon> 记录
+              </el-button>
+            </template>
             <!-- 手动交易按钮(仅手动测试策略且运行中) -->
             <template v-if="s.running && isManualTest(s)">
               <el-button
@@ -343,18 +374,8 @@
                 :loading="s._manual_loading"
               >平空</el-button>
             </template>
-            <!-- 官方策略：始终显示启动按钮 -->
-            <el-button
-              v-if="statusFilter === ''"
-              type="success"
-              size="small"
-              @click.stop="startFromTemplate(s)"
-              :loading="s._starting"
-            >
-              <el-icon><VideoPlay /></el-icon> 启动
-            </el-button>
-            <!-- 运行中/已停止：正常显示启动/停止 -->
-            <template v-else>
+            <!-- 运行中/已停止：显示启动/停止按钮 -->
+            <template v-if="statusFilter !== ''">
               <el-button
                 v-if="!s.running"
                 type="success"
@@ -375,9 +396,6 @@
                 <el-icon><VideoPause /></el-icon> 停止
               </el-button>
             </template>
-            <el-button size="small" text @click.stop="viewTrades(s)">
-              <el-icon><List /></el-icon> 记录
-            </el-button>
           </div>
         </div>
       </div>
@@ -538,14 +556,14 @@
     </el-dialog>
 
     <!-- 设置/编辑策略弹窗 -->
-    <el-dialog v-model="showSettingsDialog" :title="editForm.name + ' - 策略设置'" width="720px" :close-on-click-modal="false">
+    <el-dialog v-model="showSettingsDialog" :title="editForm.name + ' - 策略设置'" width="580px" :close-on-click-modal="false" :class="'settings-dialog settings-' + settingsMode">
       <!-- 简易版/专业版切换 -->
       <template #header>
         <div class="settings-header">
           <span>{{ editForm.name }} - 策略设置</span>
           <div class="mode-switch">
-            <el-button :type="settingsMode === 'simple' ? 'primary' : 'default'" size="small" @click="settingsMode = 'simple'">简易版</el-button>
-            <el-button :type="settingsMode === 'pro' ? 'primary' : 'default'" size="small" @click="settingsMode = 'pro'">专业版</el-button>
+            <el-button size="small" :class="settingsMode === 'simple' ? 'mode-btn mode-btn-active' : 'mode-btn'" @click="switchSettingsMode('simple')">简易版</el-button>
+            <el-button size="small" :class="settingsMode === 'pro' ? 'mode-btn mode-btn-active' : 'mode-btn'" @click="switchSettingsMode('pro')">专业版</el-button>
           </div>
         </div>
       </template>
@@ -786,7 +804,9 @@
 
       <template #footer>
         <el-button @click="showSettingsDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveSettings" :loading="saving">保存设置</el-button>
+        <el-button type="primary" @click="saveSettings" :loading="saving">
+          {{ editingIsOfficialTemplate ? '保存并启动策略' : '保存设置' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -816,6 +836,47 @@
           </template>
         </el-table-column>
       </el-table>
+    </el-dialog>
+
+    <!-- 策略日志弹窗 -->
+    <el-dialog v-model="showLogsDialog" :title="logsStrategyName + ' - 运行日志'" width="720px" :close-on-click-modal="false">
+      <div class="logs-toolbar">
+        <el-radio-group v-model="logsHours" size="small" @change="loadLogs">
+          <el-radio-button :value="1">1小时</el-radio-button>
+          <el-radio-button :value="6">6小时</el-radio-button>
+          <el-radio-button :value="24">24小时</el-radio-button>
+          <el-radio-button :value="72">3天</el-radio-button>
+        </el-radio-group>
+        <el-select v-model="logsLevel" placeholder="全部级别" clearable size="small" style="width: 110px; margin-left: 12px" @change="loadLogs">
+          <el-option label="信息" value="info" />
+          <el-option label="警告" value="warn" />
+          <el-option label="错误" value="error" />
+        </el-select>
+        <span class="logs-total">共 {{ logsTotal }} 条</span>
+      </div>
+      <el-table :data="logsList" stripe size="small" v-loading="logsLoading" empty-text="暂无日志" style="width: 100%" max-height="420">
+        <el-table-column label="时间" width="160">
+          <template #default="{ row }">{{ row.created_at }}</template>
+        </el-table-column>
+        <el-table-column label="级别" width="70" align="center">
+          <template #default="{ row }">
+            <el-tag :type="logLevelType(row.level)" size="small" effect="dark">{{ logLevelLabel(row.level) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="消息" min-width="300" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.message }}</template>
+        </el-table-column>
+      </el-table>
+      <div class="logs-pagination" v-if="logsTotal > logsPageSize">
+        <el-pagination
+          small
+          layout="prev, pager, next"
+          :total="logsTotal"
+          :page-size="logsPageSize"
+          v-model:current-page="logsPage"
+          @current-change="loadLogs"
+        />
+      </div>
     </el-dialog>
 
     <!-- 策略详情弹窗 -->
@@ -892,7 +953,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { InfoFilled, Loading, WarningFilled, TrendCharts, DataLine, Connection, Odometer, Histogram, ArrowUp, ArrowDown, Remove, VideoPause, VideoPlay, Edit, Document, DataAnalysis, Delete } from '@element-plus/icons-vue'
+import { InfoFilled, Loading, WarningFilled, TrendCharts, DataLine, Connection, Odometer, Histogram, ArrowUp, ArrowDown, Remove, VideoPause, VideoPlay, Edit, Document, DataAnalysis, Delete, Shop } from '@element-plus/icons-vue'
 import api from '../utils/api'
 import { useWebSocket } from '../utils/ws'
 
@@ -908,22 +969,24 @@ const showSettingsDialog = ref(false)
 const saving = ref(false)
 const isAdmin = ref(false)
 const editingStrategyId = ref(null)
+const editingStrategyIsInstance = ref(false) // 标记当前编辑的是实例还是模板
+const editingIsOfficialTemplate = ref(false) // 标记是否是官方策略模板
 const editFormRunning = ref(false)
 const showTradesDialog = ref(false)
 
 // 筛选后的策略列表
 const filteredStrategies = computed(() => {
   if (!statusFilter.value) {
-    // 官方策略：只显示模板
-    return strategies.value.filter(s => s.is_template)
+    // 官方策略：只显示已上架的官方策略模板
+    return strategies.value.filter(s => s.is_template && s.is_official && s.published !== false)
   }
   if (statusFilter.value === 'running') {
-    // 运行中：只显示实例
-    return strategies.value.filter(s => !s.is_template && s.running)
+    // 运行中：显示所有运行中的策略（模板或实例）
+    return strategies.value.filter(s => s.running)
   }
   if (statusFilter.value === 'stopped') {
-    // 已停止：只显示实例
-    return strategies.value.filter(s => !s.is_template && !s.running)
+    // 已停止：显示所有已停止的策略（模板或实例）
+    return strategies.value.filter(s => !s.running)
   }
   if (statusFilter.value === 'official') {
     return strategies.value.filter(s => s.is_template && s.is_official)
@@ -936,25 +999,25 @@ const filteredStrategies = computed(() => {
 
 // 运行中的实例
 const runningInstances = computed(() => {
-  return strategies.value.filter(s => !s.is_template && s.running)
+  return strategies.value.filter(s => s.running)
 })
 
-// 已停止的实例
+// 已停止的实例（只显示用户的实例，不显示模板）
 const stoppedInstances = computed(() => {
-  return strategies.value.filter(s => !s.is_template && !s.running)
+  return strategies.value.filter(s => !s.running && !s.is_template)
 })
 
 const getEmptyTitle = computed(() => {
   if (statusFilter.value === 'running') return '暂无运行中的策略'
   if (statusFilter.value === 'stopped') return '暂无已停止的策略'
-  if (statusFilter.value === 'market') return '暂无市场策略'
+  if (statusFilter.value === 'market') return '功能开发中'
   return '暂无策略'
 })
 
 const getEmptyDesc = computed(() => {
   if (statusFilter.value === 'running') return '去官方策略挑选一个开始运行吧'
   if (statusFilter.value === 'stopped') return '所有策略都在运行中'
-  if (statusFilter.value === 'market') return '暂无用户分享的策略'
+  if (statusFilter.value === 'market') return '市场策略功能正在紧张开发中，敬请期待...'
   if (strategies.value.length === 0) return '管理员尚未创建任何策略'
   return '没有符合条件的策略'
 })
@@ -962,6 +1025,18 @@ const getEmptyDesc = computed(() => {
 const tradesList = ref([])
 const tradesStrategyName = ref('')
 const tradesStrategyId = ref(null)
+
+// 策略日志弹窗
+const showLogsDialog = ref(false)
+const logsStrategyName = ref('')
+const logsStrategyId = ref(null)
+const logsList = ref([])
+const logsTotal = ref(0)
+const logsPage = ref(1)
+const logsPageSize = 50
+const logsHours = ref(24)
+const logsLevel = ref('')
+const logsLoading = ref(false)
 
 // 策略详情弹窗
 const showDetailDialog = ref(false)
@@ -1084,7 +1159,39 @@ watch(statusFilter, () => {
 
 // 策略设置模式：simple=简易版, pro=专业版
 const settingsMode = ref('simple')
+const savedSettingsMode = ref('simple') // 保存策略原有的设置模式
 const proActiveTab = ref('config')
+
+// 切换设置模式（带确认）
+async function switchSettingsMode(newMode) {
+  if (newMode === settingsMode.value) return // 已经是当前模式，不操作
+
+  if (newMode === 'pro') {
+    // 切换到专业版：确认提示
+    try {
+      await ElMessageBox.confirm(
+        '切换到专业版后，需要手动配置更多参数（运行周期、风控等）。是否继续？',
+        '切换到专业版',
+        { type: 'info', confirmButtonText: '确定切换', cancelButtonText: '取消' }
+      )
+      settingsMode.value = newMode
+    } catch {
+      // 用户取消
+    }
+  } else if (newMode === 'simple') {
+    // 切换到简易版：确认提示
+    try {
+      await ElMessageBox.confirm(
+        '当前策略设置是专业版，切换到简易版后部分高级参数将使用默认值。是否继续？',
+        '切换到简易版',
+        { type: 'warning', confirmButtonText: '确定切换', cancelButtonText: '取消' }
+      )
+      settingsMode.value = newMode
+    } catch {
+      // 用户取消
+    }
+  }
+}
 
 // 策略实时状态 (strategy_id → { signal, position, last_update })
 const strategyStatus = ref({})
@@ -1408,29 +1515,13 @@ const editForm = reactive({
 async function loadStrategies() {
   loading.value = true
   try {
-    // 加载策略模板
+    // 加载策略列表（后端已同时返回模板和实例）
     const res = await api.get('/strategy/list')
-    const templates = (res.strategies || []).map(s => ({
+    strategies.value = (res.strategies || []).map(s => ({
       ...s,
       _starting: false,
       _stopping: false,
-      is_template: true,
     }))
-
-    // 加载策略实例
-    let instances = []
-    try {
-      const instRes = await api.get('/strategy-instance/list')
-      instances = (instRes.instances || []).map(s => ({
-        ...s,
-        _starting: false,
-        _stopping: false,
-        is_template: false,
-      }))
-    } catch { /* 实例API可能还未完全实现 */ }
-
-    // 合并：模板 + 实例
-    strategies.value = [...templates, ...instances]
     isAdmin.value = res.is_admin || false
 
     // 加载完成后绘制K线
@@ -1475,6 +1566,8 @@ function onStrategyTypeChange(type) {
 
 function openSettingsDialog(s) {
   editingStrategyId.value = s.id
+  editingStrategyIsInstance.value = s.is_template === false // 标记是否为实例
+  editingIsOfficialTemplate.value = s.is_template && s.is_official // 标记是否是官方策略模板
   editFormRunning.value = s.running
   editForm.name = s.name
   editForm.type = s.type
@@ -1500,8 +1593,9 @@ function openSettingsDialog(s) {
   editForm.cooldown_minutes = s.params.cooldown_minutes || 0
   editForm.td_mode = s.params.td_mode || 'cross'
   editForm.position_mode = s.params.position_mode || 'both'
-  editForm.timeframes = s.params.timeframes || ['1h']
-  editForm.run_days = s.params.run_days || [1, 2, 3, 4, 5, 6, 0]
+  // 深拷贝数组避免引用问题
+  editForm.timeframes = [...(s.params.timeframes || ['1h'])]
+  editForm.run_days = s.params.run_days ? [...s.params.run_days] : [1, 2, 3, 4, 5, 6, 0]
   editForm.run_start_time = s.params.run_start_time || '00:00'
   editForm.run_end_time = s.params.run_end_time || '23:59'
   editForm.description = s.params.description || ''
@@ -1529,8 +1623,10 @@ function openSettingsDialog(s) {
     paramsCopy[k] = s.params[k] ?? (availableStrategies.value.find(x => x.type === s.type)?.default_params || {})[k]
   }
   editForm.params = paramsCopy
-  // 重置设置模式为简易版
-  settingsMode.value = 'simple'
+  // 优先用 params.settings_mode（编辑后保存的值），其次用 version（启动时创建的值），最后默认简易版
+  const mode = s.params.settings_mode || (s.is_template === false ? s.version : null) || 'simple'
+  settingsMode.value = mode
+  savedSettingsMode.value = mode // 记录原始模式，用于切换确认
   proActiveTab.value = 'config'
   showSettingsDialog.value = true
 }
@@ -1554,8 +1650,15 @@ async function createStrategy() {
 }
 
 async function saveSettings() {
+  // 防止重复提交
+  if (saving.value) return
   saving.value = true
+
   try {
+    // 直接使用打开时记录的类型，避免因模板和实例ID重叠导致判断错误
+    const isInstance = editingStrategyIsInstance.value
+
+    // 深拷贝 timeframes 避免引用问题
     const body = {
       platform: editForm.platform,
       inst_id: editForm.inst_id,
@@ -1564,7 +1667,7 @@ async function saveSettings() {
       size: editForm.size,
       size_pct: editForm.size_pct,
       position_mode: editForm.position_mode,
-      timeframes: editForm.timeframes,
+      timeframes: [...editForm.timeframes], // 深拷贝数组
       run_days: editForm.run_days,
       run_start_time: editForm.run_start_time,
       run_end_time: editForm.run_end_time,
@@ -1584,12 +1687,30 @@ async function saveSettings() {
       cooldown_minutes: editForm.cooldown_minutes,
       td_mode: editForm.td_mode,
       description: editForm.description,
+      settings_mode: settingsMode.value, // 保存设置模式
       params: editForm.params,
     }
-    await api.put(`/strategy/${editingStrategyId.value}`, body)
+
+    console.log('[saveSettings] isInstance:', isInstance, 'id:', editingStrategyId.value, 'timeframes:', body.timeframes)
+
+    // 根据是否是实例调用不同的API
+    if (isInstance) {
+      await api.put(`/strategy-instance/${editingStrategyId.value}`, body)
+    } else {
+      await api.put(`/strategy/${editingStrategyId.value}`, body)
+    }
+
     ElMessage.success('设置已保存')
     showSettingsDialog.value = false
     await loadStrategies()
+
+    // 如果是官方策略模板，保存后自动启动
+    if (editingIsOfficialTemplate.value) {
+      const strategy = strategies.value.find(s => s.id === editingStrategyId.value)
+      if (strategy) {
+        await startFromTemplate(strategy)
+      }
+    }
   } catch (e) {
     ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message))
   } finally {
@@ -1601,13 +1722,15 @@ async function startStrategy(id) {
   const s = strategies.value.find(x => x.id === id)
   if (s) s._starting = true
   try {
-    await api.post(`/strategy/${id}/start`)
-    ElMessage.success('策略已启动')
+    // 使用实例已保存的版本，默认简易版
+    const version = s?.version || 'simple'
+    await api.post(`/strategy/${id}/start`, null, { params: { version } })
+    const label = version === 'simple' ? '简易版' : '专业版'
+    ElMessage.success(`策略已启动（${label}）`)
     await loadStrategies()
   } catch (e) {
     const detail = e.response?.data?.detail || e.message
     if (detail.includes('already running')) {
-      // 策略已在运行，直接标记为运行中（可能是线程还活着但列表未更新）
       ElMessage.warning('策略已在运行中')
       await loadStrategies()
     } else {
@@ -1618,26 +1741,30 @@ async function startStrategy(id) {
   }
 }
 
-// 从模板创建实例并启动
+// 从模板直接启动（不创建实例）
 async function startFromTemplate(template) {
+  // 防止重复启动
+  if (template._starting) return
   template._starting = true
-  try {
-    // 创建实例
-    const res = await api.post('/strategy-instance/create', {
-      strategy_id: template.id,
-      name: `${template.name}-实例`,
-      params: template.params,
-    })
-    const instanceId = res.instance_id
 
-    // 启动实例
-    await api.post(`/strategy-instance/${instanceId}/start`)
-    ElMessage.success('策略实例已启动')
+  try {
+    // 使用设置弹窗中选择的版本（简易版/专业版）
+    const version = settingsMode.value || 'simple'
+    await api.post(`/strategy/${template.id}/start`, null, { params: { version } })
+    const label = version === 'simple' ? '简易版' : '专业版'
+    ElMessage.success(`策略已启动（${label}）`)
     // 切换到运行中标签
     statusFilter.value = 'running'
     await loadStrategies()
   } catch (e) {
-    ElMessage.error('启动失败: ' + (e.response?.data?.detail || e.message))
+    const detail = e.response?.data?.detail || e.message
+    if (detail.includes('already running')) {
+      ElMessage.warning('策略已在运行中')
+      statusFilter.value = 'running'
+      await loadStrategies()
+    } else {
+      ElMessage.error('启动失败: ' + detail)
+    }
   } finally {
     template._starting = false
   }
@@ -1662,24 +1789,14 @@ async function stopStrategy(id) {
   if (s) s._stopping = true
   try {
     const res = await api.post(`/strategy/${id}/stop`)
-    if (res.published === false) {
-      ElMessage.success('策略已停止，即将从列表中消失')
-      strategies.value = strategies.value.filter(x => x.id !== id)
-    } else {
-      ElMessage.success('策略已停止')
-      s.running = false
-      s.enabled = false
-    }
+    ElMessage.success('策略已停止')
+    // 重新加载策略列表以确保UI正确更新
+    await loadStrategies()
   } catch (e) {
     const detail = e.response?.data?.detail || e.message
     if (detail.includes('not running')) {
       ElMessage.warning('策略已停止')
-      if (s.published === false) {
-        strategies.value = strategies.value.filter(x => x.id !== id)
-      } else {
-        s.running = false
-        s.enabled = false
-      }
+      await loadStrategies()
     } else {
       ElMessage.error('停止失败: ' + detail)
     }
@@ -1705,15 +1822,63 @@ async function viewTrades(s) {
 }
 
 function viewLogs(s) {
-  ElMessage.info('日志功能开发中')
+  logsStrategyId.value = s.id
+  logsStrategyName.value = s.name
+  logsPage.value = 1
+  logsHours.value = 24
+  logsLevel.value = ''
+  showLogsDialog.value = true
+  loadLogs()
+}
+
+async function loadLogs() {
+  if (!logsStrategyId.value) return
+  logsLoading.value = true
+  try {
+    const params = { page: logsPage.value, size: logsPageSize, hours: logsHours.value }
+    if (logsLevel.value) params.level = logsLevel.value
+    const res = await api.get(`/strategy/${logsStrategyId.value}/logs`, { params })
+    logsList.value = res.logs || []
+    logsTotal.value = res.total || 0
+  } catch (e) {
+    console.error('加载日志失败', e)
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+function logLevelType(level) {
+  return level === 'error' ? 'danger' : level === 'warn' ? 'warning' : 'info'
+}
+
+function logLevelLabel(level) {
+  return level === 'error' ? '错误' : level === 'warn' ? '警告' : '信息'
 }
 
 async function deleteInstance(id) {
   try {
-    await ElMessageBox.confirm('确定要删除该策略实例吗？', '确认删除', {
+    const strategy = strategies.value.find(s => s.id === id)
+    if (!strategy) return
+
+    // 检查是否运行中
+    if (strategy.running) {
+      ElMessage.warning('请先停止策略再删除')
+      return
+    }
+
+    const isInstance = !strategy.is_template
+    const confirmText = isInstance ? '确定要删除该策略实例吗？' : '确定要删除该策略吗？'
+    await ElMessageBox.confirm(confirmText, '确认删除', {
       type: 'warning'
     })
-    await api.delete(`/strategy-instance/${id}`)
+
+    // 根据是否是实例调用不同的删除API
+    if (isInstance) {
+      await api.delete(`/strategy/instance/${id}`)
+    } else {
+      await api.delete(`/strategy/${id}`)
+    }
+
     ElMessage.success('删除成功')
     await loadStrategies()
   } catch (e) {
@@ -1774,15 +1939,40 @@ function formatTime(iso) {
   return d.toLocaleString('zh-CN')
 }
 
+/** 格式化运行时长：返回 "X天X小时" / "X小时X分" / "X分X秒" */
+// 运行时间自动刷新：每30秒触发一次重新渲染
+const runTimeTick = ref(0)
+let runTimeTimer = null
+
+function formatRunDuration(iso) {
+  // 依赖 runTimeTick 使 computed/watch 能感知变化
+  void runTimeTick.value
+  if (!iso) return ''
+  const start = new Date(iso).getTime()
+  const now = Date.now()
+  const diff = Math.max(0, now - start) // ms
+  const totalSec = Math.floor(diff / 1000)
+  const days = Math.floor(totalSec / 86400)
+  const hours = Math.floor((totalSec % 86400) / 3600)
+  const mins = Math.floor((totalSec % 3600) / 60)
+  const secs = totalSec % 60
+  if (days > 0) return `${days}天${hours}小时`
+  if (hours > 0) return `${hours}小时`
+  return `${mins}分钟`
+}
+
 onMounted(() => {
   loadStrategies()
   loadAvailable()
   wsOn('strategy_status', onWsStrategyStatus)
   wsOn('signal', onWsSignal)
   wsOn('trade', onWsTrade)
+  // 运行时间自动刷新
+  runTimeTimer = setInterval(() => { runTimeTick.value++ }, 3600000) // 每小时更新
 })
 
 onBeforeUnmount(() => {
+  if (runTimeTimer) clearInterval(runTimeTimer)
   wsOff('strategy_status', onWsStrategyStatus)
   wsOff('signal', onWsSignal)
   wsOff('trade', onWsTrade)
@@ -1808,21 +1998,22 @@ onBeforeUnmount(() => {
 }
 
 .inst-card {
-  background: var(--bg-card);
+  background: var(--bg-card) !important;
   border: 1px solid var(--border-secondary);
-  border-radius: 10px;
-  padding: 14px 14px 10px;
+  border-radius: 12px;
+  padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  transition: all 0.2s ease;
+  gap: 10px;
+  transition: all 0.25s ease;
   position: relative;
+  box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.08));
 }
 
 .inst-card:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
+  border-color: var(--card-hover-border);
+  box-shadow: var(--card-hover-shadow, 0 6px 24px rgba(0, 0, 0, 0.12));
+  transform: translateY(-2px);
 }
 
 /* 标题行 */
@@ -1846,11 +2037,29 @@ onBeforeUnmount(() => {
 .inst-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+}
+
+.version-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+.version-simple {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+.version-pro {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
 }
 
 .inst-status-dot {
@@ -1872,23 +2081,48 @@ onBeforeUnmount(() => {
 .inst-status-text.running { color: var(--green); }
 .inst-status-text.stopped { color: var(--text-muted); }
 
-/* 盈亏 */
-.inst-profit {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  font-family: 'SF Mono', 'Roboto Mono', monospace;
+/* 盈亏区域 */
+.inst-pnl-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 2px 0;
 }
 
-.inst-profit.perf-positive { color: var(--green); }
-.inst-profit.perf-negative { color: var(--red); }
-
-.profit-unit {
-  font-size: 12px;
+.pnl-label {
+  font-size: 11px;
+  color: var(--text-muted);
   font-weight: 500;
-  opacity: 0.6;
+}
+
+.pnl-value {
+  font-family: 'SF Mono', 'Roboto Mono', 'Consolas', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.pnl-value.perf-positive { color: var(--green); }
+.pnl-value.perf-negative { color: var(--red); }
+
+.pnl-sign {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pnl-num {
+  font-size: 20px;
+}
+
+.pnl-currency {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
   font-family: var(--font-family);
-  letter-spacing: 0;
+  margin-left: 2px;
 }
 
 /* 分隔线 */
@@ -1900,10 +2134,10 @@ onBeforeUnmount(() => {
 
 /* 参数区域 - 带背景的盒子 */
 .inst-meta-row {
-  background: rgba(255,255,255,0.02);
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .meta-params-row {
@@ -1933,87 +2167,199 @@ onBeforeUnmount(() => {
   color: var(--orange);
 }
 
-/* 底部 */
-.inst-footer {
+/* 底部合并行：运行时间 + 操作按钮 */
+.inst-bottom-bar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 2px;
-  padding-top: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--border-subtle);
+  gap: 8px;
 }
 
-.inst-time {
-  display: flex;
+/* 运行时间标签 */
+.run-time-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.time-text {
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.1);
   font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.run-time-tag.stopped-tag {
+  background: rgba(156, 163, 175, 0.12);
+}
+
+.run-time-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.stopped-tag .run-time-dot {
+  background: #9ca3af;
+  animation: none;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.run-time-label {
   color: var(--text-muted);
+  font-weight: 500;
 }
 
-.trade-dir {
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 700;
+.run-time-val {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.trade-dir.long {
-  background: rgba(244, 63, 94, 0.12);
-  color: var(--red);
-}
-
-.trade-dir.short {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--green);
-}
-
-/* 图标按钮 */
-.inst-actions {
+/* 底部操作按钮栏 - 现代图标按钮 */
+.inst-actions-bar {
   display: flex;
   gap: 4px;
+  flex-shrink: 1;
 }
 
-.ibtn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
+.act-btn {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
-  padding: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-secondary);
+  background: transparent;
+  overflow: hidden;
 }
 
-.ibtn:hover {
+/* 涟漪效果 */
+.act-btn::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.15;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.act-btn:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
+.act-btn:hover {
   transform: scale(1.12);
-  filter: brightness(1.2);
 }
 
-.ibtn:disabled {
+.act-btn:active {
+  transform: scale(0.95);
+}
+
+.act-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
   transform: none;
-  filter: none;
 }
 
-.ibtn .el-icon {
+.act-btn:disabled::before {
+  display: none;
+}
+
+.act-btn .el-icon {
+  font-size: 15px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 启动按钮 - 绿色 */
+.act-start {
+  color: #10b981;
+}
+.act-start:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* 暂停按钮 - 橙色 */
+.act-pause {
+  color: #f59e0b;
+}
+.act-pause:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* 编辑按钮 - 蓝色 */
+.act-edit {
+  color: #3b82f6;
+}
+.act-edit:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* 日志按钮 - 灰色 */
+.act-log {
+  color: var(--text-muted);
+}
+.act-log:hover {
+  color: var(--text-primary);
+  background: rgba(156, 163, 175, 0.1);
+}
+
+/* 日志弹窗 */
+.logs-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.logs-total {
+  margin-left: auto;
   font-size: 13px;
-  color: #fff;
+  color: var(--text-muted);
+}
+.logs-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
 }
 
-.ibtn-start { background: rgba(16, 185, 129, 0.9); }
-.ibtn-pause { background: rgba(245, 158, 11, 0.9); }
-.ibtn-edit  { background: rgba(80, 80, 80, 0.9); }
-.ibtn-info  { background: rgba(59, 130, 246, 0.9); }
-.ibtn-purple{ background: rgba(161, 104, 247, 0.9); }
-.ibtn-del   { background: rgba(244, 63, 94, 0.85); }
+/* 交易记录按钮 - 紫色 */
+.act-trade {
+  color: #8b5cf6;
+}
+.act-trade:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+/* 删除按钮 - 红色 */
+.act-del {
+  color: #ef4444;
+}
+.act-del:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 删除按钮 */
+.act-del { color: #dc2626; }
+.act-del:hover { background: rgba(244, 63, 94, 0.1); }
 
 /* ===== 页面容器（颜色变量继承全局主题） ===== */
 .strategy-page {
@@ -2546,18 +2892,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.simple-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
-  background: var(--accent-light);
-  border-radius: 8px;
-  color: var(--accent);
-  font-size: 13px;
-  margin-top: 16px;
-}
-
 .pro-settings {
   margin: 0 -20px;
   padding: 0;
@@ -2814,5 +3148,192 @@ onBeforeUnmount(() => {
   .strategy-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* 市场策略开发中提示 */
+.market-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+.coming-soon-icon {
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+.coming-soon-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+.coming-soon-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+}
+</style>
+
+<!-- 非 scoped：设置对话框主题色（teleport 到 body，scoped 无效） -->
+<style>
+.settings-simple {
+  --settings-primary: #3b82f6;
+  --settings-primary-rgb: 59, 130, 246;
+  --settings-primary-light: rgba(var(--settings-primary-rgb), 0.1);
+}
+
+.settings-pro {
+  --settings-primary: #f59e0b;
+  --settings-primary-rgb: 245, 158, 11;
+  --settings-primary-light: rgba(var(--settings-primary-rgb), 0.1);
+}
+
+/* ===== 弹窗外框 ===== */
+.settings-dialog .el-dialog {
+  border: 2px solid var(--settings-primary, #3b82f6);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* 弹窗标题栏 */
+.settings-dialog .el-dialog__header {
+  border-bottom: 1px solid rgba(var(--settings-primary-rgb), 0.15);
+  padding: 16px 20px;
+}
+
+.settings-dialog .el-dialog__title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* 弹窗底部 */
+.settings-dialog .el-dialog__footer {
+  border-top: 1px solid rgba(var(--settings-primary-rgb), 0.15);
+  padding: 14px 20px;
+}
+
+/* ===== 模式切换按钮 ===== */
+.settings-dialog .mode-switch .mode-btn {
+  border-color: #dcdfe6;
+  color: #606266;
+  background: #fff;
+  transition: all 0.25s;
+}
+
+.settings-dialog .mode-switch .mode-btn-active {
+  background: var(--settings-primary) !important;
+  border-color: var(--settings-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(var(--settings-primary-rgb), 0.35);
+}
+
+.settings-dialog .mode-switch .mode-btn:not(.mode-btn-active):hover {
+  color: var(--settings-primary);
+  border-color: var(--settings-primary);
+}
+
+/* ===== 简易版 tip ===== */
+.settings-dialog .simple-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--settings-primary-light);
+  border-radius: 8px;
+  border-left: 3px solid var(--settings-primary);
+  color: var(--settings-primary);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+/* ===== 滑块 ===== */
+.settings-dialog .el-slider__bar {
+  background-color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-slider__button {
+  border-color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-slider__button:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s;
+}
+
+/* ===== 输入框 focus ===== */
+.settings-dialog .el-input__wrapper:focus-within,
+.settings-dialog .el-input-number .el-input__wrapper:focus-within {
+  box-shadow: 0 0 0 1px var(--settings-primary) inset !important;
+}
+
+.settings-dialog .el-select .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--settings-primary) inset !important;
+}
+
+/* ===== Checkbox ===== */
+.settings-dialog .el-checkbox.is-checked .el-checkbox__inner {
+  background-color: var(--settings-primary) !important;
+  border-color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-checkbox.is-checked .el-checkbox__label {
+  color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-checkbox__input:hover .el-checkbox__inner {
+  border-color: var(--settings-primary) !important;
+}
+
+/* ===== Radio ===== */
+.settings-dialog .el-radio.is-checked .el-radio__inner {
+  background-color: var(--settings-primary) !important;
+  border-color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-radio.is-checked .el-radio__label {
+  color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-radio__input:hover .el-radio__inner {
+  border-color: var(--settings-primary) !important;
+}
+
+/* ===== Switch ===== */
+.settings-dialog .el-switch.is-checked .el-switch__core {
+  background-color: var(--settings-primary) !important;
+  border-color: var(--settings-primary) !important;
+}
+
+/* ===== 专业版 Tabs ===== */
+.settings-dialog .el-tabs__item.is-active {
+  color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-tabs__active-bar {
+  background-color: var(--settings-primary) !important;
+}
+
+.settings-dialog .el-tabs__item:hover {
+  color: var(--settings-primary) !important;
+}
+
+/* ===== 分隔线 ===== */
+.settings-dialog .el-divider__text {
+  color: var(--settings-primary);
+  font-weight: 500;
+}
+
+/* ===== 保存按钮 ===== */
+.settings-dialog .el-dialog__footer .el-button--primary {
+  background-color: var(--settings-primary) !important;
+  border-color: var(--settings-primary) !important;
+  font-weight: 600;
+}
+
+.settings-dialog .el-dialog__footer .el-button--primary:hover {
+  filter: brightness(1.1);
 }
 </style>

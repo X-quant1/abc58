@@ -17,7 +17,7 @@ class SystemLogger:
     def __init__(self):
         self._lock = threading.Lock()
 
-    def _write(self, level: str, module: str, message: str, detail: dict = None):
+    def _write(self, level: str, module: str, message: str, detail: dict = None, strategy_id: int = None):
         """写入日志"""
         detail_str = json.dumps(detail, ensure_ascii=False) if detail else None
         db = SessionLocal()
@@ -27,6 +27,7 @@ class SystemLogger:
                 module=module,
                 message=message[:500],
                 detail=detail_str,
+                strategy_id=strategy_id,
             )
             db.add(log)
             db.commit()
@@ -36,14 +37,14 @@ class SystemLogger:
         finally:
             db.close()
 
-    def info(self, module: str, message: str, detail: dict = None):
-        self._write("info", module, message, detail)
+    def info(self, module: str, message: str, detail: dict = None, strategy_id: int = None):
+        self._write("info", module, message, detail, strategy_id)
 
-    def warn(self, module: str, message: str, detail: dict = None):
-        self._write("warn", module, message, detail)
+    def warn(self, module: str, message: str, detail: dict = None, strategy_id: int = None):
+        self._write("warn", module, message, detail, strategy_id)
 
-    def error(self, module: str, message: str, detail: dict = None):
-        self._write("error", module, message, detail)
+    def error(self, module: str, message: str, detail: dict = None, strategy_id: int = None):
+        self._write("error", module, message, detail, strategy_id)
 
 
 # 全局单例
